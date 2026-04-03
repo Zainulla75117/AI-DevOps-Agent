@@ -1,0 +1,89 @@
+import { motion } from 'framer-motion';
+import { Quote } from 'lucide-react';
+
+const testimonials = [
+  {
+    name: 'Sarah Chen',
+    role: 'DevOps Lead',
+    company: 'TechCorp',
+    avatar: 'SC',
+    content: 'InfraAgent has transformed how we manage infrastructure. What used to take days now happens in minutes. The AI truly understands our needs.',
+  },
+  {
+    name: 'Michael Rodriguez',
+    role: 'Platform Engineer',
+    company: 'CloudScale',
+    avatar: 'MR',
+    content: 'The Kubernetes automation is incredible. We\'ve reduced deployment time by 80% and eliminated manual errors. This is the future of DevOps.',
+  },
+  {
+    name: 'Emily Watson',
+    role: 'CTO',
+    company: 'StartupXYZ',
+    avatar: 'EW',
+    content: 'As a small team, InfraAgent gives us enterprise-grade infrastructure automation without the complexity. It\'s like having a senior DevOps engineer on autopilot.',
+  },
+  {
+    name: 'David Kim',
+    role: 'Infrastructure Architect',
+    company: 'GlobalTech',
+    avatar: 'DK',
+    content: 'The cost optimization features alone have saved us thousands. InfraAgent continuously monitors and optimizes our cloud spend automatically.',
+  },
+];
+
+const Testimonials = () => {
+  return (
+    <section className="py-24 relative overflow-hidden">
+      <div className="container mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-heading">
+            Loved by <span className="text-gradient">DevOps Teams</span>
+          </h2>
+          <p className="text-xl text-secondary max-w-2xl mx-auto text-sharp">
+            See what teams are saying about InfraAgent
+          </p>
+        </motion.div>
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
+          {testimonials.map((testimonial, index) => (
+            <motion.div
+              key={testimonial.name}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{ y: -5 }}
+              className="glass-effect-hover rounded-xl p-8 border border-theme transition-all duration-300 relative card-glow"
+            >
+              <Quote className="w-8 h-8 text-neon-green/40 mb-4" />
+              <p className="text-secondary leading-relaxed mb-6 text-lg text-sharp">
+                "{testimonial.content}"
+              </p>
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-neon-green to-neon-blue flex items-center justify-center text-white font-bold shadow-lg shadow-neon-green/30">
+                  {testimonial.avatar}
+                </div>
+                <div>
+                  <div className="font-semibold text-heading-color text-lg text-heading">{testimonial.name}</div>
+                  <div className="text-sm text-secondary text-sharp">
+                    {testimonial.role} at {testimonial.company}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default Testimonials;
+

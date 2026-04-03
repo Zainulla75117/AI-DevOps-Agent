@@ -1,0 +1,42 @@
+# Common
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+
+# Editor
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+dist/
+build/
+*.egg-info/
+.coverage
+.pytest_cache/
+*.sqlite3
+chroma_db/
+
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+build/
+.next/
+out/
+npm-debug.log*
+yarn-error.log*
+.pnp*
+.eslintcache
+
+#zip_files
+*.zip

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="devopsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="50%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <linearGradient id="gearGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="gearGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#devopsGrad)" opacity="0.15" />
+  
+  <!-- Main Infinity Symbol -->
+  <path
+    d="M 32 32 
+       C 24 24, 16 24, 16 32
+       C 16 40, 24 40, 32 32
+       C 40 24, 48 24, 48 32
+       C 48 40, 40 40, 32 32"
+    fill="none"
+    stroke="url(#devopsGrad)"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  
+  <!-- Small Gear Icon - Top Left -->
+  <g transform="translate(12, 12)">
+    <circle cx="0" cy="0" r="4" fill="url(#gearGrad1)" opacity="0.3" />
+    <path
+      d="M 0 -4 L 1 -4 L 1.5 -2.5 L 2.5 -2.5 L 2.5 -1.5 L 4 -1.5 L 4 -0.5 L 2.5 -0.5 L 2.5 0.5 L 4 0.5 L 4 1.5 L 2.5 1.5 L 2.5 2.5 L 1.5 2.5 L 1 4 L 0 4 L -1 4 L -1.5 2.5 L -2.5 2.5 L -2.5 1.5 L -4 1.5 L -4 0.5 L -2.5 0.5 L -2.5 -0.5 L -4 -0.5 L -4 -1.5 L -2.5 -1.5 L -2.5 -2.5 L -1.5 -2.5 L -1 -4 Z"
+      fill="url(#gearGrad1)"
+      opacity="0.9"
+    />
+    <circle cx="0" cy="0" r="1" fill="#ffffff" opacity="0.9" />
+  </g>
+  
+  <!-- Small Gear Icon - Bottom Right -->
+  <g transform="translate(52, 52)">
+    <circle cx="0" cy="0" r="4" fill="url(#gearGrad2)" opacity="0.3" />
+    <path
+      d="M 0 -4 L 1 -4 L 1.5 -2.5 L 2.5 -2.5 L 2.5 -1.5 L 4 -1.5 L 4 -0.5 L 2.5 -0.5 L 2.5 0.5 L 4 0.5 L 4 1.5 L 2.5 1.5 L 2.5 2.5 L 1.5 2.5 L 1 4 L 0 4 L -1 4 L -1.5 2.5 L -2.5 2.5 L -2.5 1.5 L -4 1.5 L -4 0.5 L -2.5 0.5 L -2.5 -0.5 L -4 -0.5 L -4 -1.5 L -2.5 -1.5 L -2.5 -2.5 L -1.5 -2.5 L -1 -4 Z"
+      fill="url(#gearGrad2)"
+      opacity="0.9"
+    />
+    <circle cx="0" cy="0" r="1" fill="#ffffff" opacity="0.9" />
+  </g>
+</svg>
+
