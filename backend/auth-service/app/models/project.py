@@ -34,11 +34,13 @@ class Project(BaseModel):
     project_name: str
     description: Optional[str] = None
     domain: Optional[str] = None
-    platform: str
+    platform: Optional[str] = None
     cloud_provider: Optional[str] = None
     region: Optional[str] = None
     iam_name: Optional[str] = None
     environment: Optional[str] = None
+    expected_traffic: Optional[str] = None
+    cost_preference: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
