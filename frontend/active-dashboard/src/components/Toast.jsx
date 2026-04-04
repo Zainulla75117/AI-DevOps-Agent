@@ -23,7 +23,7 @@ const Toast = ({ message, type = 'success', onClose, duration = 5000 }) => {
     : 'bg-[#2196F3]'
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+    <div className="fixed top-24 right-6 z-[100] animate-slide-in-right">
       <div
         className="flex items-center gap-4 px-5 py-4 bg-slate-900 text-white max-w-md rounded-lg shadow-[0_8px_16px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.1)_inset] border border-slate-700/50"
         style={{

@@ -59,7 +59,7 @@ const InfrastructurePage = () => {
 
   return (
     <PageLayout userInfo={userInfo} onLogout={handleLogout}>
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-6 bg-slate-50/50 backdrop-blur-3xl w-full">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -74,10 +74,10 @@ const InfrastructurePage = () => {
                 <div key={step.number} className="flex items-center flex-1">
                   <div className="flex flex-col items-center flex-1">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-300 ${
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold tracking-tight transition-all duration-500 shadow-sm ${
                         currentStep >= step.number
-                          ? 'bg-[#F0F7FF] text-[#2196F3]'
-                          : 'bg-slate-200 text-slate-500'
+                          ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500/20'
+                          : 'bg-slate-100 text-slate-400'
                       }`}
                     >
                       {currentStep > step.number ? (
@@ -98,8 +98,8 @@ const InfrastructurePage = () => {
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`h-1 flex-1 mx-2 transition-all duration-300 ${
-                        currentStep > step.number ? 'bg-[#F0F7FF]' : 'bg-slate-200'
+                      className={`h-1 flex-1 mx-2 rounded-full transition-all duration-500 ${
+                        currentStep > step.number ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-200'
                       }`}
                     />
                   )}
@@ -109,7 +109,7 @@ const InfrastructurePage = () => {
           </div>
 
           {/* Form Card */}
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 sm:p-8">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60 p-8 sm:p-10 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.1)] hover:border-blue-100 mb-10">
             <form onSubmit={handleSubmit}>
               {/* Step 1: Basic Information */}
               {currentStep === 1 && (
@@ -126,7 +126,7 @@ const InfrastructurePage = () => {
                       name="projectName"
                       value={formData.projectName}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-800 text-base rounded-md transition-all duration-300 outline-none focus:border-[#2196F3] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.08)]"
+                      className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300"
                       placeholder="Enter project name"
                       required
                     />
@@ -142,7 +142,7 @@ const InfrastructurePage = () => {
                       name="infrastructureName"
                       value={formData.infrastructureName}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-800 text-base rounded-md transition-all duration-300 outline-none focus:border-[#2196F3] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.08)]"
+                      className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300"
                       placeholder="Enter infrastructure name"
                       required
                     />
@@ -157,7 +157,7 @@ const InfrastructurePage = () => {
                       name="infrastructureType"
                       value={formData.infrastructureType}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-800 text-base rounded-md transition-all duration-300 outline-none focus:border-[#2196F3] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.08)]"
+                      className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300"
                       required
                     >
                       <option value="">Select infrastructure type</option>
@@ -183,7 +183,7 @@ const InfrastructurePage = () => {
                       name="region"
                       value={formData.region}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-800 text-base rounded-md transition-all duration-300 outline-none focus:border-[#2196F3] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.08)]"
+                      className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300"
                       required
                     >
                       <option value="">Select region</option>
@@ -203,7 +203,7 @@ const InfrastructurePage = () => {
                       name="environment"
                       value={formData.environment}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-800 text-base rounded-md transition-all duration-300 outline-none focus:border-[#2196F3] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.08)]"
+                      className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300"
                       required
                     >
                       <option value="">Select environment</option>
@@ -223,7 +223,7 @@ const InfrastructurePage = () => {
                       value={formData.description}
                       onChange={handleInputChange}
                       rows={4}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-800 text-base rounded-md transition-all duration-300 outline-none focus:border-[#2196F3] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.08)] resize-none"
+                      className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300 resize-none"
                       placeholder="Enter description (optional)"
                     />
                   </div>
@@ -244,7 +244,7 @@ const InfrastructurePage = () => {
                       name="resourceType"
                       value={formData.resourceType}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-800 text-base rounded-md transition-all duration-300 outline-none focus:border-[#2196F3] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.08)]"
+                      className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300"
                       required
                     >
                       <option value="">Select resource type</option>
@@ -266,7 +266,7 @@ const InfrastructurePage = () => {
                       value={formData.resourceCount}
                       onChange={handleInputChange}
                       min="1"
-                      className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-800 text-base rounded-md transition-all duration-300 outline-none focus:border-[#2196F3] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.08)]"
+                      className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300"
                       placeholder="Enter number of resources"
                       required
                     />
@@ -280,10 +280,10 @@ const InfrastructurePage = () => {
                   type="button"
                   onClick={handlePrevious}
                   disabled={currentStep === 1}
-                  className={`px-6 py-2.5 rounded-md font-medium transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                     currentStep === 1
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                      ? 'bg-slate-100/50 text-slate-400 cursor-not-allowed'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:shadow-sm'
                   }`}
                 >
                   Previous
@@ -297,14 +297,14 @@ const InfrastructurePage = () => {
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="px-6 py-2.5 bg-gradient-to-r from-[#42A5F5] to-[#66BB6A] text-white font-semibold rounded-md transition-all duration-300 hover:from-[#1E88E5] hover:to-[#4CAF50] hover:shadow-lg"
+                    className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl transition-all duration-300 hover:bg-blue-700 hover:shadow-[0_8px_20px_-6px_rgba(37,99,235,0.4)] hover:-translate-y-0.5"
                   >
                     Next
                   </button>
                 ) : (
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-gradient-to-r from-[#42A5F5] to-[#66BB6A] text-white font-semibold rounded-md transition-all duration-300 hover:from-[#1E88E5] hover:to-[#4CAF50] hover:shadow-lg"
+                    className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl transition-all duration-300 hover:bg-blue-700 hover:shadow-[0_8px_20px_-6px_rgba(37,99,235,0.4)] hover:-translate-y-0.5"
                   >
                     Create Infrastructure
                   </button>

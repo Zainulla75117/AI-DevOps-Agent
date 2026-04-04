@@ -1,126 +1,35 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
+import { 
+  LayoutDashboard, 
+  Server, 
+  Workflow, 
+  Activity, 
+  Settings, 
+  Network, 
+  HardDrive, 
+  Cloud, 
+  RefreshCw,
+  Box
+} from 'lucide-react'
 
-// Icon Components - Use currentColor to inherit text color (turns white when selected)
-// Default colors are complementary to blue-orange gradient background
-const DashboardIcon = ({ className, isSelected }) => (
-  <svg 
+// Icon Wrappers to handle isSelected prop easily
+const IconWrapper = ({ Icon, className }) => (
+  <Icon 
     className={className} 
-    fill="none" 
-    stroke={isSelected ? "currentColor" : "#8b5cf6"} 
-    viewBox="0 0 24 24" 
     strokeWidth={2}
-    style={{ color: isSelected ? "#1e293b" : "#8b5cf6" }}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-  </svg>
+  />
 )
 
-const InfrastructureIcon = ({ className, isSelected }) => (
-  <svg 
-    className={className} 
-    fill="none" 
-    stroke={isSelected ? "currentColor" : "#10b981"} 
-    viewBox="0 0 24 24" 
-    strokeWidth={2}
-    style={{ color: isSelected ? "#1e293b" : "#10b981" }}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-  </svg>
-)
-
-const AutomationIcon = ({ className, isSelected }) => (
-  <svg 
-    className={className} 
-    fill="none" 
-    stroke={isSelected ? "currentColor" : "#8b5cf6"} 
-    viewBox="0 0 24 24" 
-    strokeWidth={2}
-    style={{ color: isSelected ? "#1e293b" : "#8b5cf6" }}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-)
-
-const MonitoringIcon = ({ className, isSelected }) => (
-  <svg 
-    className={className} 
-    fill="none" 
-    stroke={isSelected ? "currentColor" : "#06b6d4"} 
-    viewBox="0 0 24 24" 
-    strokeWidth={2}
-    style={{ color: isSelected ? "#1e293b" : "#06b6d4" }}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-  </svg>
-)
-
-const SettingsIcon = ({ className, isSelected }) => (
-  <svg 
-    className={className} 
-    fill="none" 
-    stroke={isSelected ? "currentColor" : "#ec4899"} 
-    viewBox="0 0 24 24" 
-    strokeWidth={2}
-    style={{ color: isSelected ? "#1e293b" : "#ec4899" }}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-)
-
-const NetworkIcon = ({ className, isSelected }) => (
-  <svg 
-    className={className} 
-    fill="none" 
-    stroke={isSelected ? "currentColor" : "#06b6d4"} 
-    viewBox="0 0 24 24" 
-    strokeWidth={2}
-    style={{ color: isSelected ? "#1e293b" : "#06b6d4" }}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-  </svg>
-)
-
-const ServersIcon = ({ className, isSelected }) => (
-  <svg 
-    className={className} 
-    fill="none" 
-    stroke={isSelected ? "currentColor" : "#14b8a6"} 
-    viewBox="0 0 24 24" 
-    strokeWidth={2}
-    style={{ color: isSelected ? "#1e293b" : "#14b8a6" }}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-  </svg>
-)
-
-const ServerlessIcon = ({ className, isSelected }) => (
-  <svg 
-    className={className} 
-    fill="none" 
-    stroke={isSelected ? "currentColor" : "#8b5cf6"} 
-    viewBox="0 0 24 24" 
-    strokeWidth={2}
-    style={{ color: isSelected ? "#1e293b" : "#8b5cf6" }}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-  </svg>
-)
-
-const CICDIcon = ({ className, isSelected }) => (
-  <svg 
-    className={className} 
-    fill="none" 
-    stroke={isSelected ? "currentColor" : "#10b981"} 
-    viewBox="0 0 24 24" 
-    strokeWidth={2}
-    style={{ color: isSelected ? "#1e293b" : "#10b981" }}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-  </svg>
-)
+const DashboardIcon = (props) => <IconWrapper Icon={LayoutDashboard} {...props} />
+const InfrastructureIcon = (props) => <IconWrapper Icon={Server} {...props} />
+const AutomationIcon = (props) => <IconWrapper Icon={Workflow} {...props} />
+const MonitoringIcon = (props) => <IconWrapper Icon={Activity} {...props} />
+const SettingsIcon = (props) => <IconWrapper Icon={Settings} {...props} />
+const NetworkIcon = (props) => <IconWrapper Icon={Network} {...props} />
+const ServersIcon = (props) => <IconWrapper Icon={HardDrive} {...props} />
+const ServerlessIcon = (props) => <IconWrapper Icon={Cloud} {...props} />
+const CICDIcon = (props) => <IconWrapper Icon={RefreshCw} {...props} />
 
 const LeftSidebar = ({ 
   onInfrastructureOptionSelect, 
@@ -136,12 +45,19 @@ const LeftSidebar = ({
   const location = useLocation()
   const [showInfraDropdown, setShowInfraDropdown] = useState(false)
   const [shouldAnimate, setShouldAnimate] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(() => {
+    const saved = localStorage.getItem('sidebarExpanded')
+    return saved !== null ? saved === 'true' : true
+  })
   const [hoveredTooltip, setHoveredTooltip] = useState(null)
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
   const prevPathnameRef = useRef(location.pathname)
   const prevShowAutomationSubmenuRef = useRef(showAutomationSubmenu)
   const isFirstRender = useRef(true)
+
+  useEffect(() => {
+    localStorage.setItem('sidebarExpanded', isExpanded)
+  }, [isExpanded])
   
   const handleMouseEnter = (e, tooltipId) => {
     if (!isExpanded) {
@@ -271,37 +187,47 @@ const LeftSidebar = ({
       {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        ${isExpanded ? 'w-64' : 'w-16'} bg-white border-r border-slate-200
+        ${isExpanded ? 'w-64' : 'w-16'} bg-white/60 backdrop-blur-2xl border-r border-white/60 shadow-[4px_0_24px_rgba(0,0,0,0.02)]
         transform transition-all duration-300 ease-in-out
         ${isMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         group
       `}>
       <div className="flex flex-col h-full overflow-y-auto overflow-x-visible">
         <div className="p-2 flex-1 flex flex-col overflow-visible">
-          <div className="flex items-center justify-between mb-4">
+          <div className={`flex items-center ${isExpanded ? 'justify-between px-2' : 'justify-center'} mb-4 mt-2 h-10`}>
+            {/* Branding container */}
+            {isExpanded && (
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-[#2196F3] to-[#8b5cf6] rounded-xl flex items-center justify-center lg:mx-auto shadow-sm">
+                  <Box className="w-6 h-6 text-white" strokeWidth={2.5} />
+                </div>
+                <span className="font-bold text-[17px] text-slate-800 whitespace-nowrap hidden lg:block tracking-wide">DevOps Agent</span>
+              </div>
+            )}
+
             {/* Expand/Collapse button - Desktop only */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="hidden lg:flex items-center justify-center p-2 rounded-md text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3] transition-all duration-300 ml-auto"
+              className="hidden lg:flex items-center justify-center p-2 rounded-md text-slate-500 hover:bg-[#F0F7FF] hover:text-[#2196F3] transition-all duration-300"
               aria-label={isExpanded ? "Collapse menu" : "Expand menu"}
             >
               <svg
-                className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+                className={`w-6 h-6 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
               </svg>
             </button>
             {/* Close button for mobile */}
             <button
               onClick={onMenuToggle}
-              className="lg:hidden p-2 rounded-md text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3] transition-all duration-300"
+              className="lg:hidden p-2 rounded-md text-slate-500 hover:bg-[#F0F7FF] hover:text-[#2196F3] transition-all duration-300"
               aria-label="Close menu"
             >
               <svg
-                className="w-5 h-5"
+                className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -310,7 +236,18 @@ const LeftSidebar = ({
               </svg>
             </button>
           </div>
-        <nav className="space-y-1 relative flex-1 overflow-visible">
+        <nav className="space-y-1 relative flex-1 overflow-visible mt-2">
+          {/* Main Navigation Section Title */}
+          {isExpanded && !showAutomationMenu && (
+            <div className="px-4 pb-2 pt-1 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block">
+              Main Navigations
+            </div>
+          )}
+          {isExpanded && showAutomationMenu && (
+            <div className="px-4 pb-2 pt-1 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block">
+              Automation Hub
+            </div>
+          )}
           {showAutomationMenu ? (
             <div 
               key="automation-menu"
@@ -508,6 +445,12 @@ const LeftSidebar = ({
         {/* Settings at bottom */}
         {!showAutomationMenu && (
           <div className="p-2 border-t border-slate-200 mt-auto">
+            {/* System Section Title */}
+            {isExpanded && (
+              <div className="px-2 pb-2 pt-2 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block mt-1">
+                System
+              </div>
+            )}
             <Link
               to={settingsMenuItem.path}
               onClick={() => {

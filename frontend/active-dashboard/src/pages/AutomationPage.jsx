@@ -60,12 +60,12 @@ const AutomationPage = () => {
         selectedAutomationOption: selectedOption,
       }}
     >
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
           <div className="p-3 sm:p-4">
             {selectedOption ? (
               // Selected Option View
               <div className="max-w-6xl mx-auto">
-                <div className="bg-white/90 rounded-xl p-3 sm:p-6 shadow-lg border border-blue-200/50">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60 mb-8 mt-4">
                   <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                     <button
                       onClick={handleBackToAutomationMenu}
@@ -97,7 +97,7 @@ const AutomationPage = () => {
                       <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-3">
                         {/* Column 1: Agents */}
                         <div className="flex-shrink-0 w-56 sm:w-72">
-                          <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <div className="bg-slate-50/50 backdrop-blur-sm rounded-2xl p-4 border border-white shadow-sm h-full">
                             <h3 className="text-xs font-semibold text-slate-700 mb-3 uppercase tracking-wide">
                               Agents
                             </h3>
@@ -109,7 +109,7 @@ const AutomationPage = () => {
                                   setShowJenkinsChat(true)
                                   console.log('showJenkinsChat state updated')
                                 }}
-                                className="w-full bg-white rounded-lg p-3 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-150 text-left cursor-pointer"
+                                className="w-full bg-white/70 backdrop-blur-md rounded-xl p-4 border border-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_20px_-6px_rgba(33,150,243,0.15)] hover:border-blue-200 transition-all duration-300 transform hover:-translate-y-1 text-left cursor-pointer group"
                               >
                                 {/* Logo at top */}
                                 <div className="flex justify-center mb-2">
@@ -127,8 +127,8 @@ const AutomationPage = () => {
                                 <div className="text-center">
                                   <h4 className="text-sm font-semibold text-slate-800 mb-1.5">Jenkins Agent</h4>
                                   <div className="space-y-1 text-xs text-slate-600">
-                                    <p className="flex items-center justify-center gap-1">
-                                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                    <p className="flex items-center justify-center gap-1.5 font-medium text-slate-700">
+                                      <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
                                       Status: Active
                                     </p>
                                     <p>Version: 2.426.1</p>
@@ -142,12 +142,12 @@ const AutomationPage = () => {
 
                         {/* Column 2: Pipelines */}
                         <div className="flex-shrink-0 w-64 sm:w-80">
-                          <div className="bg-slate-50 rounded-lg p-3 sm:p-4 border border-slate-200">
+                          <div className="bg-slate-50/50 backdrop-blur-sm rounded-2xl p-4 border border-white shadow-sm h-full">
                             <h3 className="text-xs sm:text-sm font-semibold text-slate-700 mb-3 sm:mb-4 uppercase tracking-wide">
                               Pipelines
                             </h3>
                             <div className="space-y-2 sm:space-y-3">
-                              <div className="bg-white rounded-lg p-3 sm:p-4 border border-slate-200 text-center text-xs sm:text-sm text-slate-500">
+                              <div className="bg-white/60 backdrop-blur-md rounded-xl p-4 border border-white border-dashed text-center text-sm font-medium text-slate-400">
                                 <p>No pipelines yet</p>
                               </div>
                             </div>
@@ -156,12 +156,12 @@ const AutomationPage = () => {
 
                         {/* Column 3: Jobs */}
                         <div className="flex-shrink-0 w-64 sm:w-80">
-                          <div className="bg-slate-50 rounded-lg p-3 sm:p-4 border border-slate-200">
+                          <div className="bg-slate-50/50 backdrop-blur-sm rounded-2xl p-4 border border-white shadow-sm h-full">
                             <h3 className="text-xs sm:text-sm font-semibold text-slate-700 mb-3 sm:mb-4 uppercase tracking-wide">
                               Jobs
                             </h3>
                             <div className="space-y-2 sm:space-y-3">
-                              <div className="bg-white rounded-lg p-3 sm:p-4 border border-slate-200 text-center text-xs sm:text-sm text-slate-500">
+                              <div className="bg-white/60 backdrop-blur-md rounded-xl p-4 border border-white border-dashed text-center text-sm font-medium text-slate-400">
                                 <p>No jobs yet</p>
                               </div>
                             </div>
@@ -175,7 +175,7 @@ const AutomationPage = () => {
             ) : (
               // Main Menu View
               <div className="max-w-6xl mx-auto">
-                <div className="bg-white/90 rounded-xl p-3 sm:p-6 shadow-lg border border-blue-200/50">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 sm:p-10 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60 mt-4">
                   <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">Automation</h2>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -183,7 +183,7 @@ const AutomationPage = () => {
                       <button
                         key={option.value}
                         onClick={() => handleOptionSelect(option.value)}
-                        className="bg-white border border-blue-200/50 rounded-xl p-4 hover:shadow-lg transition-shadow duration-150 text-left group"
+                        className="bg-white/60 backdrop-blur-sm border border-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] rounded-2xl p-6 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.15)] hover:border-blue-200 transition-all duration-300 transform hover:-translate-y-1 text-left group"
                       >
                         <div className="flex items-center gap-4 mb-3">
                           <span className="text-4xl">{option.icon}</span>

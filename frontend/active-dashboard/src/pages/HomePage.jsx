@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import PageLayout from '../components/PageLayout'
 import ProjectCreate from '../components/ProjectCreate'
 import Toast from '../components/Toast'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const HomePage = () => {
   const { userInfo, handleLogout } = useAuth()
@@ -15,6 +16,7 @@ const HomePage = () => {
   const [showProjectDetails, setShowProjectDetails] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [toast, setToast] = useState(null)
+  const [projectToDelete, setProjectToDelete] = useState(null)
   const hasFetchedRef = useRef(false)
 
   useEffect(() => {
@@ -84,8 +86,33 @@ const HomePage = () => {
     setSelectedProject(null)
   }
 
+  const handleDeleteProject = (project, e) => {
+    e.stopPropagation()
+    setProjectToDelete(project)
+  }
+
+  const confirmDelete = async () => {
+    if (!projectToDelete) return
+    
+    try {
+      await deleteProject(projectToDelete.id)
+      setToast({ message: 'Project deleted successfully!', type: 'success' })
+      loadProjects()
+    } catch (error) {
+      setToast({ message: error.message || 'Failed to delete project', type: 'error' })
+    } finally {
+      setProjectToDelete(null)
+    }
+  }
+
   const getProjectTypeLabel = (project) => {
     // Map project data to display type
+    if (project.domain === 'web') return 'Web Application'
+    if (project.domain === 'api') return 'Backend API'
+    if (project.domain === 'microservices') return 'Microservices'
+    if (project.domain === 'data') return 'Data / Pipeline'
+    
+    // Fallbacks
     if (project.domain) return 'Web Application'
     if (project.platform === 'cloud') return 'Backend API'
     return 'Microservices'
@@ -123,7 +150,7 @@ const HomePage = () => {
 
   return (
     <PageLayout userInfo={userInfo} onLogout={handleLogout}>
-      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
@@ -151,7 +178,7 @@ const HomePage = () => {
                   placeholder="Search projects…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 text-sm bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                  className="w-full pl-11 pr-4 py-3.5 text-sm bg-white/80 backdrop-blur-sm border border-white shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-300 placeholder:text-slate-400"
                 />
                 {searchQuery && (
                   <button
@@ -187,9 +214,11 @@ const HomePage = () => {
                     return (
                       <div
                         key={project.id || project.project_name || index}
-                        className="group bg-white rounded-xl border border-slate-200 p-5 transition-all duration-200 hover:border-slate-300 hover:shadow-md hover:shadow-slate-100 cursor-pointer"
+                        className="group relative bg-white/60 backdrop-blur-md rounded-2xl border border-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] p-6 transition-all duration-300 hover:border-blue-200/60 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.15)] hover:-translate-y-1 cursor-pointer overflow-hidden"
                       >
-                        <div className="flex items-start justify-between gap-4">
+                        {/* Decorative glow effect on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div className="relative flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-2.5">
                               <h3 className="text-base font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
@@ -250,6 +279,15 @@ const HomePage = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                               </svg>
                             </button>
+                            <button
+                              onClick={(e) => handleDeleteProject(project, e)}
+                              className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-150"
+                              title="Delete Project"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -257,7 +295,7 @@ const HomePage = () => {
                   })}
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-16 text-center">
+                <div className="bg-white/60 backdrop-blur-md rounded-3xl border border-white shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] p-16 text-center">
                   <div className="max-w-sm mx-auto">
                     <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-2xl flex items-center justify-center">
                       <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -275,9 +313,9 @@ const HomePage = () => {
                     {!searchQuery && !showCreateForm && (
                       <button
                         onClick={() => setShowCreateForm(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors shadow-sm"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 hover:shadow-[0_8px_20px_-6px_rgba(37,99,235,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
                         Create Project
@@ -296,7 +334,7 @@ const HomePage = () => {
                   onCancel={() => setShowCreateForm(false)}
                 />
               ) : (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-shadow duration-200">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] p-8 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.1)] hover:border-blue-100">
                   <div className="text-center">
                     <div className="w-12 h-12 mx-auto mb-4 bg-blue-50 rounded-xl flex items-center justify-center">
                       <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -309,7 +347,7 @@ const HomePage = () => {
                     </p>
                     <button
                       onClick={() => setShowCreateForm(true)}
-                      className="w-full px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full px-4 py-3.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 hover:shadow-[0_8px_20px_-6px_rgba(37,99,235,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300"
                     >
                       Get Started
                     </button>
@@ -443,6 +481,18 @@ const HomePage = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!projectToDelete}
+        title="Delete Project"
+        message={`Are you sure you want to delete "${projectToDelete?.project_name}"? This action cannot be undone and will permanently remove all associated configurations.`}
+        confirmText="Delete Project"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={() => setProjectToDelete(null)}
+        isDestructive={true}
+      />
     </PageLayout>
   )
 }

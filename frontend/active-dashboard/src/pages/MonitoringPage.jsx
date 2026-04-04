@@ -11,14 +11,14 @@ const MonitoringPage = () => {
 
   return (
     <PageLayout userInfo={userInfo} onLogout={handleLogout}>
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-6 bg-slate-50/50 backdrop-blur-3xl w-full">
           <div className="max-w-7xl mx-auto">
             {/* Under Development Message */}
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-              <div className="bg-white rounded-lg shadow-lg p-12 max-w-md">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60 p-12 max-w-md">
                 <div className="mb-6">
                   <svg 
-                    className="w-24 h-24 mx-auto text-[#2196F3]" 
+                    className="w-28 h-28 mx-auto text-blue-500 animate-pulse drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"

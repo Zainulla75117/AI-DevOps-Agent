@@ -72,14 +72,16 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
 
     try {
       // Map new form fields to backend format
-      // Use sensible defaults for cloud provider, region, etc.
       const projectData = {
         projectName: formData.projectName.trim(),
         description: formData.description.trim() || '',
         environment: formData.primaryEnvironment === 'dev' ? 'development' : 'production',
-        platform: 'cloud', // Default
-        cloudProvider: 'aws', // Default
-        region: 'us-east-1', // Default
+        domain: formData.projectType,
+        expectedTraffic: formData.expectedTraffic,
+        costPreference: formData.costPreference,
+        platform: '',
+        cloudProvider: '',
+        region: '',
       }
 
       const response = await createProject(projectData)
@@ -140,7 +142,7 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
                 ? 'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50'
                 : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-white'
             } focus:outline-none focus:ring-2 focus:ring-offset-0 placeholder:text-slate-400`}
-            placeholder="payments-service"
+            placeholder="my-project-1"
             required
           />
           {errors.projectName && (

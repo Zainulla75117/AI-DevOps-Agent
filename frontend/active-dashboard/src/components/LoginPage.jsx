@@ -46,7 +46,7 @@ const LoginPage = () => {
       </div>
 
       {/* Right Panel - Login Form (50% on desktop) */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-12 py-12 lg:py-0 bg-white relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-12 py-12 lg:py-0 bg-white relative animate-in fade-in slide-in-from-left-8 duration-500">
         {/* Subtle left border accent on desktop */}
         <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-slate-200 to-transparent"></div>
         <div className="w-full max-w-md">

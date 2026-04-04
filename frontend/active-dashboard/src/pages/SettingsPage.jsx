@@ -452,9 +452,9 @@ const SettingsPage = () => {
 
   return (
     <PageLayout userInfo={userInfo} onLogout={handleLogout}>
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col bg-slate-50/50 backdrop-blur-3xl w-full">
           <div className="max-w-6xl mx-auto flex-1 flex flex-col">
-            <div className="bg-white/90 rounded-xl p-3 sm:p-6 shadow-lg border border-blue-200/50 mt-auto">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60 mb-8 mt-4 flex-1">
               <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">Settings</h2>
 
               <div className="space-y-4 sm:space-y-5">
@@ -466,7 +466,7 @@ const SettingsPage = () => {
 
                   <div className="space-y-3 sm:space-y-4">
                     {/* SCM Credentials */}
-                    <div className="border border-blue-200/50 rounded-xl p-3 sm:p-4">
+                    <div className="bg-slate-50/50 backdrop-blur-sm border border-white rounded-2xl p-4 sm:p-6 shadow-sm">
                       <h4 className="text-sm sm:text-base font-semibold text-slate-800 mb-2 sm:mb-3">SCM Credentials</h4>
                       <p className="text-xs text-slate-600 mb-2 sm:mb-3">
                         Configure your Source Control Management (SCM) credentials for version control
@@ -633,7 +633,7 @@ const SettingsPage = () => {
                       )}
 
                       {/* SCM Credentials Form */}
-                      <div className="bg-white/80 rounded-lg border border-blue-200/30 overflow-hidden transition-colors duration-150">
+                      <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] overflow-hidden transition-all duration-300">
                         {/* Clickable Header */}
                         <button
                           onClick={() => {
@@ -722,8 +722,7 @@ const SettingsPage = () => {
                                   name="scm_name"
                                   value={scmCredentials.scm_name}
                                   onChange={handleSCMCredentialsChange}
-                                  className="w-full px-4 py-3 bg-white border border-[#2196F3]/20 text-slate-800 text-base transition-colors duration-150 outline-none shadow-sm focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                  style={{ borderRadius: '6px 12px 6px 12px' }}
+                                  className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300"
                                   required
                                 >
                                   <option value="">Select SCM Tool</option>

@@ -105,6 +105,8 @@ export const createProject = async (project) => {
       region: project.region || '',
       iam_name: project.iamName || project.iam_name || '',
       environment: project.environment || '',
+      expected_traffic: project.expectedTraffic || project.expected_traffic || '',
+      cost_preference: project.costPreference || project.cost_preference || '',
     }
 
     // Send to backend API (JWT Bearer token is automatically included via interceptor)
@@ -172,18 +174,24 @@ export const updateProject = (projectId, updates) => {
 
 /**
  * Delete a project
- * @param {number} projectId - Project ID
- * @returns {boolean} True if deleted, false if not found
+ * @param {string} projectId - Project ID
+ * @returns {Promise<boolean>} True if deleted successfully
  */
-export const deleteProject = (projectId) => {
+export const deleteProject = async (projectId) => {
   try {
-    const projects = getProjects()
-    const filtered = projects.filter((p) => p.id !== projectId)
-    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(filtered))
-    return filtered.length < projects.length
+    await apiClient.delete(`/api/${projectId}`)
+    return true
   } catch (error) {
     console.error('Error deleting project:', error)
-    return false
+    if (error.response) {
+      throw new Error(
+        error.response.data?.message || `Failed to delete project (Status: ${error.response.status})`
+      )
+    } else if (error.request) {
+      throw new Error('Network error. Please check your connection.')
+    } else {
+      throw new Error(error.message || 'An unexpected error occurred')
+    }
   }
 }
 
