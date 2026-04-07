@@ -1,13 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { lazy, Suspense } from 'react';
 
-const LoginPage = lazy(() => import('./components/LoginPage'));
-const RegistrationPage = lazy(() => import('./components/RegistrationPage'));
-const HomePage = lazy(() => import('./pages/HomePage'));
-const InfrastructurePage = lazy(() => import('./pages/InfrastructurePage'));
-const AutomationPage = lazy(() => import('./pages/AutomationPage'));
-const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+import LoginPage from './components/LoginPage';
+import RegistrationPage from './components/RegistrationPage';
+import HomePage from './pages/HomePage';
+import InfrastructurePage from './pages/InfrastructurePage';
+import AutomationPage from './pages/AutomationPage';
+import MonitoringPage from './pages/MonitoringPage';
+import SettingsPage from './pages/SettingsPage';
 
 import { isAuthenticated } from './services/authService';
 import './App.css';
@@ -27,7 +26,6 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-  <Suspense fallback={<div>Loading...</div>}>
     <Routes>
       <Route
         path="/login"
@@ -87,7 +85,6 @@ function App() {
       />
       <Route path="/" element={<Navigate to="/home" replace />} />
     </Routes>
-  </Suspense>
 </Router>
   )
 }

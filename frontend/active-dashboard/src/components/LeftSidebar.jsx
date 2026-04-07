@@ -6,9 +6,6 @@ import {
   Workflow, 
   Activity, 
   Settings, 
-  Network, 
-  HardDrive, 
-  Cloud, 
   RefreshCw,
   Box
 } from 'lucide-react'
@@ -26,9 +23,6 @@ const InfrastructureIcon = (props) => <IconWrapper Icon={Server} {...props} />
 const AutomationIcon = (props) => <IconWrapper Icon={Workflow} {...props} />
 const MonitoringIcon = (props) => <IconWrapper Icon={Activity} {...props} />
 const SettingsIcon = (props) => <IconWrapper Icon={Settings} {...props} />
-const NetworkIcon = (props) => <IconWrapper Icon={Network} {...props} />
-const ServersIcon = (props) => <IconWrapper Icon={HardDrive} {...props} />
-const ServerlessIcon = (props) => <IconWrapper Icon={Cloud} {...props} />
 const CICDIcon = (props) => <IconWrapper Icon={RefreshCw} {...props} />
 
 const LeftSidebar = ({ 
@@ -43,7 +37,6 @@ const LeftSidebar = ({
   onMenuToggle = () => {}
 }) => {
   const location = useLocation()
-  const [showInfraDropdown, setShowInfraDropdown] = useState(false)
   const [shouldAnimate, setShouldAnimate] = useState(false)
   const [isExpanded, setIsExpanded] = useState(() => {
     const saved = localStorage.getItem('sidebarExpanded')
@@ -95,7 +88,7 @@ const LeftSidebar = ({
 
   const menuItems = [
     { name: 'Dashboard', path: '/home', icon: DashboardIcon },
-    { name: 'Infrastructure', path: '/infrastructure', icon: InfrastructureIcon, hasDropdown: true },
+    { name: 'Infrastructure', path: '/infrastructure', icon: InfrastructureIcon },
     { name: 'Automation', path: '/automation', icon: AutomationIcon, hasSubmenu: true },
     { name: 'Monitoring', path: '/monitoring', icon: MonitoringIcon },
   ]
@@ -103,29 +96,13 @@ const LeftSidebar = ({
   // Settings menu item (separated to be at bottom)
   const settingsMenuItem = { name: 'Settings', path: '/settings', icon: SettingsIcon }
 
-  const infrastructureOptions = [
-    { value: 'network', label: 'Network', icon: NetworkIcon },
-    { value: 'servers', label: 'Servers', icon: ServersIcon },
-    { value: 'serverless', label: 'Serverless', icon: ServerlessIcon },
-  ]
+
 
   const automationOptions = [
     { value: 'cicd', label: 'CI/CD Automation', icon: CICDIcon },
   ]
 
-  const handleInfrastructureClick = (e) => {
-    e.preventDefault()
-    if (location.pathname === '/infrastructure') {
-      setShowInfraDropdown(!showInfraDropdown)
-    }
-  }
 
-  const handleInfrastructureOptionClick = (option) => {
-    if (onInfrastructureOptionSelect) {
-      onInfrastructureOptionSelect(option)
-    }
-    setShowInfraDropdown(false)
-  }
 
   const handleAutomationOptionClick = (option) => {
     if (onAutomationOptionSelect) {
@@ -137,15 +114,13 @@ const LeftSidebar = ({
   // Only show submenu if showAutomationSubmenu is explicitly true (not just on automation page)
   const showAutomationMenu = location.pathname === '/automation' && showAutomationSubmenu === true
 
-  // Track route changes for animations (skip on initial load)
+  // Mark first render complete
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      prevPathnameRef.current = location.pathname
-      prevShowAutomationSubmenuRef.current = showAutomationSubmenu
-      return
-    }
+    isFirstRender.current = false
+  }, [])
 
+  // Track route changes for animations
+  useEffect(() => {
     // Animate if pathname changed (route navigation)
     if (prevPathnameRef.current !== location.pathname) {
       setShouldAnimate(true)
@@ -334,107 +309,34 @@ const LeftSidebar = ({
                   key={item.path} 
                   className="relative overflow-visible"
                 >
-                  {item.hasDropdown && location.pathname === '/infrastructure' ? (
-                    <>
-                      <button
-                        onClick={handleInfrastructureClick}
-                        onMouseEnter={(e) => handleMouseEnter(e, `menu-${item.path}`)}
-                        onMouseLeave={handleMouseLeave}
-                        className={`relative w-full flex items-center ${isExpanded ? 'justify-between gap-3 px-4' : 'justify-center'} p-3 rounded-md font-medium transition-colors duration-200 ${
-                          location.pathname === item.path
-                            ? 'bg-[#E3F2FD] text-slate-900 font-semibold'
-                            : 'text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3]'
-                        }`}
-                        title={!isExpanded ? item.name : ""}
-                      >
-                        <div className={`flex items-center ${isExpanded ? 'gap-3' : 'gap-0'}`}>
-                          {typeof item.icon === 'function' ? (
-                            <item.icon className="w-5 h-5 flex-shrink-0" isSelected={location.pathname === item.path} />
-                          ) : (
-                            <span className="text-xl flex-shrink-0">{item.icon}</span>
-                          )}
-                          {isExpanded && <span className="text-sm">{item.name}</span>}
-                        </div>
-                        {isExpanded && (
-                          <svg 
-                            className={`w-4 h-4 transition-transform duration-150 flex-shrink-0 ${showInfraDropdown ? 'rotate-180' : ''}`}
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        )}
-                      </button>
-                      
-                      {/* Dropdown Menu */}
-                      {showInfraDropdown && (
-                        <div 
-                          className={`mt-1 bg-white rounded-md border border-slate-200 overflow-hidden z-50 ${isExpanded ? 'ml-4' : ''}`}
-                        >
-                          {infrastructureOptions.map((option) => {
-                            const isSelected = selectedInfrastructureOption === option.value
-                            return (
-                              <button
-                                key={option.value}
-                                onClick={() => {
-                                  handleInfrastructureOptionClick(option.value)
-                                  // Close mobile menu when option is selected
-                                  if (isMenuOpen) {
-                                    onMenuToggle()
-                                  }
-                                }}
-                                onMouseEnter={(e) => handleMouseEnter(e, `infra-${option.value}`)}
-                                onMouseLeave={handleMouseLeave}
-                                className={`relative w-full flex items-center ${isExpanded ? 'justify-start gap-3 px-4' : 'justify-center'} p-3 font-medium transition-colors duration-200 ${
-                                  isSelected
-                                    ? 'bg-[#E3F2FD] text-slate-900 font-semibold'
-                                    : 'text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3]'
-                                }`}
-                                title={!isExpanded ? option.label : ""}
-                              >
-                                {typeof option.icon === 'function' ? (
-                                  <option.icon className="w-5 h-5 flex-shrink-0" isSelected={isSelected} />
-                                ) : (
-                                  <span className="text-lg flex-shrink-0">{option.icon}</span>
-                                )}
-                                {isExpanded && <span className="text-sm">{option.label}</span>}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <Link
-                      to={item.path}
-                      onClick={() => {
-                        // Reset automation state when Automation link is clicked
-                        if (item.path === '/automation' && onAutomationLinkClick) {
-                          onAutomationLinkClick()
-                        }
-                        // Close mobile menu when link is clicked
-                        if (isMenuOpen) {
-                          onMenuToggle()
-                        }
-                      }}
-                      onMouseEnter={(e) => handleMouseEnter(e, `menu-${item.path}`)}
-                      onMouseLeave={handleMouseLeave}
-                      className={`relative w-full flex items-center ${isExpanded ? 'justify-start gap-3 px-4' : 'justify-center'} p-3 rounded-md font-medium transition-colors duration-200 ${
-                        location.pathname === item.path
-                          ? 'bg-[#E3F2FD] text-slate-900 font-semibold'
-                          : 'text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3]'
-                      }`}
-                      title={!isExpanded ? item.name : ""}
-                    >
-                      {typeof item.icon === 'function' ? (
-                        <item.icon className="w-5 h-5 flex-shrink-0" isSelected={location.pathname === item.path} />
-                      ) : (
-                        <span className="text-xl flex-shrink-0">{item.icon}</span>
-                      )}
-                      {isExpanded && <span className="text-sm">{item.name}</span>}
-                    </Link>
-                  )}
+                  <Link
+                    to={item.path}
+                    onClick={() => {
+                      // Reset automation state when Automation link is clicked
+                      if (item.path === '/automation' && onAutomationLinkClick) {
+                        onAutomationLinkClick()
+                      }
+                      // Close mobile menu when link is clicked
+                      if (isMenuOpen) {
+                        onMenuToggle()
+                      }
+                    }}
+                    onMouseEnter={(e) => handleMouseEnter(e, `menu-${item.path}`)}
+                    onMouseLeave={handleMouseLeave}
+                    className={`relative w-full flex items-center ${isExpanded ? 'justify-start gap-3 px-4' : 'justify-center'} p-3 rounded-md font-medium transition-colors duration-200 ${
+                      location.pathname === item.path
+                        ? 'bg-[#E3F2FD] text-slate-900 font-semibold'
+                        : 'text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3]'
+                    }`}
+                    title={!isExpanded ? item.name : ""}
+                  >
+                    {typeof item.icon === 'function' ? (
+                      <item.icon className="w-5 h-5 flex-shrink-0" isSelected={location.pathname === item.path} />
+                    ) : (
+                      <span className="text-xl flex-shrink-0">{item.icon}</span>
+                    )}
+                    {isExpanded && <span className="text-sm">{item.name}</span>}
+                  </Link>
                 </div>
               ))}
             </div>
