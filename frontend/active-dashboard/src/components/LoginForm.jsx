@@ -80,7 +80,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
     <div className="w-full">
       <div className="mb-8">
         <h2 className="text-3xl font-semibold text-slate-900 mb-2">
-          Welcome back
+          Welcome
         </h2>
         <p className="text-sm text-slate-600">
           Sign in to your account
@@ -143,7 +143,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
 
         <button
           type="submit"
-          className="w-full px-4 py-3 bg-gradient-to-r from-[#42A5F5] to-[#66BB6A] text-white text-base font-medium rounded-md transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:from-[#1E88E5] hover:to-[#4CAF50] active:from-[#1976D2] active:to-[#43A047]"
+          className="w-full px-4 py-3 bg-gradient-to-br from-[#42A5F5] to-[#66BB6A] text-white text-base font-medium rounded-md transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:from-[#1E88E5] hover:to-[#4CAF50] active:from-[#1976D2] active:to-[#43A047]"
           disabled={isLoading}
         >
           {isLoading ? (

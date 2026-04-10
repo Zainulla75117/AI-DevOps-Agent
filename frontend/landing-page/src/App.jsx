@@ -1,13 +1,11 @@
 import { useEffect } from 'react';
-import { ThemeProvider } from './contexts/ThemeContext';
 import Header from './components/Header';
 import Hero from './sections/Hero';
 import Features from './sections/Features';
 import HowItWorks from './sections/HowItWorks';
 import Showcase from './sections/Showcase';
 import Integrations from './sections/Integrations';
-import Pricing from './sections/Pricing';
-import Testimonials from './sections/Testimonials';
+
 import Footer from './components/Footer';
 import './styles/index.css';
 
@@ -31,21 +29,18 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider>
-      <div className="min-h-screen transition-colors duration-300">
-        <Header />
-        <main>
-          <Hero />
-          <Features />
-          <HowItWorks />
-          <Showcase />
-          <Integrations />
-          <Pricing />
-          <Testimonials />
-        </main>
-        <Footer />
-      </div>
-    </ThemeProvider>
+    <div className="min-h-screen bg-agentic-secondary text-agentic-text transition-colors duration-300">
+      <Header />
+      <main>
+        <Hero />
+        <Features />
+        <HowItWorks />
+        <Showcase />
+        <Integrations />
+
+      </main>
+      <Footer />
+    </div>
   );
 }
 

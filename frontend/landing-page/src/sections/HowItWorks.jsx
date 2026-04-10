@@ -11,12 +11,12 @@ const steps = [
   {
     icon: Code,
     title: 'Describe the Task',
-    description: 'Simply describe what you need in natural language. InfraAgent understands your requirements and generates the automation.',
+    description: 'Simply describe what you need in natural language. InfraX understands your requirements and generates the automation.',
     number: '02',
   },
   {
     icon: Zap,
-    title: 'InfraAgent Generates & Executes',
+    title: 'InfraX Generates & Executes',
     description: 'AI generates infrastructure code, CI/CD pipelines, and configurations. Review and approve, then watch it deploy automatically.',
     number: '03',
   },
@@ -30,7 +30,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section id="solutions" className="py-24 relative overflow-hidden">
+    <section id="solutions" className="py-24 relative overflow-hidden bg-agentic-secondary">
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -39,10 +39,10 @@ const HowItWorks = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-heading">
-            How <span className="text-gradient">InfraAgent</span> Works
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-display text-agentic-text">
+            How <span className="text-agentic-primary">InfraX</span> Works
           </h2>
-          <p className="text-xl text-secondary max-w-2xl mx-auto text-sharp">
+          <p className="text-xl text-agentic-text/80 max-w-2xl mx-auto font-sans">
             Get started in minutes, automate in seconds
           </p>
         </motion.div>
@@ -50,8 +50,7 @@ const HowItWorks = () => {
         <div className="max-w-5xl mx-auto">
           {/* Desktop Timeline */}
           <div className="hidden md:block relative">
-            {/* Timeline Line */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-neon-green via-neon-green-light to-neon-blue opacity-30" />
+            <div className="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-agentic-text/10" />
 
             {steps.map((step, index) => {
               const Icon = step.icon;
@@ -66,29 +65,25 @@ const HowItWorks = () => {
                   transition={{ duration: 0.6, delay: index * 0.2 }}
                   className={`flex items-center mb-16 ${isEven ? 'flex-row' : 'flex-row-reverse'}`}
                 >
-                  {/* Content Card */}
                   <div className={`w-5/12 ${isEven ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
-                    <div className="glass-effect-hover rounded-xl p-6 transition-all duration-300 card-glow">
-                      <div className={`flex items-center space-x-3 mb-4 ${isEven ? 'justify-end' : 'justify-start'}`}>
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-neon-green to-neon-blue flex items-center justify-center shadow-lg shadow-neon-green/30">
-                          <Icon className="w-6 h-6 text-white" />
+                    <div className="glass-effect p-6 flex flex-col items-start text-left">
+                      <div className="flex items-center space-x-3 mb-4 w-full">
+                        <div className="w-12 h-12 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center">
+                          <Icon className="w-6 h-6 text-agentic-primary" />
                         </div>
-                        <span className="text-2xl font-bold text-gradient-green text-heading">{step.number}</span>
+                        <span className="text-2xl font-bold text-agentic-primary font-mono">{step.number}</span>
                       </div>
-                      <h3 className="text-2xl font-bold mb-3 text-heading-color text-heading">{step.title}</h3>
-                      <p className="text-secondary leading-relaxed text-sharp">{step.description}</p>
+                      <h3 className="text-2xl font-bold mb-3 text-agentic-text font-display">{step.title}</h3>
+                      <p className="text-agentic-text/80 leading-relaxed font-sans">{step.description}</p>
                     </div>
                   </div>
 
-                  {/* Timeline Dot */}
                   <div className="w-2/12 flex justify-center">
                     <motion.div
-                      whileHover={{ scale: 1.5 }}
-                      className="w-6 h-6 rounded-full bg-gradient-to-br from-neon-green to-neon-blue border-4 border-theme-base z-10 shadow-lg shadow-neon-green/50"
+                      whileHover={{ scale: 1.2 }}
+                      className="w-4 h-4 rounded-full bg-agentic-primary border-2 border-agentic-secondary z-10"
                     />
                   </div>
-
-                  {/* Empty Space */}
                   <div className="w-5/12" />
                 </motion.div>
               );
@@ -108,23 +103,20 @@ const HowItWorks = () => {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="relative pl-12"
                 >
-                  {/* Timeline Line */}
                   {index < steps.length - 1 && (
-                    <div className="absolute left-6 top-12 w-0.5 h-full bg-gradient-to-b from-neon-green to-neon-blue opacity-30" />
+                    <div className="absolute left-6 top-12 w-0.5 h-full bg-agentic-text/10" />
                   )}
 
-                  {/* Timeline Dot */}
-                  <div className="absolute left-0 top-0 w-12 h-12 rounded-full bg-gradient-to-br from-neon-green to-neon-blue flex items-center justify-center border-4 border-theme-base z-10">
-                    <Icon className="w-6 h-6 text-white" />
+                  <div className="absolute left-2 top-0 w-8 h-8 rounded-full bg-agentic-surface border border-agentic-text/10 flex items-center justify-center z-10 mt-4">
+                    <Icon className="w-4 h-4 text-agentic-primary" />
                   </div>
 
-                  {/* Content Card */}
-                  <div className="glass-effect-hover rounded-xl p-6 transition-all duration-300 card-glow">
+                  <div className="glass-effect p-6">
                     <div className="flex items-center space-x-3 mb-4">
-                      <span className="text-xl font-bold text-gradient-green text-heading">{step.number}</span>
+                      <span className="text-xl font-bold text-agentic-primary font-mono">{step.number}</span>
                     </div>
-                    <h3 className="text-xl font-bold mb-3 text-heading-color text-heading">{step.title}</h3>
-                    <p className="text-secondary leading-relaxed text-sharp">{step.description}</p>
+                    <h3 className="text-xl font-bold mb-3 text-agentic-text font-display">{step.title}</h3>
+                    <p className="text-agentic-text/80 leading-relaxed font-sans">{step.description}</p>
                   </div>
                 </motion.div>
               );

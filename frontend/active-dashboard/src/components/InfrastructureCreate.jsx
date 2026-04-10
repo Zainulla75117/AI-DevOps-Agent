@@ -354,7 +354,7 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md disabled:hover:shadow-sm"
+        className="group w-full px-4 py-3 bg-gradient-to-br from-[#42A5F5] to-[#66BB6A] hover:from-[#1E88E5] hover:to-[#4CAF50] text-white text-sm font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md disabled:hover:shadow-sm"
       >
         {isSubmitting ? (
           <span className="flex items-center justify-center gap-2">
@@ -364,7 +364,7 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
         ) : (
           <span className="flex items-center justify-center gap-2">
             {label}
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </span>

@@ -3,6 +3,8 @@ import { fetchProjects } from '../services/projectService'
 import { useAuth } from '../hooks/useAuth'
 import PageLayout from '../components/PageLayout'
 import InfrastructureCreate from '../components/InfrastructureCreate'
+import InfraChatInterface from '../components/InfraChatInterface'
+import InfrastructureView from '../components/InfrastructureView'
 import Toast from '../components/Toast'
 
 const INFRA_STORAGE_KEY = 'devops_infrastructure_map'
@@ -31,7 +33,12 @@ const InfrastructurePage = () => {
   const [projects, setProjects] = useState([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(true)
   const [selectedProject, setSelectedProject] = useState(null)
+  
+  // New workflow states
+  const [creationMethod, setCreationMethod] = useState(null) // 'ai' | 'manual' | null
   const [selectedInfraType, setSelectedInfraType] = useState(null)
+  const [viewMode, setViewMode] = useState(null) // 'view' | null
+  
   const [infrastructureMap, setInfrastructureMap] = useState(loadInfraMap)
   const [toast, setToast] = useState(null)
   const hasFetchedRef = useRef(false)
@@ -137,19 +144,48 @@ const InfrastructurePage = () => {
 
   const handleCreateInfra = (project) => {
     setSelectedProject(project)
+    setCreationMethod(null) // Start with method selection
     setSelectedInfraType(null)
+  }
+  
+  const handleMethodSelect = (method) => {
+    setCreationMethod(method)
   }
 
   const handleInfraTypeSelect = (type) => {
     setSelectedInfraType(type)
   }
 
-  const handleBackToTypePicker = () => {
+  const handleManageInfra = (project) => {
+    setSelectedProject(project)
+    setViewMode('view')
+  }
+
+  const handleDeleteInfra = (project) => {
+    const projectId = project.id || project.project_name
+    setInfrastructureMap((prev) => {
+      const updated = { ...prev }
+      delete updated[projectId]
+      saveInfraMap(updated)
+      return updated
+    })
+    setToast({ message: `Infrastructure for "${project.project_name}" deleted successfully.`, type: 'success' })
+  }
+
+  // Back Navigation Handlers
+  const handleBackToCards = () => {
+    setSelectedProject(null)
+    setCreationMethod(null)
+    setSelectedInfraType(null)
+    setViewMode(null)
+  }
+  
+  const handleBackToMethodPicker = () => {
+    setCreationMethod(null)
     setSelectedInfraType(null)
   }
 
-  const handleBackToCards = () => {
-    setSelectedProject(null)
+  const handleBackToTypePicker = () => {
     setSelectedInfraType(null)
   }
 
@@ -164,7 +200,7 @@ const InfrastructurePage = () => {
             ...existing,
             {
               ...infraData,
-              infraType: selectedInfraType,
+              infraType: selectedInfraType || 'auto', // If AI, might not have selectedInfraType
               createdAt: new Date().toISOString(),
             },
           ],
@@ -175,6 +211,7 @@ const InfrastructurePage = () => {
     }
     setToast({ message: message || 'Infrastructure created successfully!', type: 'success' })
     setSelectedProject(null)
+    setCreationMethod(null)
     setSelectedInfraType(null)
   }
 
@@ -187,13 +224,124 @@ const InfrastructurePage = () => {
     if (!infraItems || infraItems.length === 0) return null
     const types = infraItems.map((i) => {
       const found = infraTypes.find((t) => t.value === i.infraType)
-      return found?.label || i.infraType || i.type || 'Unknown'
+      return found?.label || (i.infraType === 'auto' ? 'AI Provisioned' : i.infraType || i.type || 'Unknown')
     })
     return [...new Set(types)]
   }
 
-  // --- RENDER: InfrastructureCreate form (Network only for now) ---
-  if (selectedProject && selectedInfraType) {
+  // --- RENDER: AI Chat Interface ---
+  if (selectedProject && creationMethod === 'ai') {
+    return (
+      <PageLayout userInfo={userInfo} onLogout={handleLogout}>
+        <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+            <InfraChatInterface 
+               project={selectedProject} 
+               onCancel={handleBackToMethodPicker} 
+               onInfrastructureCreated={handleInfrastructureCreated} 
+            />
+          </div>
+        </main>
+      </PageLayout>
+    )
+  }
+
+  // --- RENDER: Creation Method Picker ---
+  if (selectedProject && !creationMethod) {
+    return (
+      <PageLayout userInfo={userInfo} onLogout={handleLogout}>
+        <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
+            {/* Back navigation */}
+            <button
+              onClick={handleBackToCards}
+              className="relative z-10 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 mb-6 transition-colors duration-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to projects
+            </button>
+
+            {/* Header */}
+            <div className="mb-10 text-center">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-3">
+                How would you like to build?
+              </h1>
+              <p className="text-base text-slate-600 font-medium">
+                Choose your infrastructure provisioning method for <span className="text-blue-600 font-semibold">{selectedProject.project_name}</span>
+              </p>
+            </div>
+
+            {/* Method Picker Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              
+              {/* Option 1: AI Assisted */}
+              <button
+                onClick={() => handleMethodSelect('ai')}
+                className="group relative rounded-lg shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2 text-left min-h-[420px]"
+              >
+                <img src="/Ai_bot.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-indigo-900/60 to-purple-900/70 group-hover:from-indigo-900/70 group-hover:to-purple-900/60 transition-all duration-500"></div>
+                <div className="relative p-8 sm:p-10">
+                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 shadow-md transition-transform duration-500 group-hover:scale-110">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 2a1 1 0 011 1v1a1 1 0 01-2 0V3a1 1 0 011-1zM4 9h16a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2v-6a2 2 0 012-2zm4 4a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2zm-6 5v2m4-2v2" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-indigo-200 transition-colors">
+                    Copilot-Assisted Provisioning
+                  </h3>
+                  <p className="text-sm text-white/70 leading-relaxed font-medium mb-8">
+                    Let our DevOps AI analyze your project requirements and automatically generate the optimal cloud infrastructure architecture for you in seconds.
+                  </p>
+                  
+                  <div className="flex items-center text-indigo-300 font-semibold group-hover:text-white transition-colors">
+                    <span>Start Chatting</span>
+                    <svg className="w-4 h-4 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+
+              {/* Option 2: Manual */}
+              <button
+                onClick={() => handleMethodSelect('manual')}
+                className="group relative rounded-lg shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2 text-left min-h-[420px]"
+              >
+                <img src="/form_bg.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/70 group-hover:from-slate-900/70 group-hover:to-slate-800/60 transition-all duration-500"></div>
+                <div className="relative p-8 sm:p-10">
+                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 shadow-md transition-transform duration-500 group-hover:scale-110">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-slate-200 transition-colors">
+                    Manual Configuration
+                  </h3>
+                  <p className="text-sm text-white/70 leading-relaxed font-medium mb-8">
+                    Take full control of your stack. Use our visual form builders to meticulously configure your Networks, Servers, and Databases exactly how you want.
+                  </p>
+                  
+                  <div className="flex items-center text-slate-300 font-semibold group-hover:text-white transition-colors">
+                    <span>Open Form Builder</span>
+                    <svg className="w-4 h-4 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </main>
+      </PageLayout>
+    )
+  }
+
+  // --- RENDER: InfrastructureCreate form ---
+  if (selectedProject && creationMethod === 'manual' && selectedInfraType) {
     return (
       <PageLayout userInfo={userInfo} onLogout={handleLogout}>
         <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
@@ -230,20 +378,20 @@ const InfrastructurePage = () => {
   }
 
   // --- RENDER: Infra Type Picker ---
-  if (selectedProject && !selectedInfraType) {
+  if (selectedProject && creationMethod === 'manual' && !selectedInfraType) {
     return (
       <PageLayout userInfo={userInfo} onLogout={handleLogout}>
         <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
             {/* Back navigation */}
             <button
-              onClick={handleBackToCards}
+              onClick={handleBackToMethodPicker}
               className="relative z-10 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 mb-6 transition-colors duration-200"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Back to projects
+              Back to method selection
             </button>
 
             {/* Header */}
@@ -291,6 +439,37 @@ const InfrastructurePage = () => {
                 </button>
               ))}
             </div>
+          </div>
+        </main>
+      </PageLayout>
+    )
+  }
+
+  // --- RENDER: View Infrastructure ---
+  if (selectedProject && viewMode === 'view') {
+    const projectInfra = getProjectInfra(selectedProject)
+    return (
+      <PageLayout userInfo={userInfo} onLogout={handleLogout}>
+        <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
+            <button
+              onClick={handleBackToCards}
+              className="relative z-10 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 mb-6 transition-colors duration-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to projects
+            </button>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+                Manage Infrastructure
+              </h1>
+              <p className="text-sm text-slate-600 font-medium">
+                Infrastructure details for project: <span className="text-blue-600 font-semibold">{selectedProject.project_name}</span>
+              </p>
+            </div>
+            <InfrastructureView infrastructureList={projectInfra} />
           </div>
         </main>
       </PageLayout>
@@ -383,11 +562,11 @@ const InfrastructurePage = () => {
                                 {type}
                               </span>
                             ))}
-                            {projectInfra.some((i) => i.infraType === 'network') && (
+                            {projectInfra.some((i) => i.infraType === 'network' || i.infraType === 'auto') && (
                               <span className="text-xs text-slate-500">
                                 {projectInfra
-                                  .filter((i) => i.infraType === 'network')
-                                  .map((i) => `${i.vpc_name || i.data?.vpcName || 'VPC'} (${i.vpc_cidr || i.data?.vpcCidr || ''})`)
+                                  .filter((i) => i.infraType === 'network' || i.infraType === 'auto')
+                                  .map((i) => `${i.vpc_name || i.vpcName || i.data?.vpcName || 'VPC'} (${i.vpc_cidr || i.vpcCidr || i.data?.vpcCidr || ''})`)
                                   .join(', ')}
                               </span>
                             )}
@@ -402,17 +581,41 @@ const InfrastructurePage = () => {
                         )}
                       </div>
 
-                      {/* Right: Create Infra Button */}
+                      {/* Right: Action Button */}
                       <div className="flex-shrink-0 self-center sm:self-start">
-                        <button
-                          onClick={() => handleCreateInfra(project)}
-                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 hover:shadow-[0_8px_20px_-6px_rgba(37,99,235,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Create Infra
-                        </button>
+                        {projectInfra.length > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleManageInfra(project)}
+                              className="group inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 transition-all duration-300"
+                            >
+                              <svg className="w-4 h-4 text-slate-500 group-hover:text-slate-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              Manage Infra
+                            </button>
+                            <button
+                              onClick={() => handleDeleteInfra(project)}
+                              className="group inline-flex items-center gap-1.5 px-3 py-2.5 bg-white border border-red-200 text-red-500 text-sm font-semibold rounded-xl hover:bg-red-50 hover:border-red-300 hover:text-red-600 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-red-200 focus:ring-offset-2 transition-all duration-300"
+                              title="Delete Infrastructure"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleCreateInfra(project)}
+                            className="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-sm font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 hover:shadow-[0_8px_20px_-6px_rgba(99,102,241,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300 border-none"
+                          >
+                            <svg className="w-4 h-4 transform group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Create Infra
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

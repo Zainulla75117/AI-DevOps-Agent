@@ -55,8 +55,8 @@ const LoginPage = () => {
       </div>
 
       {/* Tablet: Show reduced visual panel */}
-      <div className="hidden md:flex lg:hidden w-full h-32 relative bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 via-transparent to-green-900/20"></div>
+      <div className="hidden md:flex lg:hidden w-full h-32 relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-green-900/20"></div>
         <div className="relative z-10 flex items-center justify-center">
           <InfinityLogo />
         </div>

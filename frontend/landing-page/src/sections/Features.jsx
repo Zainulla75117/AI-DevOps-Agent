@@ -13,43 +13,37 @@ const features = [
     icon: Network,
     title: 'AI Infra Provisioning',
     description: 'Auto-generate Terraform, CloudFormation, and Pulumi configurations. Deploy infrastructure across AWS, Azure, and GCP with intelligent resource optimization.',
-    color: 'from-neon-green to-neon-green-light',
   },
   {
     icon: GitBranch,
     title: 'CI/CD Automation',
     description: 'Create and optimize pipelines for Jenkins, GitHub Actions, and GitLab. Automatically detect and fix pipeline issues before deployment.',
-    color: 'from-neon-green-light to-neon-blue',
   },
   {
     icon: Container,
     title: 'Kubernetes Management',
     description: 'Deploy, upgrade, and scale workloads automatically. Handle rolling updates, health checks, and resource allocation with zero downtime.',
-    color: 'from-neon-blue to-neon-blue-light',
   },
   {
     icon: BarChart3,
     title: 'Monitoring & Alerting',
     description: 'Auto-configure monitors for Prometheus, Grafana, and Datadog. Set up intelligent alerting rules based on your infrastructure patterns.',
-    color: 'from-neon-blue-light to-neon-green',
   },
   {
     icon: TrendingDown,
     title: 'Cost Optimization',
     description: 'Real-time cloud cost insights and recommendations. Automatically right-size resources and identify unused infrastructure to reduce spend.',
-    color: 'from-neon-green to-neon-blue',
   },
   {
     icon: ShieldCheck,
     title: 'Security Automation',
     description: 'Enforce security policies, run automated scans, and maintain compliance. Integrate with security tools for continuous protection.',
-    color: 'from-neon-blue to-neon-green-light',
   },
 ];
 
 const Features = () => {
   return (
-    <section id="features" className="py-24 relative overflow-hidden">
+    <section id="features" className="py-24 relative overflow-hidden bg-agentic-secondary">
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -58,11 +52,11 @@ const Features = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-heading">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-display text-agentic-text">
             Powerful Features for{' '}
-            <span className="text-gradient">Modern DevOps</span>
+            <span className="text-agentic-primary">Modern DevOps</span>
           </h2>
-          <p className="text-xl text-secondary max-w-2xl mx-auto text-sharp">
+          <p className="text-xl text-agentic-text/80 max-w-2xl mx-auto font-sans">
             Everything you need to automate and optimize your infrastructure operations
           </p>
         </motion.div>
@@ -77,16 +71,15 @@ const Features = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="glass-effect-hover rounded-xl p-8 transition-all duration-300 group card-glow relative"
+                className="glass-effect p-8 flex flex-col h-full group"
               >
-                <div className={`w-14 h-14 rounded-lg bg-gradient-to-br ${feature.color} p-3 mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                  <Icon className="w-full h-full text-white drop-shadow-lg" />
+                <div className="w-14 h-14 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center mb-6 group-hover:border-agentic-primary/30 transition-colors">
+                  <Icon className="w-6 h-6 text-agentic-primary" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-heading-color group-hover:text-gradient-green transition-all duration-300 text-heading">
+                <h3 className="text-2xl font-bold mb-4 text-agentic-text font-display">
                   {feature.title}
                 </h3>
-                <p className="text-secondary leading-relaxed text-sharp">
+                <p className="text-agentic-text/80 leading-relaxed font-sans mt-auto">
                   {feature.description}
                 </p>
               </motion.div>
