@@ -57,7 +57,7 @@ const Hero = () => {
 
             <div className="flex flex-col sm:flex-row gap-4">
               <motion.a
-                href="#get-started"
+                href="https://infraxai.vercel.app"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="group px-8 py-4 bg-agentic-primary text-white rounded-md font-medium flex items-center justify-center space-x-2 hover:bg-[#265A4B] transition-colors shadow-sm"

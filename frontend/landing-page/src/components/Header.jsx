@@ -53,14 +53,14 @@ const Header = () => {
               </a>
             ))}
             <a
-              href="http://localhost:5173"
+              href="https://infraxai.vercel.app"
               className="text-agentic-text/80 transition-all duration-300 font-medium hover:bg-clip-text hover:text-transparent hover:bg-gradient-to-r hover:from-agentic-primary hover:to-teal-500"
             >
               Login
             </a>
             
             <motion.a
-              href="http://localhost:5173"
+              href="https://infraxai.vercel.app/register"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-6 py-2 bg-agentic-primary text-white rounded-md font-medium hover:bg-[#265A4B] transition-colors duration-300 shadow-sm"
@@ -99,14 +99,14 @@ const Header = () => {
                 </a>
               ))}
               <a
-                href="http://localhost:5173"
+                href="https://infraxai.vercel.app"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="block text-agentic-text/80 font-medium transition-all duration-300 hover:bg-clip-text hover:text-transparent hover:bg-gradient-to-r hover:from-agentic-primary hover:to-teal-500"
               >
                 Login
               </a>
               <motion.a
-                href="http://localhost:5173"
+                href="https://infraxai.vercel.app/register"
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="block w-full px-6 py-2 bg-agentic-primary text-white rounded-md font-medium text-center shadow-sm"
