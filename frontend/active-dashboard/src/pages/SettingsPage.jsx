@@ -832,7 +832,7 @@ const SettingsPage = () => {
                               <button
                                 type="submit"
                                 disabled={isSubmittingSCM}
-                                  className="flex-1 px-6 py-3 bg-gradient-to-r from-[#42A5F5] to-[#66BB6A] text-white text-base font-semibold cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group hover:from-[#1E88E5] hover:to-[#4CAF50] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                                  className="flex-1 px-6 py-3 bg-gradient-to-r from-[#42A5F5] to-[#30705d] text-white text-base font-semibold cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group hover:from-[#1E88E5] hover:to-[#215646] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
                                 style={{ borderRadius: '12px 4px 12px 4px' }}
                               >
                                 {isSubmittingSCM ? (
@@ -987,7 +987,7 @@ const SettingsPage = () => {
                               <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="px-5 py-2.5 bg-gradient-to-r from-[#42A5F5] to-[#66BB6A] text-white text-sm font-semibold cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group hover:from-[#1E88E5] hover:to-[#4CAF50] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="px-5 py-2.5 bg-gradient-to-r from-[#42A5F5] to-[#30705d] text-white text-sm font-semibold cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group hover:from-[#1E88E5] hover:to-[#215646] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
                                 style={{ borderRadius: '12px 4px 12px 4px' }}
                               >
                                 {isSubmitting ? (
@@ -1368,7 +1368,7 @@ const SettingsPage = () => {
                                 <button
                                   type="submit"
                                   disabled={isSubmittingJenkins}
-                                  className="flex-1 px-6 py-3 bg-gradient-to-r from-[#42A5F5] to-[#66BB6A] text-white text-base font-semibold cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group hover:from-[#1E88E5] hover:to-[#4CAF50] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                                  className="flex-1 px-6 py-3 bg-gradient-to-r from-[#42A5F5] to-[#30705d] text-white text-base font-semibold cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group hover:from-[#1E88E5] hover:to-[#215646] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
                                   style={{ borderRadius: '12px 4px 12px 4px' }}
                                 >
                                   {isSubmittingJenkins ? (

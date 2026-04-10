@@ -17,7 +17,7 @@ const Toast = ({ message, type = 'success', onClose, duration = 5000 }) => {
     : 'ℹ'
 
   const iconBg = type === 'success' 
-    ? 'bg-[#4CAF50]' 
+    ? 'bg-[#30705d]' 
     : type === 'error'
     ? 'bg-[#F44336]'
     : 'bg-[#2196F3]'

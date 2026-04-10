@@ -78,8 +78,8 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
 
   return (
     <div className="w-full">
-      <div className="mb-8">
-        <h2 className="text-3xl font-semibold text-slate-900 mb-2">
+      <div className="mb-6 md:mb-8 text-center md:text-left">
+        <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-1 md:mb-2">
           Welcome
         </h2>
         <p className="text-sm text-slate-600">
@@ -98,7 +98,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
             name="username"
             value={formData.username}
             onChange={handleChange}
-            className="w-full px-4 py-3 bg-white border border-[#2196F3]/20 text-slate-900 text-base rounded-md transition-colors outline-none placeholder:text-slate-400 focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3.5 md:py-3 bg-slate-50 md:bg-white border border-[#2196F3]/20 text-slate-900 text-base rounded-xl md:rounded-md transition-colors outline-none placeholder:text-slate-400 focus:bg-white focus:border-[#30705d] focus:ring-2 focus:ring-[#30705d]/20 disabled:opacity-60 disabled:cursor-not-allowed"
             placeholder="Enter your username"
             disabled={isLoading}
             autoComplete="username"
@@ -116,7 +116,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-3 pr-12 bg-white border border-[#2196F3]/20 text-slate-900 text-base rounded-md transition-colors outline-none placeholder:text-slate-400 focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3.5 md:py-3 pr-12 bg-slate-50 md:bg-white border border-[#2196F3]/20 text-slate-900 text-base rounded-xl md:rounded-md transition-colors outline-none placeholder:text-slate-400 focus:bg-white focus:border-[#30705d] focus:ring-2 focus:ring-[#30705d]/20 disabled:opacity-60 disabled:cursor-not-allowed"
               placeholder="Enter your password"
               disabled={isLoading}
               autoComplete="current-password"
@@ -143,7 +143,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
 
         <button
           type="submit"
-          className="w-full px-4 py-3 bg-gradient-to-br from-[#42A5F5] to-[#66BB6A] text-white text-base font-medium rounded-md transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:from-[#1E88E5] hover:to-[#4CAF50] active:from-[#1976D2] active:to-[#43A047]"
+          className="w-full mt-2 md:mt-0 px-4 py-3.5 md:py-3 bg-gradient-to-br from-[#42A5F5] to-[#30705d] text-white text-base font-semibold md:font-medium rounded-xl md:rounded-md transition-all flex items-center justify-center gap-2 hover:shadow-lg md:hover:shadow-none disabled:opacity-70 disabled:cursor-not-allowed hover:from-[#1E88E5] hover:to-[#215646] active:from-[#1976D2] active:to-[#1a4135]"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -168,7 +168,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
             // Placeholder for Google login - to be implemented later
             console.log('Google login clicked')
           }}
-          className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-700 text-base font-medium rounded-md transition-all flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-slate-400 active:bg-slate-100"
+          className="w-full px-4 py-3.5 md:py-3 bg-white border border-slate-300 text-slate-700 text-base font-semibold md:font-medium rounded-xl md:rounded-md transition-all flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-slate-400 shadow-sm md:shadow-none active:bg-slate-100"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -185,7 +185,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
             // Placeholder for GitHub login - to be implemented later
             console.log('GitHub login clicked')
           }}
-          className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-700 text-base font-medium rounded-md transition-all flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-slate-400 active:bg-slate-100"
+          className="w-full px-4 py-3.5 md:py-3 bg-white border border-slate-300 text-slate-700 text-base font-semibold md:font-medium rounded-xl md:rounded-md transition-all flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-slate-400 shadow-sm md:shadow-none active:bg-slate-100"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
             <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"/>
@@ -198,7 +198,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
             Don't have an account?{' '}
             <Link 
               to="/register" 
-              className="text-[#1E88E5] font-medium hover:text-[#43A047] transition-colors underline"
+              className="text-[#1E88E5] font-medium hover:text-[#215646] transition-colors underline"
             >
               Sign Up
             </Link>

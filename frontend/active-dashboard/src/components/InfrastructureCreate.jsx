@@ -354,7 +354,7 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
       <button
         type="submit"
         disabled={isSubmitting}
-        className="group w-full px-4 py-3 bg-gradient-to-br from-[#42A5F5] to-[#66BB6A] hover:from-[#1E88E5] hover:to-[#4CAF50] text-white text-sm font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md disabled:hover:shadow-sm"
+        className="group w-full px-4 py-3 bg-gradient-to-br from-[#42A5F5] to-[#30705d] hover:from-[#1E88E5] hover:to-[#215646] text-white text-sm font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#30705d]/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md disabled:hover:shadow-sm"
       >
         {isSubmitting ? (
           <span className="flex items-center justify-center gap-2">

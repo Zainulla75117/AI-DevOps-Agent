@@ -76,9 +76,9 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-6 md:mb-8 text-center md:text-left gap-4 md:gap-0">
         <div>
-          <h2 className="text-3xl font-semibold text-slate-900 mb-2 mt-2">
+          <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-1 md:mb-2 md:mt-2">
             Create an account
           </h2>
           <p className="text-sm text-slate-600">
@@ -86,9 +86,9 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
           </p>
         </div>
         
-        <div className="flex flex-col items-end gap-1.5 pt-1">
+        <div className="flex flex-col items-center md:items-end gap-1.5 pt-1 w-full md:w-auto">
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Continue with</span>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-center md:justify-end w-full">
             <button
               type="button"
               onClick={() => console.log('Google signup clicked')}
@@ -119,7 +119,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="username" className="text-sm font-medium text-slate-700">
+          <label htmlFor="username" className="text-sm font-medium text-slate-700 text-left">
             Username
           </label>
           <input
@@ -137,7 +137,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-slate-700">
+          <label htmlFor="email" className="text-sm font-medium text-slate-700 text-left">
             Email Address
           </label>
           <input
@@ -155,7 +155,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="password" className="text-sm font-medium text-slate-700">
+          <label htmlFor="password" className="text-sm font-medium text-slate-700 text-left">
             Password
           </label>
           <div className="relative">
@@ -201,7 +201,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
+          <label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700 text-left">
             Confirm Password
           </label>
           <div className="relative">
@@ -237,7 +237,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
 
         <button
           type="submit"
-          className="rounded-xl w-full mt-3 px-4 py-3.5 bg-gradient-to-br from-[#42A5F5] to-[#66BB6A] text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.98] border-none"
+          className="rounded-xl w-full mt-3 px-4 py-3.5 bg-gradient-to-br from-[#42A5F5] to-[#30705d] text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.98] border-none"
           disabled={isLoading || success}
         >
           {isLoading ? (
@@ -259,7 +259,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
             Already have an account?{' '}
             <Link 
               to="/login" 
-              className="text-[#1E88E5] font-semibold hover:text-[#43A047] transition-colors"
+              className="text-[#1E88E5] font-semibold hover:text-[#215646] transition-colors"
             >
               Log in
             </Link>

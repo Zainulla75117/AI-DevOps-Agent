@@ -1,4 +1,13 @@
+import { useId } from 'react';
+
 const InfinityLogo = () => {
+  const rawId = useId();
+  const id = rawId.replace(/:/g, "");
+  const devopsGradient = `devopsGradient-${id}`;
+  const devopsGradient2 = `devopsGradient2-${id}`;
+  const gearGradient1 = `gearGradient1-${id}`;
+  const gearGradient2 = `gearGradient2-${id}`;
+
   return (
     <div className="relative w-40 h-20 sm:w-48 sm:h-24 flex items-center justify-center animate-float" style={{ willChange: 'transform' }}>
       <div 
@@ -17,10 +26,10 @@ const InfinityLogo = () => {
       >
         {/* DevOps Gear Icon - Left */}
         <g className="animate-[spin-slow_8s_linear_infinite]" transform="translate(25, 50)">
-          <circle cx="0" cy="0" r="6" fill="url(#gearGradient1)" opacity="0.3" />
+          <circle cx="0" cy="0" r="6" fill={`url(#${gearGradient1})`} opacity="0.3" />
           <path
-            d="M 0 -7 L 1.5 -7 L 2 -5 L 4 -5 L 4 -3 L 7 -3 L 7 -1 L 4 -1 L 4 1 L 7 1 L 7 3 L 4 3 L 4 5 L 2 5 L 1.5 7 L 0 7 L -1.5 7 L -2 5 L -4 5 L -4 3 L -7 3 L -7 1 L -4 1 L -4 -1 L -7 -1 L -7 -3 L -4 -3 L -4 -5 L -2 -5 L -1.5 -7 Z"
-            fill="url(#gearGradient1)"
+            d="M 0 -7 L 1.5 -7 L 2 -5 L 4 -5 L 4 -3 L 7 -3 L 7 -1 L 4 -1 L 4 1 L 7 1 L 7 3 L 4 -3 L 4 5 L 2 5 L 1.5 7 L 0 7 L -1.5 7 L -2 5 L -4 5 L -4 3 L -7 3 L -7 1 L -4 1 L -4 -1 L -7 -1 L -7 -3 L -4 -3 L -4 -5 L -2 -5 L -1.5 -7 Z"
+            fill={`url(#${gearGradient1})`}
             opacity="0.85"
           />
           <circle cx="0" cy="0" r="2" fill="#ffffff" opacity="0.9" />
@@ -28,10 +37,10 @@ const InfinityLogo = () => {
 
         {/* DevOps Gear Icon - Right */}
         <g className="animate-[spin-slow_10s_linear_infinite_reverse]" transform="translate(175, 50)">
-          <circle cx="0" cy="0" r="6" fill="url(#gearGradient2)" opacity="0.3" />
+          <circle cx="0" cy="0" r="6" fill={`url(#${gearGradient2})`} opacity="0.3" />
           <path
             d="M 0 -7 L 1.5 -7 L 2 -5 L 4 -5 L 4 -3 L 7 -3 L 7 -1 L 4 -1 L 4 1 L 7 1 L 7 3 L 4 3 L 4 5 L 2 5 L 1.5 7 L 0 7 L -1.5 7 L -2 5 L -4 5 L -4 3 L -7 3 L -7 1 L -4 1 L -4 -1 L -7 -1 L -7 -3 L -4 -3 L -4 -5 L -2 -5 L -1.5 -7 Z"
-            fill="url(#gearGradient2)"
+            fill={`url(#${gearGradient2})`}
             opacity="0.85"
           />
           <circle cx="0" cy="0" r="2" fill="#ffffff" opacity="0.9" />
@@ -46,7 +55,7 @@ const InfinityLogo = () => {
              C 70 30, 90 30, 90 50
              C 90 70, 70 70, 50 50"
           fill="none"
-          stroke="url(#devopsGradient)"
+          stroke={`url(#${devopsGradient})`}
           strokeWidth="3.5"
           opacity="0.9"
         />
@@ -60,14 +69,14 @@ const InfinityLogo = () => {
              C 70 30, 90 30, 90 50
              C 90 70, 70 70, 50 50"
           fill="none"
-          stroke="url(#devopsGradient2)"
+          stroke={`url(#${devopsGradient2})`}
           strokeWidth="2.5"
           opacity="0.7"
         />
 
         {/* Gradient Definitions - DevOps Colors */}
         <defs>
-          <linearGradient id="devopsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={devopsGradient} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.9" />
             <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.85" />
             <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.9" />
@@ -84,7 +93,7 @@ const InfinityLogo = () => {
               repeatCount="indefinite"
             />
           </linearGradient>
-          <linearGradient id="devopsGradient2" x1="100%" y1="100%" x2="0%" y2="0%">
+          <linearGradient id={devopsGradient2} x1="100%" y1="100%" x2="0%" y2="0%">
             <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.7" />
             <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.65" />
             <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.7" />
@@ -101,11 +110,11 @@ const InfinityLogo = () => {
               repeatCount="indefinite"
             />
           </linearGradient>
-          <linearGradient id="gearGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={gearGradient1} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.9" />
             <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.9" />
           </linearGradient>
-          <linearGradient id="gearGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={gearGradient2} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.9" />
             <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.9" />
           </linearGradient>

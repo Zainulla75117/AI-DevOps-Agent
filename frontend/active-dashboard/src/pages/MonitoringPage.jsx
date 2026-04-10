@@ -37,7 +37,7 @@ const MonitoringPage = () => {
                 <p className="text-lg text-slate-600 mb-2">
                   This page is currently
                 </p>
-                <p className="text-2xl font-semibold text-[#4CAF50]">
+                <p className="text-2xl font-semibold text-[#30705d]">
                   Under Development
                 </p>
                 <p className="text-sm text-slate-500 mt-6">

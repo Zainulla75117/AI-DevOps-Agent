@@ -128,7 +128,7 @@ const AutomationPage = () => {
                                   <h4 className="text-sm font-semibold text-slate-800 mb-1.5">Jenkins Agent</h4>
                                   <div className="space-y-1 text-xs text-slate-600">
                                     <p className="flex items-center justify-center gap-1.5 font-medium text-slate-700">
-                                      <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                                      <span className="w-2.5 h-2.5 bg-[#30705d] rounded-full animate-pulse shadow-[0_0_8px_rgba(48,112,93,0.6)]"></span>
                                       Status: Active
                                     </p>
                                     <p>Version: 2.426.1</p>

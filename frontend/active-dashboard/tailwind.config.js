@@ -12,15 +12,15 @@ export default {
       colors: {
         devops: {
           blue: '#2196F3',
-          green: '#4CAF50',
+          green: '#30705d',
         },
         theme: {
           blue: '#2196F3',
-          green: '#4CAF50',
+          green: '#30705d',
           'blue-light': '#F0F7FF',
           'green-light': '#F5FBF5',
           'blue-hover': '#1976D2',
-          'green-hover': '#388E3C',
+          'green-hover': '#215646',
           'blue-subtle': '#E3F2FD',
           'green-subtle': '#E8F5E9',
         },
