@@ -117,7 +117,7 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Create New Project</h3>
+            <h3 className="text-lg font-bold text-slate-900 font-display">Create New Project</h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Define what you're building. Infrastructure comes next.
             </p>

@@ -79,7 +79,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
   return (
     <div className="w-full">
       <div className="mb-6 md:mb-8 text-center md:text-left">
-        <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-1 md:mb-2">
+        <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-1 md:mb-2 font-display">
           Welcome
         </h2>
         <p className="text-sm text-slate-600">

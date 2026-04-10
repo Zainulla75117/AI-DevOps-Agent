@@ -33,18 +33,18 @@ const InfrastructurePage = () => {
   const [projects, setProjects] = useState([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(true)
   const [selectedProject, setSelectedProject] = useState(null)
-  
+
   // New workflow states
   const [creationMethod, setCreationMethod] = useState(null) // 'ai' | 'manual' | null
   const [selectedInfraType, setSelectedInfraType] = useState(null)
   const [viewMode, setViewMode] = useState(null) // 'view' | null
-  
+
   const [infrastructureMap, setInfrastructureMap] = useState(loadInfraMap)
   const [toast, setToast] = useState(null)
   const hasFetchedRef = useRef(false)
 
   useEffect(() => {
-    document.title = 'DevOps Infinity - Infrastructure'
+    document.title = 'infraXai - Infrastructure'
   }, [])
 
   useEffect(() => {
@@ -147,7 +147,7 @@ const InfrastructurePage = () => {
     setCreationMethod(null) // Start with method selection
     setSelectedInfraType(null)
   }
-  
+
   const handleMethodSelect = (method) => {
     setCreationMethod(method)
   }
@@ -179,7 +179,7 @@ const InfrastructurePage = () => {
     setSelectedInfraType(null)
     setViewMode(null)
   }
-  
+
   const handleBackToMethodPicker = () => {
     setCreationMethod(null)
     setSelectedInfraType(null)
@@ -234,11 +234,11 @@ const InfrastructurePage = () => {
     return (
       <PageLayout userInfo={userInfo} onLogout={handleLogout}>
         <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
-            <InfraChatInterface 
-               project={selectedProject} 
-               onCancel={handleBackToMethodPicker} 
-               onInfrastructureCreated={handleInfrastructureCreated} 
+          <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-6">
+            <InfraChatInterface
+              project={selectedProject}
+              onCancel={handleBackToMethodPicker}
+              onInfrastructureCreated={handleInfrastructureCreated}
             />
           </div>
         </main>
@@ -265,7 +265,7 @@ const InfrastructurePage = () => {
 
             {/* Header */}
             <div className="mb-10 text-center">
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-3">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 font-display">
                 How would you like to build?
               </h1>
               <p className="text-base text-slate-600 font-medium">
@@ -275,7 +275,7 @@ const InfrastructurePage = () => {
 
             {/* Method Picker Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              
+
               {/* Option 1: AI Assisted */}
               <button
                 onClick={() => handleMethodSelect('ai')}
@@ -293,9 +293,9 @@ const InfrastructurePage = () => {
                     Copilot-Assisted Provisioning
                   </h3>
                   <p className="text-sm text-white/70 leading-relaxed font-medium mb-8">
-                    Let our DevOps AI analyze your project requirements and automatically generate the optimal cloud infrastructure architecture for you in seconds.
+                    Let our infraXai agent analyze your project requirements and automatically generate the optimal cloud infrastructure architecture for you in seconds.
                   </p>
-                  
+
                   <div className="flex items-center text-indigo-300 font-semibold group-hover:text-white transition-colors">
                     <span>Start Chatting</span>
                     <svg className="w-4 h-4 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,7 +324,7 @@ const InfrastructurePage = () => {
                   <p className="text-sm text-white/70 leading-relaxed font-medium mb-8">
                     Take full control of your stack. Use our visual form builders to meticulously configure your Networks, Servers, and Databases exactly how you want.
                   </p>
-                  
+
                   <div className="flex items-center text-slate-300 font-semibold group-hover:text-white transition-colors">
                     <span>Open Form Builder</span>
                     <svg className="w-4 h-4 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,7 +396,7 @@ const InfrastructurePage = () => {
 
             {/* Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 font-display">
                 Create Infrastructure
               </h1>
               <p className="text-sm text-slate-600 font-medium">
@@ -462,7 +462,7 @@ const InfrastructurePage = () => {
               Back to projects
             </button>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 font-display">
                 Manage Infrastructure
               </h1>
               <p className="text-sm text-slate-600 font-medium">
@@ -483,7 +483,7 @@ const InfrastructurePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 font-display">
               Infrastructure
             </h1>
             <p className="text-sm text-slate-600 font-medium">

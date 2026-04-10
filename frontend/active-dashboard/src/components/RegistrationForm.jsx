@@ -78,11 +78,11 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
     <div className="w-full">
       <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-6 md:mb-8 text-center md:text-left gap-4 md:gap-0">
         <div>
-          <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-1 md:mb-2 md:mt-2">
+          <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-1 md:mb-2 md:mt-2 font-display">
             Create an account
           </h2>
           <p className="text-sm text-slate-600">
-            Sign up to get started with DevOps Infinity
+            Sign up to get started with infraXai
           </p>
         </div>
         

@@ -1757,6 +1757,43 @@ const PreInputForm = ({ formConfig, onSubmit, onCancel }) => {
   )
 }
 
+// --- Jenkins Chat History localStorage helpers ---
+const JENKINS_SESSIONS_KEY = 'jenkins_chat_sessions'
+
+const loadJenkinsSessions = () => {
+  try {
+    const raw = localStorage.getItem(JENKINS_SESSIONS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+const saveJenkinsSessions = (sessions) => {
+  try {
+    localStorage.setItem(JENKINS_SESSIONS_KEY, JSON.stringify(sessions))
+  } catch (e) {
+    console.error('Failed to save Jenkins chat sessions:', e)
+  }
+}
+
+const groupJenkinsSessionsByDate = (sessions) => {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today.getTime() - 86400000)
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 86400000)
+  const groups = { today: [], yesterday: [], week: [], older: [] }
+  const sorted = [...sessions].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+  sorted.forEach((s) => {
+    const d = new Date(s.updatedAt)
+    if (d >= today) groups.today.push(s)
+    else if (d >= yesterday) groups.yesterday.push(s)
+    else if (d >= sevenDaysAgo) groups.week.push(s)
+    else groups.older.push(s)
+  })
+  return groups
+}
+
 const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
@@ -1770,24 +1807,132 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
   const inputRef = useRef(null)
   const eventSourceRef = useRef(null)
 
+  // --- Chat History Sidebar state ---
+  const [chatSessions, setChatSessions] = useState(() => loadJenkinsSessions())
+  const [activeLocalSessionId, setActiveLocalSessionId] = useState(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+
+  // Persist current session to localStorage
+  const persistCurrentSession = (localId, msgs, serverSessionId) => {
+    setChatSessions((prev) => {
+      const updated = prev.map((s) =>
+        s.id === localId
+          ? { ...s, messages: msgs, serverSessionId: serverSessionId || s.serverSessionId, updatedAt: new Date().toISOString() }
+          : s
+      )
+      saveJenkinsSessions(updated)
+      return updated
+    })
+  }
+
+  // Auto-title from first user message
+  const updateJenkinsSessionTitle = (localId, title) => {
+    setChatSessions((prev) => {
+      const updated = prev.map((s) => (s.id === localId ? { ...s, title } : s))
+      saveJenkinsSessions(updated)
+      return updated
+    })
+  }
+
+  // Start a new chat session
+  const handleNewJenkinsChat = () => {
+    // Close any SSE connection
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
+    const newId = `jsession_${Date.now()}`
+    const initMsg = initialMessage
+      ? [{ role: 'assistant', content: initialMessage, type: 'text' }]
+      : []
+    const newSession = {
+      id: newId,
+      title: 'New conversation',
+      messages: initMsg,
+      serverSessionId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    setChatSessions((prev) => {
+      const updated = [newSession, ...prev]
+      saveJenkinsSessions(updated)
+      return updated
+    })
+    setActiveLocalSessionId(newId)
+    setMessages(initMsg)
+    setSessionId(null)
+    setInputValue('')
+    setStreamingMessage('')
+    setShowPreInputForm(false)
+    setPreInputFormConfig(null)
+    setLastSubmittedFormData(null)
+    setDeleteConfirmId(null)
+  }
+
+  // Load a previous session
+  const handleLoadJenkinsSession = (session) => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
+    setActiveLocalSessionId(session.id)
+    setMessages(session.messages || [])
+    setSessionId(session.serverSessionId || null)
+    setInputValue('')
+    setStreamingMessage('')
+    setIsLoading(false)
+    setShowPreInputForm(false)
+    setPreInputFormConfig(null)
+    setLastSubmittedFormData(null)
+    setDeleteConfirmId(null)
+  }
+
+  // Delete a session
+  const handleDeleteJenkinsSession = (localId) => {
+    setChatSessions((prev) => {
+      const updated = prev.filter((s) => s.id !== localId)
+      saveJenkinsSessions(updated)
+      if (localId === activeLocalSessionId) {
+        if (updated.length > 0) {
+          const sorted = [...updated].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+          handleLoadJenkinsSession(sorted[0])
+        } else {
+          handleNewJenkinsChat()
+        }
+      }
+      return updated
+    })
+    setDeleteConfirmId(null)
+  }
+
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus()
     }
   }, [isOpen])
 
+  // On open: load most recent session or create new
   useEffect(() => {
-    if (isOpen && initialMessage && messages.length === 0) {
-      setMessages([{ role: 'assistant', content: initialMessage, type: 'text' }])
+    if (isOpen) {
+      const sessions = loadJenkinsSessions()
+      setChatSessions(sessions)
+      if (sessions.length > 0 && !activeLocalSessionId) {
+        const sorted = [...sessions].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        const latest = sorted[0]
+        setActiveLocalSessionId(latest.id)
+        setMessages(latest.messages || [])
+        setSessionId(latest.serverSessionId || null)
+      } else if (sessions.length === 0 && !activeLocalSessionId) {
+        handleNewJenkinsChat()
+      }
     }
-  }, [isOpen, initialMessage])
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) {
-      setMessages([])
       setInputValue('')
       setStreamingMessage('')
-      setSessionId(null)
       setShowPreInputForm(false)
       setPreInputFormConfig(null)
       setLastSubmittedFormData(null)
@@ -1805,6 +1950,19 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  // Auto-save messages to localStorage whenever they change
+  useEffect(() => {
+    if (activeLocalSessionId && messages.length > 0) {
+      persistCurrentSession(activeLocalSessionId, messages, sessionId)
+      // Auto-title: use first user message
+      const userMsgs = messages.filter((m) => m.role === 'user')
+      if (userMsgs.length === 1) {
+        const title = userMsgs[0].content.length > 40 ? userMsgs[0].content.substring(0, 40) + '…' : userMsgs[0].content
+        updateJenkinsSessionTitle(activeLocalSessionId, title)
+      }
+    }
+  }, [messages, sessionId])
 
   const showPreInputFormHandler = () => {
     // Add form to conversation when "Add Form" button is clicked
@@ -2486,6 +2644,69 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
     return null
   }
 
+  // --- Grouped sessions for sidebar ---
+  const grouped = groupJenkinsSessionsByDate(chatSessions)
+
+  const renderSessionGroup = (label, sessions) => {
+    if (sessions.length === 0) return null
+    return (
+      <div key={label} style={{ marginBottom: '16px' }}>
+        <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#94a3b8', padding: '0 12px', marginBottom: '6px' }}>
+          {label}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          {sessions.map((s) => (
+            <div
+              key={s.id}
+              onClick={() => handleLoadJenkinsSession(s)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                backgroundColor: s.id === activeLocalSessionId ? '#ecfdf5' : 'transparent',
+                color: s.id === activeLocalSessionId ? '#059669' : '#475569',
+                fontWeight: s.id === activeLocalSessionId ? 600 : 400,
+              }}
+              onMouseEnter={(e) => { if (s.id !== activeLocalSessionId) e.currentTarget.style.backgroundColor = '#f1f5f9'; const btn = e.currentTarget.querySelector('[data-delete-btn]'); if (btn) btn.style.opacity = '1' }}
+              onMouseLeave={(e) => { if (s.id !== activeLocalSessionId) e.currentTarget.style.backgroundColor = 'transparent'; const btn = e.currentTarget.querySelector('[data-delete-btn]'); if (btn) { btn.style.opacity = '0'; btn.style.color = '#cbd5e1' } }}
+            >
+              <svg style={{ width: '14px', height: '14px', flexShrink: 0, color: s.id === activeLocalSessionId ? '#10b981' : '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <span style={{ flex: 1, fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</span>
+              {deleteConfirmId === s.id ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => handleDeleteJenkinsSession(s.id)} style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }} title="Confirm delete">
+                    <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  </button>
+                  <button onClick={() => setDeleteConfirmId(null)} style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Cancel">
+                    <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  data-delete-btn
+                  onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(s.id) }}
+                  style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', opacity: 0, transition: 'opacity 0.15s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#ef4444' }}
+                  title="Delete conversation"
+                >
+                  <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   const chatInterface = (
     <div 
       style={{ 
@@ -2498,13 +2719,73 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
         height: '100vh',
         zIndex: 99999,
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         backgroundColor: '#ffffff',
         margin: 0,
         padding: 0,
         overflow: 'hidden'
       }}
     >
+      {/* ===== Chat History Sidebar ===== */}
+      <div style={{
+        width: isSidebarOpen ? '260px' : '0px',
+        minWidth: isSidebarOpen ? '260px' : '0px',
+        borderRight: isSidebarOpen ? '1px solid #e5e7eb' : 'none',
+        backgroundColor: '#f8fafc',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'all 0.3s ease-in-out',
+        overflow: 'hidden',
+        flexShrink: 0,
+      }}>
+        {/* Sidebar Header */}
+        <div style={{ padding: '16px 16px 12px', flexShrink: 0 }}>
+          <button
+            onClick={() => handleNewJenkinsChat()}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              color: '#059669',
+              fontSize: '12px',
+              fontWeight: 600,
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ecfdf5'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Chat
+          </button>
+        </div>
+        {/* Session List */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 6px 16px' }}>
+          {chatSessions.length === 0 ? (
+            <div style={{ padding: '32px 12px', textAlign: 'center' }}>
+              <p style={{ fontSize: '12px', color: '#94a3b8' }}>No conversations yet</p>
+            </div>
+          ) : (
+            <>
+              {renderSessionGroup('Today', grouped.today)}
+              {renderSessionGroup('Yesterday', grouped.yesterday)}
+              {renderSessionGroup('Previous 7 Days', grouped.week)}
+              {renderSessionGroup('Older', grouped.older)}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ===== Main Chat Column ===== */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ 
         display: 'flex', 
@@ -2517,12 +2798,36 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
         flexShrink: 0
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Sidebar toggle */}
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            style={{
+              padding: '6px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: '6px',
+              color: '#64748b',
+              transition: 'all 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#334155' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748b' }}
+            title={isSidebarOpen ? 'Hide history' : 'Show history'}
+          >
+            <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+          </button>
           <img
-            src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Jenkins_logo.svg"
+            src="/icons8-jenkins-color-16.png"
             alt="Jenkins Logo"
             style={{ width: '32px', height: '32px', objectFit: 'contain' }}
             onError={(e) => {
-              e.target.style.display = 'none'
+              e.target.onerror = null
+              e.target.src = 'https://img.icons8.com/color/32/jenkins.png'
             }}
           />
           <div>
@@ -2602,17 +2907,18 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                         width: '32px', 
                         height: '32px', 
                         borderRadius: '50%', 
-                        background: 'linear-gradient(to right, #3b82f6, #f97316)', 
+                        background: 'linear-gradient(135deg, #10b981, #0d9488)', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center' 
                       }}>
                         <img
-                          src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Jenkins_logo.svg"
+                          src="/icons8-jenkins-color-16.png"
                           alt="Jenkins"
                           style={{ width: '24px', height: '24px', objectFit: 'contain' }}
                           onError={(e) => {
-                            e.target.style.display = 'none'
+                            e.target.onerror = null
+                            e.target.src = 'https://img.icons8.com/color/24/jenkins.png'
                           }}
                         />
                       </div>
@@ -2674,7 +2980,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                         borderRadius: '8px',
                         padding: '12px 16px',
                         background: message.role === 'user' 
-                          ? 'linear-gradient(to right, #3b82f6, #f97316)' 
+                          ? '#059669' 
                           : '#ffffff',
                         backgroundColor: message.role === 'user' ? undefined : '#ffffff',
                         color: message.role === 'user' ? '#ffffff' : '#1f2937',
@@ -2784,13 +3090,13 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                         >
                           {preprocessMarkdown(streamingMessage)}
                         </ReactMarkdown>
-                        <span style={{ display: 'inline-block', width: '8px', height: '16px', backgroundColor: '#3b82f6', marginLeft: '4px', animation: 'pulse 1s infinite' }}></span>
+                        <span style={{ display: 'inline-block', width: '8px', height: '16px', backgroundColor: '#10b981', marginLeft: '4px', animation: 'pulse 1s infinite' }}></span>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: '4px' }}>
-                        <div style={{ width: '8px', height: '8px', backgroundColor: '#9ca3af', borderRadius: '50%', animation: 'bounce 1s infinite' }}></div>
-                        <div style={{ width: '8px', height: '8px', backgroundColor: '#9ca3af', borderRadius: '50%', animation: 'bounce 1s infinite', animationDelay: '0.1s' }}></div>
-                        <div style={{ width: '8px', height: '8px', backgroundColor: '#9ca3af', borderRadius: '50%', animation: 'bounce 1s infinite', animationDelay: '0.2s' }}></div>
+                        <div style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%', animation: 'bounce 1s infinite' }}></div>
+                        <div style={{ width: '8px', height: '8px', backgroundColor: '#0d9488', borderRadius: '50%', animation: 'bounce 1s infinite', animationDelay: '0.1s' }}></div>
+                        <div style={{ width: '8px', height: '8px', backgroundColor: '#14b8a6', borderRadius: '50%', animation: 'bounce 1s infinite', animationDelay: '0.2s' }}></div>
                       </div>
                     )}
                   </div>
@@ -2818,7 +3124,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                   padding: '4px 8px',
                   fontSize: '11px',
                   fontWeight: 500,
-                  color: '#2563eb',
+                  color: '#059669',
                   backgroundColor: 'transparent',
                   border: 'none',
                   borderRadius: '4px',
@@ -2828,7 +3134,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                   alignItems: 'center',
                   gap: '4px'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#eff6ff'}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#ecfdf5'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                 title="Show input form"
               >
@@ -2874,7 +3180,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                   right: '8px',
                   bottom: '8px',
                   padding: '8px',
-                  background: 'linear-gradient(to right, #3b82f6, #f97316)',
+                  background: '#059669',
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: '8px',
@@ -2929,6 +3235,8 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
             Jenkins Agent can help you with CI/CD pipelines, builds, and deployments
           </p>
         </div>
+      </div>
+      {/* End Main Chat Column */}
       </div>
     </div>
   )

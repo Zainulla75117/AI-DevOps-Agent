@@ -248,7 +248,7 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
             {icon}
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+            <h3 className="text-lg font-bold text-slate-900 font-display">{title}</h3>
             <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
           </div>
         </div>

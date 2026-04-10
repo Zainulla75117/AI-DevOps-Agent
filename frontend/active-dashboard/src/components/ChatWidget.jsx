@@ -104,7 +104,7 @@ const ChatWidget = ({ initialMessage }) => {
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-[#F0F7FF] text-[#2196F3]">
-            <h3 className="text-lg font-semibold">CI/CD Agent</h3>
+            <h3 className="text-lg font-semibold font-display">CI/CD Agent</h3>
             <button
               onClick={() => setIsOpen(false)}
               className="p-1 hover:bg-white/20 rounded transition-all duration-200 hover:rotate-90"

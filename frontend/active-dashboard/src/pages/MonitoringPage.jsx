@@ -6,7 +6,7 @@ const MonitoringPage = () => {
   const { userInfo, handleLogout } = useAuth()
 
   useEffect(() => {
-    document.title = 'DevOps Infinity - Monitoring'
+    document.title = 'infraXai - Monitoring'
   }, [])
 
   return (
@@ -31,7 +31,7 @@ const MonitoringPage = () => {
                     />
                   </svg>
                 </div>
-                <h1 className="text-3xl font-bold text-slate-800 mb-4">
+                <h1 className="text-3xl font-bold text-slate-800 mb-4 font-display">
                   Monitoring
                 </h1>
                 <p className="text-lg text-slate-600 mb-2">

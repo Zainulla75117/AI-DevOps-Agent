@@ -8,8 +8,22 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        display: ['Sora', 'sans-serif'],
+        brand: ['Space Grotesk', 'sans-serif'],
       },
       colors: {
+        blue: {
+          50: '#ebf7f4',
+          100: '#cceae2',
+          200: '#a3d9cb',
+          300: '#70c1b0',
+          400: '#43a691',
+          500: '#2e967a',
+          600: '#298a70',
+          700: '#206b57',
+          800: '#185443',
+          900: '#144537',
+        },
         devops: {
           blue: '#2196F3',
           green: '#30705d',

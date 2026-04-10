@@ -172,11 +172,11 @@ const LeftSidebar = ({
           <div className={`flex items-center ${isExpanded ? 'justify-between px-2' : 'justify-center'} mb-4 mt-2 h-10`}>
             {/* Branding container */}
             {isExpanded && (
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-[#2196F3] to-[#8b5cf6] rounded-xl flex items-center justify-center lg:mx-auto shadow-sm">
-                  <Box className="w-6 h-6 text-white" strokeWidth={2.5} />
+              <div className="flex items-center gap-4 overflow-hidden">
+                <div className="w-11 h-11 flex-shrink-0 flex items-center justify-center lg:mx-auto">
+                  <img src="/infraxai_logo.png" alt="infraXai Logo" className="w-full h-full object-contain" />
                 </div>
-                <span className="font-bold text-[17px] text-slate-800 whitespace-nowrap hidden lg:block tracking-wide">DevOps Agent</span>
+                <span className="font-bold text-[20px] text-slate-800 whitespace-nowrap hidden lg:block tracking-[0.05em] font-brand">infraXai</span>
               </div>
             )}
 
@@ -215,7 +215,7 @@ const LeftSidebar = ({
           {/* Main Navigation Section Title */}
           {isExpanded && !showAutomationMenu && (
             <div className="px-4 pb-2 pt-1 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block">
-              Main Navigations
+              Navigations
             </div>
           )}
           {isExpanded && showAutomationMenu && (

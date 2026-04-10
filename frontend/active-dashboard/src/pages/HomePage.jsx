@@ -20,7 +20,7 @@ const HomePage = () => {
   const hasFetchedRef = useRef(false)
 
   useEffect(() => {
-    document.title = 'DevOps Infinity - Project Canvas'
+    document.title = 'infraXai - Project Canvas'
   }, [])
 
   useEffect(() => {
@@ -93,7 +93,7 @@ const HomePage = () => {
 
   const confirmDelete = async () => {
     if (!projectToDelete) return
-    
+
     try {
       await deleteProject(projectToDelete.id)
       setToast({ message: 'Project deleted successfully!', type: 'success' })
@@ -111,7 +111,7 @@ const HomePage = () => {
     if (project.domain === 'api') return 'Backend API'
     if (project.domain === 'microservices') return 'Microservices'
     if (project.domain === 'data') return 'Data / Pipeline'
-    
+
     // Fallbacks
     if (project.domain) return 'Web Application'
     if (project.platform === 'cloud') return 'Backend API'
@@ -154,7 +154,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 font-display">
               Project Canvas
             </h1>
             <p className="text-sm text-slate-600 font-medium">
@@ -306,8 +306,8 @@ const HomePage = () => {
                       {searchQuery ? 'No projects found' : 'No projects yet'}
                     </h3>
                     <p className="text-sm text-slate-500 mb-6">
-                      {searchQuery 
-                        ? 'Try adjusting your search terms' 
+                      {searchQuery
+                        ? 'Try adjusting your search terms'
                         : 'Get started by creating your first project'}
                     </p>
                     {!searchQuery && !showCreateForm && (
@@ -329,7 +329,7 @@ const HomePage = () => {
             {/* Right Section - Create Project Panel */}
             <div className="lg:sticky lg:top-8 h-fit">
               {showCreateForm ? (
-                <ProjectCreate 
+                <ProjectCreate
                   onProjectCreated={handleProjectCreated}
                   onCancel={() => setShowCreateForm(false)}
                 />
@@ -370,11 +370,11 @@ const HomePage = () => {
 
       {/* Project Details Modal */}
       {showProjectDetails && selectedProject && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
           onClick={handleCloseProjectDetails}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >

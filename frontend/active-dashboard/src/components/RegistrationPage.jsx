@@ -6,7 +6,7 @@ const RegistrationPage = () => {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    document.title = 'DevOps Infinity - Register'
+    document.title = 'infraXai - Register'
   }, [])
 
   return (
@@ -23,7 +23,7 @@ const RegistrationPage = () => {
       <div className="absolute top-8 left-0 right-0 flex justify-center md:fixed md:justify-start md:top-6 md:left-6 z-50">
         <img 
           src="/My_Brand-Logo_1.png" 
-          alt="DevOps Infinity Logo" 
+          alt="infraXai Logo" 
           className="h-7 sm:h-8 w-auto object-contain drop-shadow-lg md:drop-shadow-none"
           onError={(e) => {
             e.target.src = '/My_Brand-Logo.png'
@@ -56,7 +56,7 @@ const RegistrationPage = () => {
           
           {/* Onboarding Value Proposition */}
           <div className="text-center space-y-6 bg-white/5 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
-            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-blue-300 via-emerald-100 to-blue-200 tracking-tight">
+            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-blue-300 via-emerald-100 to-blue-200 tracking-tight font-display">
               Build the Future Faster
             </h2>
             <div className="space-y-4">

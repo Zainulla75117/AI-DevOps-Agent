@@ -8,7 +8,7 @@ const LoginPage = () => {
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
-    document.title = 'DevOps Infinity - Login'
+    document.title = 'infraXai - Login'
   }, [])
 
   return (
@@ -25,7 +25,7 @@ const LoginPage = () => {
       <div className="absolute top-8 left-0 right-0 flex justify-center md:fixed md:justify-start md:top-6 md:left-6 z-50">
         <img 
           src="/My_Brand-Logo_1.png" 
-          alt="DevOps Infinity Logo" 
+          alt="infraXai Logo" 
           className="h-7 sm:h-8 w-auto object-contain drop-shadow-lg md:drop-shadow-none"
           onError={(e) => {
             e.target.src = '/My_Brand-Logo.png'
