@@ -10,10 +10,7 @@ pydantic-settings>=2.6.1
 motor>=3.6.0
 pymongo>=4.9.0
 
-# Password Hashing
-passlib[bcrypt]>=1.7.4
-
-# JWT
+# JWT Verification
 python-jose[cryptography]>=3.3.0
 
 # Environment Variables

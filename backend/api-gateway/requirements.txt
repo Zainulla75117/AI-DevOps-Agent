@@ -1,0 +1,18 @@
+# API Gateway
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Reverse Proxy HTTP Client
+httpx>=0.27.0
+
+# JWT Verification (read-only, does not create tokens)
+python-jose[cryptography]>=3.3.0
+
+# Payload Decryption
+cryptography>=42.0.5
+
+# Environment Variables
+python-dotenv>=1.2.1
+
+# Settings
+pydantic-settings>=2.6.1

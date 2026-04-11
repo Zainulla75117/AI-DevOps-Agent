@@ -11,9 +11,11 @@ const apiClient = axios.create({
   },
 })
 
-// Add token to requests
+import { encryptionService } from './encryptionService'
+
+// Add token and encryption to requests
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const token = localStorage.getItem('jwt_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -25,6 +27,11 @@ apiClient.interceptors.request.use(
         tokenStart: token.substring(0, 20) + '...',
       })
     }
+    
+    if (['post', 'put', 'patch'].includes(config.method?.toLowerCase()) && config.data) {
+      config.data = await encryptionService.encryptPayload(config.data, API_BASE_URL, '/api/crypto/public-key')
+    }
+    
     return config
   },
   (error) => {

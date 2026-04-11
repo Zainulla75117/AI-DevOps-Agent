@@ -100,8 +100,7 @@ async def login(user: UserLogin, db: AsyncIOMotorDatabase = Depends(get_db)):
         access_token=access_token,
         token_type="bearer",
         user=TokenUser(
-            username=db_user.username,
-            email=db_user.email
+            username=db_user.username
         )
     )
 

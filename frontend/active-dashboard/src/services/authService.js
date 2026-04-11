@@ -11,6 +11,19 @@ const apiClient = axios.create({
   },
 })
 
+import { encryptionService } from './encryptionService'
+
+// Add request interceptor for payload encryption
+apiClient.interceptors.request.use(
+  async (config) => {
+    if (['post', 'put', 'patch'].includes(config.method?.toLowerCase()) && config.data) {
+      config.data = await encryptionService.encryptPayload(config.data, API_BASE_URL, '/api/crypto/public-key')
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
 // Helper function to clear auth data
 const clearAuthData = () => {
   localStorage.removeItem('jwt_token')
@@ -100,7 +113,6 @@ export const login = async (username, password) => {
     if (user) {
       localStorage.setItem('user_info', JSON.stringify({
         username: user.username,
-        email: user.email,
       }))
     } else {
       // Fallback: If user object not in response, store the login username
