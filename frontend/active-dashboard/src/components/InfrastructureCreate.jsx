@@ -1,6 +1,168 @@
 import { useState, useEffect } from 'react'
 import { fetchProjects } from '../services/projectService'
-import { createNetworkInfrastructure } from '../services/infrastructureService'
+import { 
+  createNetworkInfrastructure, 
+  createServersInfrastructure,
+  createServerlessInfrastructure,
+  createCloudManagedInfrastructure
+} from '../services/infrastructureService'
+
+// ── Reusable UI Components ────────────────────────────────────────
+const inputClass = 'w-full px-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-500 transition-all duration-200 bg-white placeholder:text-slate-400'
+const selectClass = 'w-full px-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-500 transition-all duration-200 bg-white cursor-pointer'
+const labelClass = 'block text-sm font-semibold text-slate-900 mb-2'
+
+const FormCard = ({ icon, iconGradient, title, subtitle, children }) => (
+  <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+    <div className="mb-6">
+      <div className="flex items-center gap-3 mb-2">
+        <div className={`w-10 h-10 bg-gradient-to-br ${iconGradient} rounded-lg flex items-center justify-center text-white shadow-sm`}>
+          {icon}
+        </div>
+        <div>
+          <h3 className="text-lg font-bold text-slate-900 font-display">{title}</h3>
+          <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
+        </div>
+      </div>
+    </div>
+    {children}
+  </div>
+)
+
+const ProjectField = ({ preSelectedProject, isLoadingProjects, projects, value, onChange }) => (
+  <div>
+    <label className={labelClass}>
+      Project <span className="text-red-500 font-normal">*</span>
+    </label>
+    {preSelectedProject ? (
+      <div className="w-full px-4 py-2.5 bg-blue-50 border border-blue-200 text-sm rounded-xl flex items-center gap-2">
+        <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        <span className="font-semibold text-slate-800">{preSelectedProject}</span>
+      </div>
+    ) : isLoadingProjects ? (
+      <div className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 text-sm rounded-xl flex items-center gap-2 text-slate-500">
+        <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
+        Loading projects...
+      </div>
+    ) : (
+      <>
+        <select
+          name="projectName"
+          value={value}
+          onChange={onChange}
+          className={selectClass}
+          required
+        >
+          <option value="">Select a project</option>
+          {projects.map((project, index) => (
+            <option key={project.project_name || index} value={project.project_name}>
+              {project.project_name}
+            </option>
+          ))}
+        </select>
+        {!isLoadingProjects && projects.length === 0 && (
+          <p className="text-xs text-slate-500 mt-1.5">
+            No projects found. Create a project from the Dashboard first.
+          </p>
+        )}
+      </>
+    )}
+  </div>
+)
+
+const ToggleSwitch = ({ name, checked, onChange, label }) => (
+  <div className="flex items-center justify-between py-2">
+    <label htmlFor={name} className="text-sm font-medium text-slate-700 cursor-pointer">
+      {label}
+    </label>
+    <button
+      type="button"
+      id={name}
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange({ target: { name, type: 'checkbox', checked: !checked } })}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+        checked ? 'bg-blue-600' : 'bg-slate-300'
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  </div>
+)
+
+const PillToggle = ({ name, value, onChange, options }) => (
+  <div className="flex gap-2">
+    {options.map((option) => (
+      <label
+        key={option.value}
+        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-xl cursor-pointer transition-all duration-200 text-sm font-medium ${
+          value === option.value
+            ? 'border-blue-500 bg-blue-50 text-blue-700'
+            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+        }`}
+      >
+        <input
+          type="radio"
+          name={name}
+          value={option.value}
+          checked={value === option.value}
+          onChange={onChange}
+          className="sr-only"
+        />
+        {option.label}
+      </label>
+    ))}
+  </div>
+)
+
+const SubmitButton = ({ label, submittingLabel, isSubmitting, onCancel }) => (
+  <div className="pt-3 space-y-3">
+    <button
+      type="submit"
+      disabled={isSubmitting}
+      className="group w-full px-4 py-3 bg-gradient-to-br from-[#42A5F5] to-[#30705d] hover:from-[#1E88E5] hover:to-[#215646] text-white text-sm font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#30705d]/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md disabled:hover:shadow-sm"
+    >
+      {isSubmitting ? (
+        <span className="flex items-center justify-center gap-2">
+          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+          {submittingLabel || 'Creating...'}
+        </span>
+      ) : (
+        <span className="flex items-center justify-center gap-2">
+          {label}
+          <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </span>
+      )}
+    </button>
+    {onCancel && (
+      <button
+        type="button"
+        onClick={onCancel}
+        className="w-full px-4 py-2.5 text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors duration-200"
+      >
+        Cancel
+      </button>
+    )}
+  </div>
+)
+
+const ErrorAlert = ({ error }) =>
+  error ? (
+    <div className="px-4 py-3 text-sm bg-red-50 border-2 border-red-200 text-red-700 rounded-xl flex items-center gap-2">
+      <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+      </svg>
+      <span>{error}</span>
+    </div>
+  ) : null
 
 const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCancel, preSelectedProject }) => {
   const [projects, setProjects] = useState([])
@@ -223,174 +385,29 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
     setIsSubmitting(true)
     setError('')
     try {
-      // No backend endpoint — save locally
-      await new Promise((r) => setTimeout(r, 800)) // Simulate API call
+      let response;
+      if (type === 'servers') {
+        response = await createServersInfrastructure(formData)
+      } else if (type === 'serverless') {
+        response = await createServerlessInfrastructure(formData)
+      } else if (type === 'cloud-managed') {
+        response = await createCloudManagedInfrastructure(formData)
+      } else {
+        throw new Error(`Unknown infrastructure type: ${type}`)
+      }
+      
       onInfrastructureCreated({
         ...formData,
         type,
-      }, `${type.charAt(0).toUpperCase() + type.slice(1)} infrastructure created successfully!`)
+        response,
+      }, response.message || `${type.charAt(0).toUpperCase() + type.slice(1)} infrastructure created successfully!`)
     } catch (err) {
       setError(err.message || `Failed to create ${type} infrastructure`)
       setIsSubmitting(false)
     }
   }
 
-  // ── Reusable UI Components ────────────────────────────────────────
-  const inputClass = 'w-full px-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-500 transition-all duration-200 bg-white placeholder:text-slate-400'
-  const selectClass = 'w-full px-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-500 transition-all duration-200 bg-white cursor-pointer'
-  const labelClass = 'block text-sm font-semibold text-slate-900 mb-2'
-
-  const FormCard = ({ icon, iconGradient, title, subtitle, children }) => (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <div className={`w-10 h-10 bg-gradient-to-br ${iconGradient} rounded-lg flex items-center justify-center text-white shadow-sm`}>
-            {icon}
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 font-display">{title}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
-          </div>
-        </div>
-      </div>
-      {children}
-    </div>
-  )
-
-  const ProjectField = () => (
-    <div>
-      <label className={labelClass}>
-        Project <span className="text-red-500 font-normal">*</span>
-      </label>
-      {preSelectedProject ? (
-        <div className="w-full px-4 py-2.5 bg-blue-50 border border-blue-200 text-sm rounded-xl flex items-center gap-2">
-          <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          <span className="font-semibold text-slate-800">{preSelectedProject}</span>
-        </div>
-      ) : isLoadingProjects ? (
-        <div className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 text-sm rounded-xl flex items-center gap-2 text-slate-500">
-          <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
-          Loading projects...
-        </div>
-      ) : (
-        <>
-          <select
-            name="projectName"
-            value={networkFormData.projectName}
-            onChange={handleNetworkFormChange}
-            className={selectClass}
-            required
-          >
-            <option value="">Select a project</option>
-            {projects.map((project, index) => (
-              <option key={project.project_name || index} value={project.project_name}>
-                {project.project_name}
-              </option>
-            ))}
-          </select>
-          {!isLoadingProjects && projects.length === 0 && (
-            <p className="text-xs text-slate-500 mt-1.5">
-              No projects found. Create a project from the Dashboard first.
-            </p>
-          )}
-        </>
-      )}
-    </div>
-  )
-
-  const ToggleSwitch = ({ name, checked, onChange, label }) => (
-    <div className="flex items-center justify-between py-2">
-      <label htmlFor={name} className="text-sm font-medium text-slate-700 cursor-pointer">
-        {label}
-      </label>
-      <button
-        type="button"
-        id={name}
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange({ target: { name, type: 'checkbox', checked: !checked } })}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-          checked ? 'bg-blue-600' : 'bg-slate-300'
-        }`}
-      >
-        <span
-          className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
-            checked ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </button>
-    </div>
-  )
-
-  const PillToggle = ({ name, value, onChange, options }) => (
-    <div className="flex gap-2">
-      {options.map((option) => (
-        <label
-          key={option.value}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-xl cursor-pointer transition-all duration-200 text-sm font-medium ${
-            value === option.value
-              ? 'border-blue-500 bg-blue-50 text-blue-700'
-              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-          }`}
-        >
-          <input
-            type="radio"
-            name={name}
-            value={option.value}
-            checked={value === option.value}
-            onChange={onChange}
-            className="sr-only"
-          />
-          {option.label}
-        </label>
-      ))}
-    </div>
-  )
-
-  const SubmitButton = ({ label, submittingLabel }) => (
-    <div className="pt-3 space-y-3">
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="group w-full px-4 py-3 bg-gradient-to-br from-[#42A5F5] to-[#30705d] hover:from-[#1E88E5] hover:to-[#215646] text-white text-sm font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#30705d]/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md disabled:hover:shadow-sm"
-      >
-        {isSubmitting ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            {submittingLabel || 'Creating...'}
-          </span>
-        ) : (
-          <span className="flex items-center justify-center gap-2">
-            {label}
-            <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </span>
-        )}
-      </button>
-      {onCancel && (
-        <button
-          type="button"
-          onClick={onCancel}
-          className="w-full px-4 py-2.5 text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors duration-200"
-        >
-          Cancel
-        </button>
-      )}
-    </div>
-  )
-
-  const ErrorAlert = () =>
-    error ? (
-      <div className="px-4 py-3 text-sm bg-red-50 border-2 border-red-200 text-red-700 rounded-xl flex items-center gap-2">
-        <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-        </svg>
-        <span>{error}</span>
-      </div>
-    ) : null
+  // Reusable UI components have been extracted above
 
   // ═══════════════════════════════════════════════════════════════════
   // NETWORK FORM
@@ -408,7 +425,13 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
         subtitle="Configure VPC, subnets, and gateways"
       >
         <form onSubmit={handleNetworkSubmit} className="space-y-5">
-          <ProjectField />
+          <ProjectField 
+            preSelectedProject={preSelectedProject}
+            isLoadingProjects={isLoadingProjects}
+            projects={projects}
+            value={networkFormData.projectName}
+            onChange={handleNetworkFormChange}
+          />
 
           {/* VPC Name + VPC CIDR — 2 columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -555,8 +578,8 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
             />
           </div>
 
-          <ErrorAlert />
-          <SubmitButton label="Create Network" submittingLabel="Creating Network..." />
+          <ErrorAlert error={error} />
+          <SubmitButton label="Create Network" submittingLabel="Creating Network..." isSubmitting={isSubmitting} onCancel={onCancel} />
         </form>
       </FormCard>
     )
@@ -578,7 +601,13 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
         subtitle="Configure EC2 instances and compute resources"
       >
         <form onSubmit={handleGenericSubmit(serversFormData, 'servers')} className="space-y-5">
-          <ProjectField />
+          <ProjectField 
+            preSelectedProject={preSelectedProject}
+            isLoadingProjects={isLoadingProjects}
+            projects={projects}
+            value={serversFormData.projectName}
+            onChange={handleServersFormChange}
+          />
 
           {/* Instance Type + OS Image — 2 columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -670,8 +699,8 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
             />
           </div>
 
-          <ErrorAlert />
-          <SubmitButton label="Create Servers" submittingLabel="Creating Servers..." />
+          <ErrorAlert error={error} />
+          <SubmitButton label="Create Servers" submittingLabel="Creating Servers..." isSubmitting={isSubmitting} onCancel={onCancel} />
         </form>
       </FormCard>
     )
@@ -693,7 +722,13 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
         subtitle="Configure Lambda functions and event-driven resources"
       >
         <form onSubmit={handleGenericSubmit(serverlessFormData, 'serverless')} className="space-y-5">
-          <ProjectField />
+          <ProjectField 
+            preSelectedProject={preSelectedProject}
+            isLoadingProjects={isLoadingProjects}
+            projects={projects}
+            value={serverlessFormData.projectName}
+            onChange={handleServerlessFormChange}
+          />
 
           {/* Runtime + Memory — 2 columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -784,8 +819,8 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
             />
           </div>
 
-          <ErrorAlert />
-          <SubmitButton label="Create Serverless" submittingLabel="Creating Serverless..." />
+          <ErrorAlert error={error} />
+          <SubmitButton label="Create Serverless" submittingLabel="Creating Serverless..." isSubmitting={isSubmitting} onCancel={onCancel} />
         </form>
       </FormCard>
     )
@@ -807,7 +842,13 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
         subtitle="Configure RDS, S3, ElastiCache, and other managed services"
       >
         <form onSubmit={handleGenericSubmit(cloudManagedFormData, 'cloud-managed')} className="space-y-5">
-          <ProjectField />
+          <ProjectField 
+            preSelectedProject={preSelectedProject}
+            isLoadingProjects={isLoadingProjects}
+            projects={projects}
+            value={cloudManagedFormData.projectName}
+            onChange={handleCloudManagedFormChange}
+          />
 
           {/* Service Type + Service Name — 2 columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -882,8 +923,8 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
             </div>
           </div>
 
-          <ErrorAlert />
-          <SubmitButton label="Create Managed Service" submittingLabel="Creating Service..." />
+          <ErrorAlert error={error} />
+          <SubmitButton label="Create Managed Service" submittingLabel="Creating Service..." isSubmitting={isSubmitting} onCancel={onCancel} />
         </form>
       </FormCard>
     )

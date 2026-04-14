@@ -8,25 +8,34 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
-  
+
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-padding-top: 80px;
   }
-  
+
   body {
     @apply transition-colors duration-300 bg-agentic-secondary text-agentic-text font-sans;
     letter-spacing: -0.01em;
     overflow-x: hidden;
   }
-  
-  a, button, input, select, textarea {
+
+  a,
+  button,
+  input,
+  select,
+  textarea {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display text-agentic-text font-bold;
     letter-spacing: -0.02em;
     text-rendering: optimizeLegibility;
@@ -40,12 +49,12 @@
     @apply font-bold font-display;
     letter-spacing: -0.02em;
   }
-  
+
   .glass-effect {
     @apply border border-agentic-text/10 bg-agentic-surface rounded-lg shadow-sm;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   .glass-effect:hover {
     @apply border-agentic-primary/30 shadow-md;
     transform: translateY(-2px);
@@ -54,12 +63,29 @@
   .bg-terminal {
     @apply bg-agentic-text text-agentic-secondary font-mono;
   }
-  
+
   .bg-header {
     @apply bg-agentic-surface/90 backdrop-blur-md;
   }
-  
+
   .bg-footer {
     @apply bg-agentic-surface border-t border-agentic-text/10;
+  }
+
+  .bg-dashed-grid {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40' fill='none' stroke='rgb(17 24 39 / 0.25)' stroke-width='1.5' stroke-dasharray='4 4'%3e%3cpath d='M0 .5H40V40'/%3e%3c/svg%3e");
+    /* Ensure the background scales or repeats perfectly */
+    background-size: 40px 40px;
+    background-repeat: repeat;
+  }
+
+  .mask-radial-fade {
+    mask-image: radial-gradient(ellipse at center, black 10%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 10%, transparent 70%);
+  }
+
+  .mask-vertical-fade {
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
   }
 }

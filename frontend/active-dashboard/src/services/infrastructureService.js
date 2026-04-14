@@ -53,38 +53,137 @@ apiClient.interceptors.response.use(
  */
 export const createNetworkInfrastructure = async (networkData) => {
   try {
-    // Prepare payload with snake_case keys as required by backend
-    const payload = {
-      project_name: networkData.project_name || '',
-      vpc_name: networkData.vpc_name || '',
-      vpc_cidr: networkData.vpc_cidr || '',
-      no_of_az: networkData.no_of_az || 1,
-      public_subnet_count: networkData.public_subnet_count || 0,
-      private_subnet_count: networkData.private_subnet_count || 0,
-      nat_gateway: networkData.nat_gateway || 'none',
-      enable_dns_hostname: networkData.enable_dns_hostname !== undefined ? networkData.enable_dns_hostname : true,
-      enable_dns_support: networkData.enable_dns_support !== undefined ? networkData.enable_dns_support : true,
-    }
-
-    // Send to backend API (JWT Bearer token is automatically included via interceptor)
-    const response = await apiClient.post('/api/infrastructure/network', payload)
-
-    // Return response with message for toast notification
+    const response = await apiClient.post('/api/infrastructure/network', networkData)
     return {
       ...response.data,
-      message: response.data?.message || response.data?.detail || 'Network infrastructure created successfully!',
+      message: response.data?.message || 'Network infrastructure created successfully!',
     }
   } catch (error) {
     console.error('Error creating network infrastructure:', error)
-    if (error.response) {
-      throw new Error(
-        error.response.data?.message || `Failed to create network infrastructure (Status: ${error.response.status})`
-      )
-    } else if (error.request) {
-      throw new Error('Network error. Please check your connection.')
-    } else {
-      throw new Error(error.message || 'An unexpected error occurred')
+    throw new Error(error.response?.data?.detail || error.message || 'Failed to create network infrastructure')
+  }
+}
+
+/**
+ * Create servers infrastructure
+ * @param {Object} serversData - Servers infrastructure data
+ * @returns {Promise<Object>} Response from backend
+ */
+export const createServersInfrastructure = async (serversData) => {
+  try {
+    const payload = {
+      project_name: serversData.projectName,
+      instance_type: serversData.instanceType,
+      instance_count: serversData.instanceCount,
+      os_image: serversData.osImage,
+      storage_size: serversData.storageSize,
+      key_pair_name: serversData.keyPairName || null,
     }
+    const response = await apiClient.post('/api/infrastructure/servers', payload)
+    return {
+      ...response.data,
+      message: response.data?.message || 'Servers infrastructure created successfully!',
+    }
+  } catch (error) {
+    console.error('Error creating servers infrastructure:', error)
+    throw new Error(error.response?.data?.detail || error.message || 'Failed to create servers infrastructure')
+  }
+}
+
+/**
+ * Create serverless infrastructure
+ * @param {Object} serverlessData - Serverless infrastructure data
+ * @returns {Promise<Object>} Response from backend
+ */
+export const createServerlessInfrastructure = async (serverlessData) => {
+  try {
+    const payload = {
+      project_name: serverlessData.projectName,
+      runtime: serverlessData.runtime,
+      memory_size: serverlessData.memorySize,
+      timeout: serverlessData.timeout,
+      handler: serverlessData.handler,
+      description: serverlessData.description || null,
+    }
+    const response = await apiClient.post('/api/infrastructure/serverless', payload)
+    return {
+      ...response.data,
+      message: response.data?.message || 'Serverless infrastructure created successfully!',
+    }
+  } catch (error) {
+    console.error('Error creating serverless infrastructure:', error)
+    throw new Error(error.response?.data?.detail || error.message || 'Failed to create serverless infrastructure')
+  }
+}
+
+/**
+ * Create cloud managed infrastructure
+ * @param {Object} cloudData - Cloud managed infrastructure data
+ * @returns {Promise<Object>} Response from backend
+ */
+export const createCloudManagedInfrastructure = async (cloudData) => {
+  try {
+    const payload = {
+      project_name: cloudData.projectName,
+      service_type: cloudData.serviceType,
+      instance_class: cloudData.instanceClass,
+      storage_size: cloudData.storageSize,
+      service_name: cloudData.serviceName || null,
+    }
+    const response = await apiClient.post('/api/infrastructure/cloud-managed', payload)
+    return {
+      ...response.data,
+      message: response.data?.message || 'Cloud managed infrastructure created successfully!',
+    }
+  } catch (error) {
+    console.error('Error creating cloud managed infrastructure:', error)
+    throw new Error(error.response?.data?.detail || error.message || 'Failed to create cloud managed infrastructure')
+  }
+}
+
+/**
+ * Fetch infrastructure for a specific project
+ * @param {string} projectName - The name of the project
+ * @returns {Promise<Object>} Response from backend
+ */
+export const getInfrastructureByProject = async (projectName) => {
+  try {
+    const response = await apiClient.get(`/api/infrastructure/project/${projectName}`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching infrastructure:', error)
+    throw new Error(error.response?.data?.detail || error.message || 'Failed to fetch infrastructure')
+  }
+}
+
+/**
+ * Delete all infrastructure for a specific project
+ * @param {string} projectName - The name of the project
+ * @returns {Promise<boolean>} True if successful
+ */
+export const deleteInfrastructureByProject = async (projectName) => {
+  try {
+    await apiClient.delete(`/api/infrastructure/project/${projectName}`)
+    return true
+  } catch (error) {
+    console.error('Error deleting infrastructure:', error)
+    throw new Error(error.response?.data?.detail || error.message || 'Failed to delete infrastructure')
+  }
+}
+
+/**
+ * Delete specific infrastructure item
+ * @param {string} infraType - Type of infrastructure ('network', 'servers', etc)
+ * @param {string} infraId - ObjectId of the infrastructure
+ * @returns {Promise<boolean>} True if successful
+ */
+export const deleteSpecificInfrastructure = async (infraType, infraId) => {
+  try {
+    await apiClient.delete(`/api/infrastructure/${infraType}/${infraId}`)
+    return true
+  } catch (error) {
+    console.error(`Error deleting ${infraType} infrastructure:`, error)
+    throw new Error(error.response?.data?.detail || error.message || `Failed to delete ${infraType} infrastructure`)
   }
 }
 

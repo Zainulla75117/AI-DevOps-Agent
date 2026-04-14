@@ -6,6 +6,7 @@ Handles project CRUD and infrastructure creation.
 from fastapi import FastAPI
 from app.config import settings
 from app.routers import project_router
+from app.routers.infrastructure import router as infrastructure_router
 from app.database.connection import close_db, check_db_connection
 
 app = FastAPI(
@@ -15,6 +16,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(project_router)
+app.include_router(infrastructure_router)
 
 @app.on_event("startup")
 async def startup_event():

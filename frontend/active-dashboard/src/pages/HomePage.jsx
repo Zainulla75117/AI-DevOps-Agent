@@ -5,6 +5,7 @@ import PageLayout from '../components/PageLayout'
 import ProjectCreate from '../components/ProjectCreate'
 import Toast from '../components/Toast'
 import ConfirmDialog from '../components/ConfirmDialog'
+import { motion } from 'framer-motion'
 
 const HomePage = () => {
   const { userInfo, handleLogout } = useAuth()
@@ -163,14 +164,14 @@ const HomePage = () => {
           </div>
 
           {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-8">
             {/* Left Section - Project Overview */}
-            <div className="space-y-5">
+            <div className="space-y-6">
               {/* Search Field */}
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg className="h-[18px] w-[18px] text-slate-500 group-focus-within:text-blue-600 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
                 <input
@@ -207,18 +208,33 @@ const HomePage = () => {
                   </div>
                 </div>
               ) : filteredProjects.length > 0 ? (
-                <div className="space-y-3">
+                <motion.div 
+                  className="space-y-4"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                      opacity: 1,
+                      transition: { staggerChildren: 0.08 }
+                    }
+                  }}
+                >
                   {filteredProjects.map((project, index) => {
                     const envBadge = getEnvironmentBadge(project.environment)
 
                     return (
-                      <div
+                      <motion.div
                         key={project.id || project.project_name || index}
-                        className="group relative bg-white/60 backdrop-blur-md rounded-2xl border border-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] p-6 transition-all duration-300 hover:border-blue-200/60 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.15)] hover:-translate-y-1 cursor-pointer overflow-hidden"
+                        variants={{
+                          hidden: { opacity: 0, y: 20 },
+                          visible: { opacity: 1, y: 0 }
+                        }}
+                        className="group relative glass-card rounded-xl p-6 transition-all duration-300 hover:shadow-[0_10px_40px_-5px_rgba(33,150,243,0.35)] hover:border-blue-500/80 hover:-translate-y-1 cursor-pointer overflow-hidden"
                       >
                         {/* Decorative glow effect on hover */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="relative flex items-start justify-between gap-4">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                        <div className="relative z-10 flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-2.5">
                               <h3 className="text-base font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
@@ -290,14 +306,14 @@ const HomePage = () => {
                             </button>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )
                   })}
-                </div>
+                </motion.div>
               ) : (
-                <div className="bg-white/60 backdrop-blur-md rounded-3xl border border-white shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] p-16 text-center">
+                <div className="glass-panel rounded-3xl border border-white p-16 text-center">
                   <div className="max-w-sm mx-auto">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-2xl flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-slate-100/80 rounded-2xl flex items-center justify-center">
                       <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
@@ -327,17 +343,17 @@ const HomePage = () => {
             </div>
 
             {/* Right Section - Create Project Panel */}
-            <div className="lg:sticky lg:top-8 h-fit">
+            <div className="xl:sticky xl:top-8 h-fit">
               {showCreateForm ? (
                 <ProjectCreate
                   onProjectCreated={handleProjectCreated}
                   onCancel={() => setShowCreateForm(false)}
                 />
               ) : (
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] p-8 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.1)] hover:border-blue-100">
+                <div className="glass-panel rounded-2xl border border-white p-8 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.1)] hover:border-blue-200/50">
                   <div className="text-center">
-                    <div className="w-12 h-12 mx-auto mb-4 bg-blue-50 rounded-xl flex items-center justify-center">
-                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-16 h-16 mx-auto mb-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                     </div>

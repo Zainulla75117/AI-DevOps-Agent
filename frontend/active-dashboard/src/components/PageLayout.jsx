@@ -17,7 +17,7 @@ const PageLayout = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <div className={`flex flex-col h-screen bg-slate-50 ${className}`} style={{ willChange: 'scroll-position' }}>
+    <div className={`flex flex-col h-screen aurora-bg ${className}`} style={{ willChange: 'scroll-position' }}>
       {/* Top Navbar */}
       <TopNavbar 
         userInfo={userInfo} 

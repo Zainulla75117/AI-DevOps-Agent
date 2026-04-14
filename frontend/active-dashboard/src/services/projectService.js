@@ -179,7 +179,7 @@ export const updateProject = (projectId, updates) => {
  */
 export const deleteProject = async (projectId) => {
   try {
-    await apiClient.delete(`/api/${projectId}`)
+    await apiClient.delete(`/api/projects/${projectId}`)
     return true
   } catch (error) {
     console.error('Error deleting project:', error)

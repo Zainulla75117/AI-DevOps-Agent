@@ -63,7 +63,7 @@ async def get_projects(
         for project in projects
     ]
 
-@router.get("/{project_id}", response_model=ProjectResponse, status_code=status.HTTP_200_OK)
+@router.get("/projects/{project_id}", response_model=ProjectResponse, status_code=status.HTTP_200_OK)
 async def get_project(project_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
     project = await crud_project.get_project(db, project_id)
     if not project:
@@ -75,7 +75,7 @@ async def get_project(project_id: str, db: AsyncIOMotorDatabase = Depends(get_db
         created_at=project.created_at, updated_at=project.updated_at
     )
 
-@router.put("/{project_id}", response_model=ProjectResponse, status_code=status.HTTP_200_OK)
+@router.put("/projects/{project_id}", response_model=ProjectResponse, status_code=status.HTTP_200_OK)
 async def update_project(project_id: str, project_update: ProjectUpdate, db: AsyncIOMotorDatabase = Depends(get_db)):
     existing_project = await crud_project.get_project(db, project_id)
     if not existing_project:
@@ -91,7 +91,7 @@ async def update_project(project_id: str, project_update: ProjectUpdate, db: Asy
         created_at=updated_project.created_at, updated_at=updated_project.updated_at
     )
 
-@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(project_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
     deleted = await crud_project.delete_project(db, project_id)
     if not deleted:
