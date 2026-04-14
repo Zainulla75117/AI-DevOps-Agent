@@ -100,10 +100,10 @@ const Hero = () => {
               <div className="bg-agentic-text text-agentic-surface rounded-md p-6 font-mono text-sm space-y-3 min-h-[300px] shadow-inner">
                 {!isResetting && codeLines.slice(0, currentLine + 1).map((line, idx) => (
                   <motion.div
-                    key={`${line}-${idx}-${currentLine}`}
-                    initial={{ opacity: 0, x: -5 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2 }}
+                    key={`${line}-${idx}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
                     className={line.startsWith('✓') ? 'text-agentic-success' : 'text-agentic-secondary/80'}
                   >
                     {line}
