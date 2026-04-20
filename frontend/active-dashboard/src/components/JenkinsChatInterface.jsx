@@ -3,14 +3,9 @@ import { createPortal } from 'react-dom'
 import { getToken, getChatToken, getValidChatToken, isAuthenticated, isTokenExpired } from '../services/authService'
 import { getSCMCredentials } from '../services/credentialService'
 import ReactMarkdown from 'react-markdown'
-import hljs from 'highlight.js'
-import groovy from 'highlight.js/lib/languages/groovy'
-import bash from 'highlight.js/lib/languages/bash'
-import 'highlight.js/styles/github-dark.css' // Dark theme similar to vscDarkPlus
-
-// Register languages explicitly (some may not be included by default)
-hljs.registerLanguage('groovy', groovy)
-hljs.registerLanguage('bash', bash)
+import remarkGfm from 'remark-gfm'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 // Helper function to preprocess markdown content
 const preprocessMarkdown = (content) => {
@@ -114,538 +109,46 @@ const preprocessMarkdown = (content) => {
   return processed
 }
 
-// Shared markdown components configuration for consistent rendering
-const createMarkdownComponents = (messages, message, handleRegenerateCode, handleConfirmCode) => {
-  const messageIndex = messages ? messages.findIndex(m => m === message) : -1
-  
-  return {
-    // Headings
-    h1: ({ children }) => <h1 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', marginTop: '20px', lineHeight: '1.4', color: '#111827' }}>{children}</h1>,
-    h2: ({ children }) => <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', marginTop: '18px', lineHeight: '1.4', color: '#111827' }}>{children}</h2>,
-    h3: ({ children }) => <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px', marginTop: '16px', lineHeight: '1.4', color: '#111827' }}>{children}</h3>,
-    h4: ({ children }) => <h4 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '8px', marginTop: '14px', lineHeight: '1.4', color: '#1f2937' }}>{children}</h4>,
-    h5: ({ children }) => <h5 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '6px', marginTop: '12px', lineHeight: '1.4', color: '#1f2937' }}>{children}</h5>,
-    h6: ({ children }) => <h6 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '6px', marginTop: '12px', lineHeight: '1.4', color: '#374151' }}>{children}</h6>,
-    
-    // Paragraphs
-    p: ({ children }) => <p style={{ marginBottom: '12px', marginTop: 0, lineHeight: '1.7', color: '#1f2937' }}>{children}</p>,
-    
-    // Lists
-    ul: ({ children }) => <ul style={{ listStyle: 'disc', paddingLeft: '24px', marginBottom: '12px', marginTop: '8px' }}>{children}</ul>,
-    ol: ({ children }) => <ol style={{ listStyle: 'decimal', paddingLeft: '24px', marginBottom: '12px', marginTop: '8px' }}>{children}</ol>,
-    li: ({ children, checked }) => {
-      // Handle task list items
-      if (checked !== null && checked !== undefined) {
-        return (
-          <li style={{ marginBottom: '6px', lineHeight: '1.6', listStyle: 'none', paddingLeft: '0' }}>
-            <input type="checkbox" checked={checked} readOnly style={{ marginRight: '8px', cursor: 'default' }} />
-            <span style={{ textDecoration: checked ? 'line-through' : 'none', opacity: checked ? 0.7 : 1 }}>{children}</span>
-          </li>
-        )
-      }
-      return <li style={{ marginBottom: '6px', lineHeight: '1.6' }}>{children}</li>
-    },
-    
-    // Pre blocks - ReactMarkdown wraps code blocks in <pre><code className="language-xxx">
-    pre: ({ children }) => {
-      // ReactMarkdown wraps code blocks: <pre><code className="language-xxx">content</code></pre>
-      // The children is the <code> element, so we need to extract it
-      if (children && typeof children === 'object') {
-        // Check if children is a code element or has code element structure
-        const codeElement = React.Children.toArray(children).find(
-          child => child && typeof child === 'object' && 
-          (child.type === 'code' || (child.props && /language-/.test(child.props.className || '')))
-        )
-        
-        if (codeElement) {
-          const codeProps = codeElement.props || {}
-          const className = codeProps.className || ''
-          const match = /language-([\w-]+)/i.exec(className || '')
-          
-          if (match) {
-            const language = match[1].toLowerCase().trim()
-            const isGroovy = language === 'groovy'
-            const codeContent = codeProps.children || codeElement.children || ''
-            
-            return (
-              <CodeBlock 
-                className={className} 
-                onRegenerate={isGroovy && handleRegenerateCode ? () => handleRegenerateCode(messageIndex) : undefined}
-                onConfirmed={isGroovy && handleConfirmCode ? handleConfirmCode : undefined}
-              >
-                {String(codeContent).replace(/\n$/, '')}
-              </CodeBlock>
-            )
-          }
-        }
-        
-        // Check if children itself is a code element
-        if (children.type === 'code' || (children.props && /language-/.test(children.props.className || ''))) {
-          const codeProps = children.props || {}
-          const className = codeProps.className || ''
-          const match = /language-([\w-]+)/i.exec(className || '')
-          
-          if (match) {
-            const language = match[1].toLowerCase().trim()
-            const isGroovy = language === 'groovy'
-            const codeContent = codeProps.children || children.children || ''
-            
-            return (
-              <CodeBlock 
-                className={className} 
-                onRegenerate={isGroovy && handleRegenerateCode ? () => handleRegenerateCode(messageIndex) : undefined}
-                onConfirmed={isGroovy && handleConfirmCode ? handleConfirmCode : undefined}
-              >
-                {String(codeContent).replace(/\n$/, '')}
-              </CodeBlock>
-            )
-          }
-        }
-      }
-      
-      // Regular pre block without code
-      return <pre style={{ 
-        backgroundColor: '#f3f4f6', 
-        padding: '12px', 
-        borderRadius: '6px', 
-        marginTop: '16px', 
-        marginBottom: '16px', 
-        overflowX: 'auto', 
-        fontSize: '13px', 
-        lineHeight: '1.5',
-        border: '1px solid #e5e7eb'
-      }}>{children}</pre>
-    },
-    
-    // Code blocks - handle both inline and block code
-    code: ({ node, inline, className, children, ...props }) => {
-      // Inline code - render as styled span
-      if (inline) {
-        return (
-          <code style={{ 
-            backgroundColor: '#f3f4f6', 
-            padding: '2px 6px', 
-            borderRadius: '4px', 
-            fontSize: '12px', 
-            fontFamily: 'monospace', 
-            color: '#1f2937',
-            border: '1px solid #e5e7eb'
-          }}>
-            {children}
-          </code>
-        )
-      }
-      
-      // Block code - check if it has a language class
-      // Use case-insensitive regex to handle "language-Groovy", "language-groovy", etc.
-      const match = /language-([\w-]+)/i.exec(className || '')
-      if (match) {
-        const language = match[1].toLowerCase().trim()
-        const isGroovy = language === 'groovy'
-        
-        // Debug logging for groovy
-        if (isGroovy) {
-          console.log('[Markdown code] ✅ GROOVY DETECTED!', { className, language, childrenLength: String(children).length })
-        }
-        
-        return (
-          <CodeBlock 
-            className={className} 
-            onRegenerate={isGroovy && handleRegenerateCode ? () => handleRegenerateCode(messageIndex) : undefined}
-            onConfirmed={isGroovy && handleConfirmCode ? handleConfirmCode : undefined}
-            {...props}
-          >
-            {String(children).replace(/\n$/, '')}
-          </CodeBlock>
-        )
-      }
-      
-      // Block code without language - return as-is (will be wrapped by pre)
-      if (className && className.includes('groovy')) {
-        console.warn('[Markdown code] ⚠️ Groovy in className but no match!', className)
-      }
-      
-      return (
-        <code className={className} {...props}>
-          {children}
-        </code>
-      )
-    },
-    
-    // Blockquotes
-    blockquote: ({ children }) => (
-      <blockquote style={{ 
-        borderLeft: '4px solid #3b82f6', 
-        paddingLeft: '16px', 
-        margin: '12px 0',
-        paddingTop: '8px',
-        paddingBottom: '8px',
-        backgroundColor: '#eff6ff',
-        borderRadius: '4px',
-        fontStyle: 'italic', 
-        color: '#1e40af'
-      }}>
-        {children}
-      </blockquote>
-    ),
-    
-    // Links
-    a: ({ href, children }) => (
-      <a 
-        href={href} 
-        style={{ 
-          color: '#2563eb', 
-          textDecoration: 'underline',
-          fontWeight: 500
-        }} 
-        target="_blank" 
-        rel="noopener noreferrer"
-      >
-        {children}
-      </a>
-    ),
-    
-    // Text formatting
-    strong: ({ children }) => <strong style={{ fontWeight: 600, color: '#111827' }}>{children}</strong>,
-    em: ({ children }) => <em style={{ fontStyle: 'italic' }}>{children}</em>,
-    
-    // Horizontal rule
-    hr: () => <hr style={{ border: 'none', borderTop: '2px solid #e5e7eb', margin: '20px 0' }} />,
-    
-    // Tables
-    table: ({ children }) => (
-      <div style={{ overflowX: 'auto', marginBottom: '16px', marginTop: '16px' }}>
-        <table style={{ 
-          width: '100%', 
-          borderCollapse: 'collapse',
-          border: '1px solid #e5e7eb',
-          borderRadius: '6px',
-          overflow: 'hidden'
-        }}>
-          {children}
-        </table>
-      </div>
-    ),
-    thead: ({ children }) => (
-      <thead style={{ backgroundColor: '#f9fafb' }}>{children}</thead>
-    ),
-    tbody: ({ children }) => <tbody>{children}</tbody>,
-    tr: ({ children, isHeader }) => (
-      <tr style={{ 
-        borderBottom: '1px solid #e5e7eb',
-        backgroundColor: isHeader ? '#f9fafb' : 'transparent'
-      }}>
-        {children}
-      </tr>
-    ),
-    th: ({ children }) => (
-      <th style={{ 
-        padding: '10px 12px', 
-        textAlign: 'left', 
-        fontWeight: 600, 
-        color: '#111827',
-        borderRight: '1px solid #e5e7eb',
-        backgroundColor: '#f9fafb'
-      }}>
-        {children}
-      </th>
-    ),
-    td: ({ children }) => (
-      <td style={{ 
-        padding: '10px 12px', 
-        borderRight: '1px solid #e5e7eb',
-        color: '#1f2937'
-      }}>
-        {children}
-      </td>
-    ),
-    
-    // Images
-    img: ({ src, alt }) => (
-      <img 
-        src={src} 
-        alt={alt || ''} 
-        style={{ 
-          maxWidth: '100%', 
-          height: 'auto', 
-          borderRadius: '6px',
-          margin: '12px 0',
-          border: '1px solid #e5e7eb'
-        }} 
-      />
-    ),
-    
-    // Line breaks
-    br: () => <br />,
-  }
-}
+const CodeBlock = ({ language, value, isGroovy, onRegenerate, onConfirmed }) => {
+  const [copied, setCopied] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
-// Language mapping - moved outside component for better performance
-const LANGUAGE_MAP = {
-  'groovy': 'groovy',
-  'java': 'java',
-  'javascript': 'javascript',
-  'js': 'javascript',
-  'typescript': 'typescript',
-  'ts': 'typescript',
-  'python': 'python',
-  'py': 'python',
-  'bash': 'bash',
-  'sh': 'bash',
-  'shell': 'bash',
-  'yaml': 'yaml',
-  'yml': 'yaml',
-  'json': 'json',
-  'xml': 'xml',
-  'html': 'xml',
-  'css': 'css',
-  'sql': 'sql',
-  'dockerfile': 'dockerfile',
-  'docker': 'dockerfile',
-}
-
-// Cache for highlighted code to avoid re-highlighting same content
-const highlightCache = new Map()
-const CACHE_SIZE_LIMIT = 100
-
-// CodeBlock component with copy button, regenerate, and confirmed buttons (only for groovy)
-const CodeBlock = ({ children, className, onRegenerate, onConfirmed, ...props }) => {
-  const [copied, setCopied] = useState(false)
-  const [isRegenerating, setIsRegenerating] = useState(false)
-  const codeRef = useRef(null)
-  const highlightTimeoutRef = useRef(null)
-  const observerRef = useRef(null)
-  const isHighlightedRef = useRef(false)
-  
-  // Extract language from className
-  const match = /language-([\w-]+)/i.exec(className || '')
-  const language = match ? match[1].toLowerCase().trim() : ''
-  const hljsLanguage = LANGUAGE_MAP[language] || language || null
-  const isGroovy = language === 'groovy'
-  
-  // Get the code string
-  const codeString = typeof children === 'string' ? children : String(children).replace(/\n$/, '')
-  
-  // Generate cache key
-  const cacheKey = React.useMemo(() => {
-    return `${hljsLanguage || 'auto'}:${codeString.length}:${codeString.slice(0, 50)}`
-  }, [hljsLanguage, codeString])
-  
-  // Function to check if highlighting is needed
-  const needsHighlighting = (element) => {
-    if (!element) return false
-    
-    if (element.classList.contains('hljs') && element.innerHTML.includes('<span class="')) {
-      return false
-    }
-    
-    const html = element.innerHTML
-    if (html.includes('<span class="')) return false
-    
-    const textContent = element.textContent || element.innerText || ''
-    return textContent.trim() === codeString.trim() || html === codeString
-  }
-  
-  // Function to apply highlighting
-  const applyHighlighting = () => {
-    const element = codeRef.current
-    if (!element || !codeString) return
-    
-    if (!needsHighlighting(element)) {
-      isHighlightedRef.current = true
-      return
-    }
-    
-    try {
-      // Check cache first
-      let highlighted = highlightCache.get(cacheKey)
-      
-      if (!highlighted) {
-        // Generate highlighted code
-        if (hljsLanguage && hljs.getLanguage(hljsLanguage)) {
-          highlighted = hljs.highlight(codeString, { language: hljsLanguage }).value
-        } else {
-          highlighted = hljs.highlightAuto(codeString).value
-        }
-        
-        // Cache the result
-        if (highlightCache.size >= CACHE_SIZE_LIMIT) {
-          const firstKey = highlightCache.keys().next().value
-          highlightCache.delete(firstKey)
-        }
-        highlightCache.set(cacheKey, highlighted)
-      }
-      
-      // Apply highlighting
-      element.innerHTML = highlighted
-      element.classList.add('hljs')
-      isHighlightedRef.current = true
-    } catch (error) {
-      if (element && !element.classList.contains('hljs')) {
-        element.textContent = codeString
-      }
-      isHighlightedRef.current = false
-    }
-  }
-
-  // Highlight code using highlight.js
-  useEffect(() => {
-    const element = codeRef.current
-    if (!element) return
-    
-    if (highlightTimeoutRef.current) {
-      clearTimeout(highlightTimeoutRef.current)
-    }
-    
-    highlightTimeoutRef.current = setTimeout(() => {
-      applyHighlighting()
-    }, 0)
-    
-    // MutationObserver to re-apply if ReactMarkdown overwrites it
-    if (!observerRef.current) {
-      let debounceTimer = null
-      
-      observerRef.current = new MutationObserver((mutations) => {
-        if (isHighlightedRef.current) {
-          const html = element.innerHTML
-          if (!element.classList.contains('hljs') || !html.includes('<span')) {
-            isHighlightedRef.current = false
-          } else {
-            return
-          }
-        }
-        
-        if (debounceTimer) {
-          clearTimeout(debounceTimer)
-        }
-        
-        debounceTimer = setTimeout(() => {
-          if (needsHighlighting(element)) {
-            applyHighlighting()
-          }
-        }, 50)
-      })
-      
-      observerRef.current.observe(element, {
-        childList: true,
-        subtree: false,
-        characterData: false,
-      })
-    }
-    
-    return () => {
-      if (highlightTimeoutRef.current) {
-        clearTimeout(highlightTimeoutRef.current)
-      }
-      if (observerRef.current) {
-        observerRef.current.disconnect()
-        observerRef.current = null
-      }
-      isHighlightedRef.current = false
-    }
-  }, [codeString, hljsLanguage])
-
-  const handleCopy = async () => {
-    try {
-      // Copy with exact indentation preserved
-      await navigator.clipboard.writeText(codeString)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-    }
-  }
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleRegenerate = async () => {
     if (onRegenerate && !isRegenerating) {
-      setIsRegenerating(true)
+      setIsRegenerating(true);
       try {
-        await onRegenerate()
+        await onRegenerate();
       } catch (error) {
       } finally {
-        setIsRegenerating(false)
+        setIsRegenerating(false);
       }
     }
-  }
-
-  const handleConfirmed = () => {
-    if (onConfirmed) {
-      onConfirmed()
-    }
-  }
+  };
 
   return (
-    <div 
-      className="relative group" 
-      style={{ 
-        marginTop: '20px', 
-        marginBottom: '20px',
-        borderRadius: '8px',
-        border: '1px solid #e5e7eb',
-        backgroundColor: '#ffffff',
-        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Header with language label and copy button */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '8px 12px',
-        backgroundColor: '#f9fafb',
-        borderBottom: '1px solid #e5e7eb',
-      }}>
-        {language && (
-          <div style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            color: '#6b7280',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}>
-            {language}
-          </div>
-        )}
+    <div className="relative group rounded-lg overflow-hidden my-4 border border-slate-700/50 shadow-md bg-[#1e1e1e]">
+      <div className="flex items-center justify-between px-4 py-2 bg-[#2d2d2d] text-slate-300 text-xs border-b border-white/5">
+        <span className="font-mono uppercase tracking-wider">{language || 'text'}</span>
         <button
           onClick={handleCopy}
-          style={{
-            padding: '4px 8px',
-            backgroundColor: copied ? '#10b981' : 'transparent',
-            color: copied ? '#ffffff' : '#6b7280',
-            border: '1px solid #e5e7eb',
-            borderRadius: '4px',
-            fontSize: '11px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            if (!copied) {
-              e.target.style.backgroundColor = '#f3f4f6'
-              e.target.style.borderColor = '#d1d5db'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!copied) {
-              e.target.style.backgroundColor = 'transparent'
-              e.target.style.borderColor = '#e5e7eb'
-            }
-          }}
-          title="Copy code"
+          className="flex items-center gap-1.5 px-2 py-1 rounded transition-colors hover:bg-white/10 hover:text-white"
         >
           {copied ? (
             <>
-              <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span>Copied</span>
             </>
           ) : (
             <>
-              <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
               <span>Copy</span>
@@ -653,92 +156,32 @@ const CodeBlock = ({ children, className, onRegenerate, onConfirmed, ...props })
           )}
         </button>
       </div>
-      
-      {/* Code content */}
-      <div style={{ position: 'relative', overflow: 'auto' }}>
-        <pre style={{
-          margin: 0,
-          padding: '16px',
-          fontSize: '13px',
-          lineHeight: '1.6',
-          fontFamily: '"Fira Code", "Consolas", "Monaco", "Courier New", monospace',
-          backgroundColor: '#0d1117', // GitHub dark theme background
-          color: '#c9d1d9',
-          overflowX: 'auto',
-        }}>
-          <code
-            ref={codeRef}
-            className={hljsLanguage ? `hljs language-${hljsLanguage}` : 'hljs'}
-            style={{
-              fontFamily: '"Fira Code", "Consolas", "Monaco", "Courier New", monospace',
-              fontSize: '13px',
-              display: 'block',
-              whiteSpace: 'pre',
-              wordWrap: 'normal',
-              wordBreak: 'normal',
-            }}
-          >
-            {codeString}
-          </code>
-        </pre>
-      </div>
-      {/* Regenerate and Confirmed buttons below code block - ONLY for groovy */}
+      <SyntaxHighlighter
+        language={language}
+        style={vscDarkPlus}
+        PreTag="div"
+        customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '13px' }}
+      >
+        {value}
+      </SyntaxHighlighter>
       {isGroovy && (onRegenerate || onConfirmed) && (
-        <div style={{ 
-          display: 'flex', 
-          gap: '8px', 
-          padding: '12px',
-          backgroundColor: '#f9fafb',
-          borderTop: '1px solid #e5e7eb',
-          justifyContent: 'flex-end' 
-        }}>
+        <div className="flex gap-2 p-3 bg-slate-50 border-t border-slate-200 justify-end">
           {onRegenerate && (
             <button
               onClick={handleRegenerate}
               disabled={isRegenerating}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: isRegenerating ? '#9ca3af' : '#3b82f6',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: isRegenerating ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.2s',
-                boxShadow: isRegenerating ? 'none' : '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-              }}
-              onMouseEnter={(e) => {
-                if (!isRegenerating) {
-                  e.target.style.backgroundColor = '#2563eb'
-                  e.target.style.boxShadow = '0 2px 4px 0 rgba(0, 0, 0, 0.1)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isRegenerating) {
-                  e.target.style.backgroundColor = '#3b82f6'
-                  e.target.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                }
-              }}
+              className={`px-4 py-2 text-[13px] font-medium rounded-md flex items-center gap-1.5 transition-all ${
+                isRegenerating ? 'bg-slate-400 text-white cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
+              }`}
             >
               {isRegenerating ? (
                 <>
-                  <div style={{
-                    width: '14px',
-                    height: '14px',
-                    border: '2px solid #ffffff',
-                    borderTopColor: 'transparent',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }}></div>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>Regenerating...</span>
                 </>
               ) : (
                 <>
-                  <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   <span>Regenerate</span>
@@ -748,29 +191,10 @@ const CodeBlock = ({ children, className, onRegenerate, onConfirmed, ...props })
           )}
           {onConfirmed && (
             <button
-              onClick={handleConfirmed}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#10b981',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#059669'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#10b981'
-              }}
+              onClick={onConfirmed}
+              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-[14px] font-medium flex items-center gap-1.5 transition-colors"
             >
-              <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span>Confirmed</span>
@@ -779,8 +203,58 @@ const CodeBlock = ({ children, className, onRegenerate, onConfirmed, ...props })
         </div>
       )}
     </div>
-  )
-}
+  );
+};
+
+// Shared markdown components configuration for consistent rendering
+const createMarkdownComponents = (messages, message, handleRegenerateCode, handleConfirmCode) => {
+  const messageIndex = messages ? messages.findIndex(m => m === message) : -1;
+
+  return {
+    h1: ({ children }) => <h1 className="text-xl font-bold text-slate-800 mt-5 mb-3 leading-tight">{children}</h1>,
+    h2: ({ children }) => <h2 className="text-lg font-bold text-slate-800 mt-4 mb-2 leading-tight">{children}</h2>,
+    h3: ({ children }) => <h3 className="text-base font-bold text-slate-800 mt-4 mb-2">{children}</h3>,
+    p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed text-slate-700">{children}</p>,
+    ul: ({ children }) => <ul className="list-disc pl-6 mb-3 space-y-1.5 text-slate-700 marker:text-slate-400">{children}</ul>,
+    ol: ({ children }) => <ol className="list-decimal pl-6 mb-3 space-y-1.5 text-slate-700 marker:text-slate-400">{children}</ol>,
+    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+    strong: ({ children }) => <strong className="font-semibold text-slate-900">{children}</strong>,
+    blockquote: ({ children }) => <blockquote className="border-l-4 border-emerald-500 pl-4 py-1 my-3 bg-emerald-50/50 italic text-slate-700 rounded-r">{children}</blockquote>,
+    a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 font-medium">{children}</a>,
+    table: ({ children }) => (
+      <div className="overflow-x-auto my-4 rounded border border-slate-200">
+        <table className="w-full text-sm text-left">{children}</table>
+      </div>
+    ),
+    thead: ({ children }) => <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">{children}</thead>,
+    tbody: ({ children }) => <tbody>{children}</tbody>,
+    tr: ({ children }) => <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">{children}</tr>,
+    th: ({ children }) => <th className="px-4 py-3 font-semibold">{children}</th>,
+    td: ({ children }) => <td className="px-4 py-3">{children}</td>,
+    code({ node, inline, className, children, ...props }) {
+      const match = /language-(\w+)/.exec(className || '');
+      const value = String(children).replace(/\n$/, '');
+      const language = match ? match[1].toLowerCase().trim() : '';
+      const isGroovy = language === 'groovy';
+      
+      return !inline && match ? (
+        <CodeBlock 
+          language={language} 
+          value={value} 
+          isGroovy={isGroovy}
+          onRegenerate={isGroovy && handleRegenerateCode ? () => handleRegenerateCode(messageIndex) : undefined}
+          onConfirmed={isGroovy && handleConfirmCode ? handleConfirmCode : undefined}
+        />
+      ) : !inline && !match ? (
+        <CodeBlock language="text" value={value} />
+      ) : (
+        <code className="bg-slate-100 text-emerald-700 px-1.5 py-0.5 rounded text-[13px] font-mono border border-slate-200/60" {...props}>
+          {children}
+        </code>
+      );
+    }
+  };
+};
 
 // Options Menu Component
 const OptionsMenu = ({ options, sessionId, onSelect }) => {
@@ -2659,43 +2133,32 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
             <div
               key={s.id}
               onClick={() => handleLoadJenkinsSession(s)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                backgroundColor: s.id === activeLocalSessionId ? '#ecfdf5' : 'transparent',
-                color: s.id === activeLocalSessionId ? '#059669' : '#475569',
-                fontWeight: s.id === activeLocalSessionId ? 600 : 400,
-              }}
-              onMouseEnter={(e) => { if (s.id !== activeLocalSessionId) e.currentTarget.style.backgroundColor = '#f1f5f9'; const btn = e.currentTarget.querySelector('[data-delete-btn]'); if (btn) btn.style.opacity = '1' }}
-              onMouseLeave={(e) => { if (s.id !== activeLocalSessionId) e.currentTarget.style.backgroundColor = 'transparent'; const btn = e.currentTarget.querySelector('[data-delete-btn]'); if (btn) { btn.style.opacity = '0'; btn.style.color = '#cbd5e1' } }}
+              className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${s.id === activeLocalSessionId
+                  ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 text-emerald-700 font-bold shadow-sm shadow-emerald-900/5'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-white border border-transparent hover:border-slate-200 hover:shadow-sm'
+                }`}
             >
-              <svg style={{ width: '14px', height: '14px', flexShrink: 0, color: s.id === activeLocalSessionId ? '#10b981' : '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-3.5 h-3.5 flex-shrink-0 ${s.id === activeLocalSessionId ? 'text-emerald-500' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              <span style={{ flex: 1, fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</span>
+              <span className="flex-1 text-xs truncate overflow-hidden whitespace-nowrap">{s.title}</span>
               {deleteConfirmId === s.id ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => handleDeleteJenkinsSession(s.id)} style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }} title="Confirm delete">
-                    <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => handleDeleteJenkinsSession(s.id)} className="p-0.5 text-red-500 hover:text-red-700 transition-colors" title="Confirm delete">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   </button>
-                  <button onClick={() => setDeleteConfirmId(null)} style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Cancel">
-                    <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  <button onClick={() => setDeleteConfirmId(null)} className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors" title="Cancel">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
               ) : (
                 <button
                   data-delete-btn
                   onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(s.id) }}
-                  style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', opacity: 0, transition: 'opacity 0.15s' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#ef4444' }}
+                  className="p-0.5 text-slate-300 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
                   title="Delete conversation"
                 >
-                  <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
@@ -2742,26 +2205,9 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
         <div style={{ padding: '16px 16px 12px', flexShrink: 0 }}>
           <button
             onClick={() => handleNewJenkinsChat()}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '10px 16px',
-              color: '#059669',
-              fontSize: '12px',
-              fontWeight: 600,
-              borderRadius: '12px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              cursor: 'pointer',
-              transition: 'background-color 0.15s',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ecfdf5'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold rounded-xl shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:shadow-[0_6px_16px_rgba(16,185,129,0.4)] hover:-translate-y-0.5 transition-all duration-300 group"
           >
-            <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             New Chat
@@ -2930,6 +2376,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                         <div style={{ marginBottom: '12px', fontSize: '14px', color: '#1f2937', wordBreak: 'break-word', lineHeight: '1.6' }}>
                           <ReactMarkdown
                             skipHtml={false}
+                            remarkPlugins={[remarkGfm]}
                             components={createMarkdownComponents(messages, message, handleRegenerateCode, handleConfirmCode)}
                           >
                             {preprocessMarkdown(message.content)}
@@ -2955,6 +2402,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                         <div style={{ marginBottom: '12px', fontSize: '14px', color: '#1f2937', wordBreak: 'break-word', lineHeight: '1.6' }}>
                           <ReactMarkdown
                             skipHtml={false}
+                            remarkPlugins={[remarkGfm]}
                             components={createMarkdownComponents(messages, message, handleRegenerateCode, handleConfirmCode)}
                           >
                             {preprocessMarkdown(message.content)}
@@ -2997,6 +2445,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                           {message.content ? (
                             <ReactMarkdown
                               skipHtml={false}
+                              remarkPlugins={[remarkGfm]}
                               components={createMarkdownComponents(messages, message, handleRegenerateCode, handleConfirmCode)}
                             >
                               {preprocessMarkdown(message.content)}
@@ -3086,6 +2535,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                       <div style={{ fontSize: '14px', wordBreak: 'break-word', lineHeight: '1.6', color: '#1f2937' }}>
                         <ReactMarkdown
                           skipHtml={false}
+                          remarkPlugins={[remarkGfm]}
                           components={createMarkdownComponents(null, null, handleRegenerateCode, handleConfirmCode)}
                         >
                           {preprocessMarkdown(streamingMessage)}
@@ -3109,36 +2559,17 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
       </div>
 
       {/* Input Area */}
-      <div style={{ 
-        borderTop: '1px solid #e5e7eb', 
-        backgroundColor: '#ffffff',
-        flexShrink: 0
-      }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '12px 16px', width: '100%' }}>
+      <div className="p-5 bg-white border-t border-slate-100 flex-shrink-0 relative z-10 shadow-[0_-4px_24px_rgba(0,0,0,0.02)]">
+        <div className="max-w-4xl mx-auto w-full">
           {!showPreInputForm && (
-            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="mb-3 flex justify-end">
               <button
                 type="button"
                 onClick={showPreInputFormHandler}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  color: '#059669',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.15s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#ecfdf5'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50/50 hover:bg-emerald-100 rounded-full transition-all duration-200 border border-emerald-100 shadow-sm"
                 title="Show input form"
               >
-                <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span>Add Form</span>
@@ -3146,8 +2577,9 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
             </div>
           )}
           
-          <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
-            <div style={{ flex: '1 1 auto', position: 'relative' }}>
+          <form onSubmit={handleSend} className="relative mb-2">
+            <div className="relative group flex items-end">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-2xl blur opacity-0 group-focus-within:opacity-25 transition duration-500 pointer-events-none"></div>
               <textarea
                 ref={inputRef}
                 value={inputValue}
@@ -3155,18 +2587,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                 onKeyPress={handleKeyPress}
                 placeholder="Message Jenkins Agent..."
                 rows={1}
-                style={{
-                  width: '100%',
-                  resize: 'none',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  padding: '12px 48px 12px 16px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  minHeight: '52px',
-                  maxHeight: '200px',
-                  fontFamily: 'inherit'
-                }}
+                className="relative w-full pl-6 pr-16 py-4 bg-slate-50 border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl text-sm focus:outline-none focus:border-emerald-400/50 focus:bg-white transition-all duration-300 text-slate-800 placeholder-slate-400 block resize-none min-h-[56px] max-h-[200px]"
                 onInput={(e) => {
                   e.target.style.height = 'auto'
                   e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`
@@ -3175,22 +2596,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
               <button
                 type="submit"
                 disabled={!inputValue.trim() || isLoading}
-                style={{
-                  position: 'absolute',
-                  right: '8px',
-                  bottom: '8px',
-                  padding: '8px',
-                  background: '#059669',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: (!inputValue.trim() || isLoading) ? 'not-allowed' : 'pointer',
-                  opacity: (!inputValue.trim() || isLoading) ? 0.5 : 1,
-                  transition: 'opacity 0.15s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className="absolute right-2 bottom-2 w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-xl shadow-md disabled:shadow-none hover:shadow-lg disabled:opacity-40 disabled:from-slate-400 disabled:to-slate-400 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
                 aria-label="Send message"
               >
                 {isLoading ? (

@@ -4,7 +4,8 @@ import {
   createNetworkInfrastructure, 
   createServersInfrastructure,
   createServerlessInfrastructure,
-  createCloudManagedInfrastructure
+  createCloudManagedInfrastructure,
+  getResourcesByProject
 } from '../services/infrastructureService'
 
 // ── Reusable UI Components ────────────────────────────────────────
@@ -164,7 +165,7 @@ const ErrorAlert = ({ error }) =>
     </div>
   ) : null
 
-const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCancel, preSelectedProject }) => {
+const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCancel, preSelectedProject, preSelectedProjectId, preSelectedProjectData }) => {
   const [projects, setProjects] = useState([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -186,12 +187,17 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
 
   const [serversFormData, setServersFormData] = useState({
     projectName: preSelectedProject || '',
+    networkId: '',
     instanceType: 't3.micro',
     instanceCount: 1,
     osImage: 'amazon-linux-2',
     storageSize: 20,
     keyPairName: '',
   })
+
+  // Network resources for the current project (used in servers form)
+  const [networkOptions, setNetworkOptions] = useState([])
+  const [isLoadingNetworks, setIsLoadingNetworks] = useState(false)
 
   const [serverlessFormData, setServerlessFormData] = useState({
     projectName: preSelectedProject || '',
@@ -299,6 +305,24 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
     loadProjects()
   }, [preSelectedProject])
 
+  // Fetch existing networks for the current project (for servers form "depends_on")
+  useEffect(() => {
+    if (!preSelectedProjectId || selectedOption !== 'servers') return
+    const fetchNetworks = async () => {
+      setIsLoadingNetworks(true)
+      try {
+        const resources = await getResourcesByProject(preSelectedProjectId, { type: 'network' })
+        setNetworkOptions(resources || [])
+      } catch (err) {
+        console.error('Failed to fetch networks:', err)
+        setNetworkOptions([])
+      } finally {
+        setIsLoadingNetworks(false)
+      }
+    }
+    fetchNetworks()
+  }, [preSelectedProjectId, selectedOption])
+
   // ── Form Handlers ─────────────────────────────────────────────────
   const handleNetworkFormChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -358,6 +382,7 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
     setError('')
     try {
       const payload = {
+        project_id: preSelectedProjectId || '',
         project_name: networkFormData.projectName,
         vpc_name: networkFormData.vpcName,
         vpc_cidr: networkFormData.vpcCidr,
@@ -368,6 +393,9 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
         nat_gateway_az_count: networkFormData.natGateway === 'yes' ? networkFormData.natGatewayAzCount : 0,
         enable_dns_hostnames: networkFormData.enableDnsHostnames,
         enable_dns_support: networkFormData.enableDnsSupport,
+        provider: preSelectedProjectData?.cloud_provider?.toLowerCase() || 'aws',
+        region: preSelectedProjectData?.region || 'us-east-1',
+        env: preSelectedProjectData?.environment?.toLowerCase() || 'dev',
       }
       const response = await createNetworkInfrastructure(payload)
       onInfrastructureCreated({
@@ -380,24 +408,38 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
     }
   }
 
-  const handleGenericSubmit = (formData, type) => async (e) => {
+  const handleGenericSubmit = (getFormData, type) => async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError('')
     try {
+      const formData = getFormData()
+      // Inject project_id and project metadata
+      const enrichedFormData = {
+        ...formData,
+        project_id: preSelectedProjectId || '',
+        provider: preSelectedProjectData?.cloud_provider?.toLowerCase() || 'aws',
+        region: preSelectedProjectData?.region || 'us-east-1',
+        env: preSelectedProjectData?.environment?.toLowerCase() || 'dev',
+      }
+
+      // For servers: add network dependency via depends_on
+      if (type === 'servers' && formData.networkId) {
+        enrichedFormData.depends_on = [formData.networkId]
+      }
       let response;
       if (type === 'servers') {
-        response = await createServersInfrastructure(formData)
+        response = await createServersInfrastructure(enrichedFormData)
       } else if (type === 'serverless') {
-        response = await createServerlessInfrastructure(formData)
+        response = await createServerlessInfrastructure(enrichedFormData)
       } else if (type === 'cloud-managed') {
-        response = await createCloudManagedInfrastructure(formData)
+        response = await createCloudManagedInfrastructure(enrichedFormData)
       } else {
         throw new Error(`Unknown infrastructure type: ${type}`)
       }
       
       onInfrastructureCreated({
-        ...formData,
+        ...enrichedFormData,
         type,
         response,
       }, response.message || `${type.charAt(0).toUpperCase() + type.slice(1)} infrastructure created successfully!`)
@@ -600,7 +642,7 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
         title="Create Servers"
         subtitle="Configure EC2 instances and compute resources"
       >
-        <form onSubmit={handleGenericSubmit(serversFormData, 'servers')} className="space-y-5">
+        <form onSubmit={handleGenericSubmit(() => serversFormData, 'servers')} className="space-y-5">
           <ProjectField 
             preSelectedProject={preSelectedProject}
             isLoadingProjects={isLoadingProjects}
@@ -608,6 +650,39 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
             value={serversFormData.projectName}
             onChange={handleServersFormChange}
           />
+
+          {/* Select Network */}
+          <div>
+            <label htmlFor="networkId" className={labelClass}>
+              Network (VPC) <span className="text-red-500 font-normal">*</span>
+            </label>
+            {isLoadingNetworks ? (
+              <div className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-400 border border-slate-200 rounded-xl bg-slate-50">
+                <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
+                Loading networks...
+              </div>
+            ) : networkOptions.length === 0 ? (
+              <div className="px-4 py-2.5 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl">
+                <span className="font-medium">No networks found.</span> Create a Network (VPC) first before provisioning servers.
+              </div>
+            ) : (
+              <select
+                id="networkId"
+                name="networkId"
+                value={serversFormData.networkId}
+                onChange={handleServersFormChange}
+                className={selectClass}
+                required
+              >
+                <option value="">Select a network...</option>
+                {networkOptions.map((net) => (
+                  <option key={net.id} value={net.id}>
+                    {net.name}{net.config?.vpc_cidr ? ` (${net.config.vpc_cidr})` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
 
           {/* Instance Type + OS Image — 2 columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -721,7 +796,7 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
         title="Create Serverless"
         subtitle="Configure Lambda functions and event-driven resources"
       >
-        <form onSubmit={handleGenericSubmit(serverlessFormData, 'serverless')} className="space-y-5">
+        <form onSubmit={handleGenericSubmit(() => serverlessFormData, 'serverless')} className="space-y-5">
           <ProjectField 
             preSelectedProject={preSelectedProject}
             isLoadingProjects={isLoadingProjects}
@@ -841,7 +916,7 @@ const InfrastructureCreate = ({ selectedOption, onInfrastructureCreated, onCance
         title="Cloud Managed Service"
         subtitle="Configure RDS, S3, ElastiCache, and other managed services"
       >
-        <form onSubmit={handleGenericSubmit(cloudManagedFormData, 'cloud-managed')} className="space-y-5">
+        <form onSubmit={handleGenericSubmit(() => cloudManagedFormData, 'cloud-managed')} className="space-y-5">
           <ProjectField 
             preSelectedProject={preSelectedProject}
             isLoadingProjects={isLoadingProjects}

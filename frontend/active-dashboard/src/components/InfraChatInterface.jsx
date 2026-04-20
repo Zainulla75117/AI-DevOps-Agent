@@ -1,5 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { getToken } from '../services/authService'
+
+// --- Infrastructure service URL (direct, SSE bypasses gateway) ---
+const INFRA_API_URL = import.meta.env.VITE_INFRA_API_BASE_URL || 'http://localhost:8004'
 
 // --- localStorage helpers ---
 const STORAGE_PREFIX = 'infra_chat_sessions_'
@@ -54,6 +61,91 @@ const createDefaultMessage = (projectName) => ({
 // ============================================================
 // InfraChatInterface
 // ============================================================
+
+// --- Markdown Components Generator ---
+const CodeBlock = ({ language, value }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative group rounded-lg overflow-hidden my-4 border border-slate-700/50 shadow-md bg-[#1e1e1e]">
+      <div className="flex items-center justify-between px-4 py-2 bg-[#2d2d2d] text-slate-300 text-xs border-b border-white/5">
+        <span className="font-mono uppercase tracking-wider">{language || 'text'}</span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 px-2 py-1 rounded transition-colors hover:bg-white/10 hover:text-white"
+        >
+          {copied ? (
+            <>
+              <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Copied</span>
+            </>
+          ) : (
+            <>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>Copy</span>
+            </>
+          )}
+        </button>
+      </div>
+      <SyntaxHighlighter
+        language={language}
+        style={vscDarkPlus}
+        PreTag="div"
+        customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '13px' }}
+      >
+        {value}
+      </SyntaxHighlighter>
+    </div>
+  );
+};
+
+const markdownComponents = {
+  h1: ({ children }) => <h1 className="text-xl font-bold text-slate-800 mt-5 mb-3 leading-tight">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-lg font-bold text-slate-800 mt-4 mb-2 leading-tight">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-base font-bold text-slate-800 mt-4 mb-2">{children}</h3>,
+  p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed text-slate-700">{children}</p>,
+  ul: ({ children }) => <ul className="list-disc pl-6 mb-3 space-y-1.5 text-slate-700 marker:text-slate-400">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal pl-6 mb-3 space-y-1.5 text-slate-700 marker:text-slate-400">{children}</ol>,
+  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  strong: ({ children }) => <strong className="font-semibold text-slate-900">{children}</strong>,
+  blockquote: ({ children }) => <blockquote className="border-l-4 border-emerald-500 pl-4 py-1 my-3 bg-emerald-50/50 italic text-slate-700 rounded-r">{children}</blockquote>,
+  a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 font-medium">{children}</a>,
+  table: ({ children }) => (
+    <div className="overflow-x-auto my-4 rounded border border-slate-200">
+      <table className="w-full text-sm text-left">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">{children}</tr>,
+  th: ({ children }) => <th className="px-4 py-3 font-semibold">{children}</th>,
+  td: ({ children }) => <td className="px-4 py-3">{children}</td>,
+  code({ node, inline, className, children, ...props }) {
+    const match = /language-(\w+)/.exec(className || '');
+    const value = String(children).replace(/\n$/, '');
+    
+    return !inline && match ? (
+      <CodeBlock language={match[1]} value={value} />
+    ) : !inline && !match ? (
+      <CodeBlock language="text" value={value} />
+    ) : (
+      <code className="bg-slate-100 text-emerald-700 px-1.5 py-0.5 rounded text-[13px] font-mono border border-slate-200/60" {...props}>
+        {children}
+      </code>
+    );
+  }
+};
+
 const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
   const projectId = project.id || project.project_name
 
@@ -67,7 +159,9 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
   const [messages, setMessages] = useState([createDefaultMessage(project.project_name)])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [streamingMessage, setStreamingMessage] = useState('')
   const messagesEndRef = useRef(null)
+  const eventSourceRef = useRef(null)
 
   // On mount: if sessions exist, load the most recent one; otherwise create a new session
   useEffect(() => {
@@ -84,13 +178,23 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+    }
+  }, [])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages, isTyping])
+  }, [messages, isTyping, streamingMessage])
 
   // --- Persist current session whenever messages change ---
   const persistSession = useCallback(
@@ -140,6 +244,7 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
     setMessages([defaultMsg])
     setInputValue('')
     setIsTyping(false)
+    setStreamingMessage('')
   }
 
   // --- Load session ---
@@ -148,6 +253,7 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
     setMessages(session.messages)
     setInputValue('')
     setIsTyping(false)
+    setStreamingMessage('')
     setDeleteConfirmId(null)
   }
 
@@ -157,14 +263,12 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
       const updated = prev.filter((s) => s.id !== sessionId)
       saveSessions(projectId, updated)
 
-      // If deleting the active session, switch to newest or create new
       if (sessionId === activeSessionId) {
         if (updated.length > 0) {
           const sorted = [...updated].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
           setActiveSessionId(sorted[0].id)
           setMessages(sorted[0].messages)
         } else {
-          // Create a brand new session
           const newId = `session_${Date.now()}`
           const defaultMsg = createDefaultMessage(project.project_name)
           const fresh = {
@@ -186,10 +290,10 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
     setDeleteConfirmId(null)
   }
 
-  // --- Send message ---
+  // --- Send message (real SSE to infrastructure-service) ---
   const handleSendMessage = (e) => {
     e.preventDefault()
-    if (!inputValue.trim()) return
+    if (!inputValue.trim() || isTyping) return
 
     const userMsg = {
       id: Date.now(),
@@ -201,6 +305,7 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
     setMessages(newMessages)
     setInputValue('')
     setIsTyping(true)
+    setStreamingMessage('')
 
     // Auto-title: if this is the first user message in the session
     const userMsgsCount = newMessages.filter((m) => m.sender === 'user').length
@@ -212,37 +317,142 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
     // Persist user message immediately
     if (activeSessionId) persistSession(activeSessionId, newMessages)
 
-    // Simulate AI response
-    setTimeout(() => {
-      let aiResponseText = ''
-      const aiMsgCount = newMessages.filter((m) => m.sender === 'ai').length
+    // Get auth token
+    const token = getToken()
+    if (!token) {
+      const errorMsg = {
+        id: Date.now() + 1,
+        sender: 'ai',
+        text: '⚠️ Authentication required. Please log in again.',
+      }
+      const withError = [...newMessages, errorMsg]
+      setMessages(withError)
+      setIsTyping(false)
+      if (activeSessionId) persistSession(activeSessionId, withError)
+      return
+    }
 
-      if (aiMsgCount === 1) {
-        aiResponseText =
-          "That sounds like a great plan. To support that, I recommend a High-Availability Network (VPC with 2 Public and 2 Private Subnets), an Application Load Balancer, and an ECS Fargate cluster for compute. Does this architecture sound good to you?"
-      } else if (aiMsgCount >= 2) {
-        aiResponseText =
-          "Excellent. I've automatically configured the CloudFormation templates and executed the terraform plan. Your infrastructure is now provisioning!"
+    // Close any existing EventSource
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
 
-        setTimeout(() => {
-          onInfrastructureCreated(
-            {
-              vpcName: `${project.project_name}-ai-vpc`,
-              vpcCidr: '10.0.0.0/16',
-              provider: 'aws',
-              method: 'copilot-assisted',
-            },
-            'AI successfully provisioned your infrastructure!'
-          )
-        }, 3000)
+    // Build SSE URL with query params
+    const params = new URLSearchParams({
+      message: userMsg.text,
+      project_id: projectId,
+      project_name: project.project_name,
+      session_id: activeSessionId || `infra-chat-${Date.now()}`,
+      token: token,
+    })
+
+    const sseUrl = `${INFRA_API_URL}/api/infra/chat/stream?${params.toString()}`
+
+    try {
+      const eventSource = new EventSource(sseUrl)
+      eventSourceRef.current = eventSource
+
+      let accumulatedContent = ''
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+
+          if (data.type === 'chunk') {
+            accumulatedContent += data.content
+            setStreamingMessage(accumulatedContent)
+          } else if (data.type === 'done') {
+            const finalContent = data.content || accumulatedContent
+            const aiMsg = {
+              id: Date.now() + 1,
+              sender: 'ai',
+              text: finalContent,
+            }
+            const updatedMessages = [...newMessages, aiMsg]
+            setMessages(updatedMessages)
+            setStreamingMessage('')
+            setIsTyping(false)
+
+            if (activeSessionId) persistSession(activeSessionId, updatedMessages)
+
+            // If resources were saved, notify parent
+            if (data.response_type === 'saved' && data.saved_resources?.length > 0) {
+              const savedRes = data.saved_resources
+              onInfrastructureCreated(
+                {
+                  resources: savedRes,
+                  provider: 'aws',
+                  method: 'copilot-assisted',
+                },
+                `AI successfully provisioned ${savedRes.length} resource${savedRes.length > 1 ? 's' : ''}!`
+              )
+            }
+
+            eventSource.close()
+            eventSourceRef.current = null
+          } else if (data.type === 'error') {
+            const errorMsg = {
+              id: Date.now() + 1,
+              sender: 'ai',
+              text: `⚠️ ${data.message || 'An error occurred. Please try again.'}`,
+            }
+            const withError = [...newMessages, errorMsg]
+            setMessages(withError)
+            setStreamingMessage('')
+            setIsTyping(false)
+            if (activeSessionId) persistSession(activeSessionId, withError)
+
+            eventSource.close()
+            eventSourceRef.current = null
+          }
+        } catch (parseError) {
+          console.error('Failed to parse SSE event:', parseError)
+        }
       }
 
-      const withAi = [...newMessages, { id: Date.now() + 1, sender: 'ai', text: aiResponseText }]
-      setMessages(withAi)
-      setIsTyping(false)
+      eventSource.onerror = (error) => {
+        console.error('SSE connection error:', error)
+        eventSource.close()
+        eventSourceRef.current = null
 
-      if (activeSessionId) persistSession(activeSessionId, withAi)
-    }, 1500)
+        if (isTyping) {
+          if (accumulatedContent) {
+            const aiMsg = {
+              id: Date.now() + 1,
+              sender: 'ai',
+              text: accumulatedContent,
+            }
+            const updatedMessages = [...newMessages, aiMsg]
+            setMessages(updatedMessages)
+            if (activeSessionId) persistSession(activeSessionId, updatedMessages)
+          } else {
+            const errorMsg = {
+              id: Date.now() + 1,
+              sender: 'ai',
+              text: '⚠️ Connection lost. Please check that the infrastructure service is running and try again.',
+            }
+            const withError = [...newMessages, errorMsg]
+            setMessages(withError)
+            if (activeSessionId) persistSession(activeSessionId, withError)
+          }
+          setStreamingMessage('')
+          setIsTyping(false)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create EventSource:', error)
+      const errorMsg = {
+        id: Date.now() + 1,
+        sender: 'ai',
+        text: '⚠️ Failed to connect to the infrastructure service. Please try again.',
+      }
+      const withError = [...newMessages, errorMsg]
+      setMessages(withError)
+      setIsTyping(false)
+      setStreamingMessage('')
+      if (activeSessionId) persistSession(activeSessionId, withError)
+    }
   }
 
   // --- Grouped sessions ---
@@ -259,13 +469,12 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
           {sessions.map((s) => (
             <div
               key={s.id}
-              className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 ${s.id === activeSessionId
-                  ? 'bg-emerald-50 text-emerald-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-100'
+              className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${s.id === activeSessionId
+                  ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 text-emerald-700 font-bold shadow-sm shadow-emerald-900/5'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-white border border-transparent hover:border-slate-200 hover:shadow-sm'
                 }`}
               onClick={() => handleLoadSession(s)}
             >
-              {/* Chat icon */}
               <svg
                 className={`w-3.5 h-3.5 flex-shrink-0 ${s.id === activeSessionId ? 'text-emerald-500' : 'text-slate-400'}`}
                 fill="none"
@@ -281,7 +490,6 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
               </svg>
               <span className="flex-1 text-xs truncate">{s.title}</span>
 
-              {/* Delete button */}
               {deleteConfirmId === s.id ? (
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                   <button
@@ -336,20 +544,18 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
         className={`flex-shrink-0 border-r border-slate-100 bg-slate-50/80 flex flex-col transition-all duration-300 ease-in-out overflow-hidden ${isSidebarOpen ? 'w-64' : 'w-0'
           }`}
       >
-        {/* Sidebar Header */}
         <div className="px-4 pt-4 pb-3 flex-shrink-0">
           <button
             onClick={() => handleNewChat()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-emerald-600 text-xs font-semibold rounded-xl hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold rounded-xl shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:shadow-[0_6px_16px_rgba(16,185,129,0.4)] hover:-translate-y-0.5 transition-all duration-300 group"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             New Chat
           </button>
         </div>
 
-        {/* Session List */}
         <div className="flex-1 overflow-y-auto px-1.5 pb-4">
           {chatSessions.length === 0 ? (
             <div className="px-3 py-8 text-center">
@@ -371,7 +577,6 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
         {/* Header */}
         <div className="px-4 sm:px-6 py-4 border-b border-slate-100 bg-white/50 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
-            {/* Sidebar toggle */}
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
@@ -421,19 +626,26 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
                     : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm'
                   }`}
               >
-                <ReactMarkdown
-                  components={{
-                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                    strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-                  }}
-                >
+                <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
                   {msg.text}
                 </ReactMarkdown>
               </div>
             </div>
           ))}
 
-          {isTyping && (
+          {/* Streaming message (real-time SSE content) */}
+          {streamingMessage && (
+            <div className="flex justify-start">
+              <div className="max-w-[80%] rounded-2xl rounded-tl-sm px-5 py-3.5 shadow-sm text-sm leading-relaxed bg-white border border-slate-100 text-slate-700">
+                <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
+                  {streamingMessage}
+                </ReactMarkdown>
+              </div>
+            </div>
+          )}
+
+          {/* Typing indicator (shown before first chunk arrives) */}
+          {isTyping && !streamingMessage && (
             <div className="flex justify-start">
               <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
@@ -446,31 +658,34 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 bg-white border-t border-slate-100 flex-shrink-0">
-          <form onSubmit={handleSendMessage} className="relative">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Type your infrastructure requirements..."
-              className="w-full pl-5 pr-14 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10 transition-all text-slate-800"
-              autoFocus
-            />
-            <button
-              type="submit"
-              disabled={!inputValue.trim() || isTyping}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 transition-colors flex items-center justify-center"
-            >
-              <img
-                src="/icons8-send-puffy-filled-32.png"
-                alt="Send"
-                className="w-5 h-5 object-contain block m-auto"
-                onError={(e) => {
-                  e.target.onerror = null
-                  e.target.src = 'https://img.icons8.com/puffy-filled/32/ffffff/sent.png'
-                }}
+        <div className="p-5 bg-white border-t border-slate-100 flex-shrink-0 relative z-10 shadow-[0_-4px_24px_rgba(0,0,0,0.02)]">
+          <form onSubmit={handleSendMessage} className="relative max-w-4xl mx-auto">
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-2xl blur opacity-0 group-focus-within:opacity-25 transition duration-500"></div>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Type your infrastructure requirements..."
+                className="relative w-full pl-6 pr-16 py-4 bg-slate-50 border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl text-sm focus:outline-none focus:border-emerald-400/50 focus:bg-white transition-all duration-300 text-slate-800 placeholder-slate-400 block"
+                autoFocus
               />
-            </button>
+              <button
+                type="submit"
+                disabled={!inputValue.trim() || isTyping}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-xl shadow-md disabled:shadow-none hover:shadow-lg disabled:opacity-40 disabled:from-slate-400 disabled:to-slate-400 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+              >
+                <img
+                  src="/icons8-send-puffy-filled-32.png"
+                  alt="Send"
+                  className="w-5 h-5 object-contain block m-auto filter brightness-0 invert"
+                  onError={(e) => {
+                    e.target.onerror = null
+                    e.target.src = 'https://img.icons8.com/puffy-filled/32/ffffff/sent.png'
+                  }}
+                />
+              </button>
+            </div>
           </form>
           <p className="text-center text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-3">
             AI may hallucinate infrastructure endpoints. Verify before production.

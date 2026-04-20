@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Trash2, ShieldAlert, AlertTriangle, Server, Database, Network, Activity, Info } from 'lucide-react'
-import { getInfrastructureByProject, deleteSpecificInfrastructure, deleteInfrastructureByProject } from '../services/infrastructureService'
+import { getResourcesByProject, deleteResource, deleteResourcesByProject } from '../services/infrastructureService'
 
 const DeleteInfraModal = ({ project, onClose, onDeletedAll, onInfraUpdated }) => {
   const [infraData, setInfraData] = useState(null)
@@ -17,9 +17,10 @@ const DeleteInfraModal = ({ project, onClose, onDeletedAll, onInfraUpdated }) =>
   const loadInfra = async () => {
     try {
       setIsLoading(true)
-      const data = await getInfrastructureByProject(project.project_name)
-      setInfraData(data)
-      if (onInfraUpdated) onInfraUpdated(data)
+      // Fetch from unified resource API using project.id (ObjectId)
+      const resources = await getResourcesByProject(project.id)
+      setInfraData(resources || [])
+      if (onInfraUpdated) onInfraUpdated(resources || [])
     } catch (e) {
       setError(e.message || "Failed to load infrastructure")
     } finally {
@@ -33,7 +34,7 @@ const DeleteInfraModal = ({ project, onClose, onDeletedAll, onInfraUpdated }) =>
     setDeletingItemId(id)
     setError(null)
     try {
-      await deleteSpecificInfrastructure(type, id)
+      await deleteResource(id)
       await loadInfra() // reload
     } catch (e) {
       setError(e.message || "Failed to delete item")
@@ -48,7 +49,7 @@ const DeleteInfraModal = ({ project, onClose, onDeletedAll, onInfraUpdated }) =>
     setIsDeletingAll(true)
     setError(null)
     try {
-      await deleteInfrastructureByProject(project.project_name)
+      await deleteResourcesByProject(project.id)
       if (onDeletedAll) onDeletedAll()
       onClose()
     } catch (e) {
@@ -57,18 +58,32 @@ const DeleteInfraModal = ({ project, onClose, onDeletedAll, onInfraUpdated }) =>
     }
   }
 
+  // Map unified resource type to display properties
+  const getTypeDisplay = (type) => {
+    switch (type) {
+      case 'network': return { _type: 'network', _label: 'VPC Network', _icon: Network, color: 'text-indigo-500', bg: 'bg-indigo-50' }
+      case 'compute': return { _type: 'compute', _label: 'Compute Servers', _icon: Server, color: 'text-violet-500', bg: 'bg-violet-50' }
+      case 'serverless': return { _type: 'serverless', _label: 'Serverless', _icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-50' }
+      case 'database': return { _type: 'database', _label: 'Cloud Managed', _icon: Database, color: 'text-orange-500', bg: 'bg-orange-50' }
+      default: return { _type: type, _label: type || 'Resource', _icon: Server, color: 'text-slate-500', bg: 'bg-slate-50' }
+    }
+  }
+
   const flattenInfra = () => {
-    if (!infraData) return []
-    const items = []
-    if (infraData.network) infraData.network.forEach(i => items.push({ ...i, _type: 'network', _label: 'VPC Network', _icon: Network, color: 'text-indigo-500', bg: 'bg-indigo-50' }))
-    if (infraData.servers) infraData.servers.forEach(i => items.push({ ...i, _type: 'servers', _label: 'Compute Servers', _icon: Server, color: 'text-violet-500', bg: 'bg-violet-50' }))
-    if (infraData.serverless) infraData.serverless.forEach(i => items.push({ ...i, _type: 'serverless', _label: 'Serverless', _icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-50' }))
-    if (infraData.cloud_managed) infraData.cloud_managed.forEach(i => items.push({ ...i, _type: 'cloud-managed', _label: 'Cloud Managed', _icon: Database, color: 'text-orange-500', bg: 'bg-orange-50' }))
-    return items
+    if (!infraData || !Array.isArray(infraData)) return []
+    return infraData.map(r => ({
+      ...r.config,
+      id: r.id,
+      _id: r.id,
+      name: r.name,
+      state: r.state,
+      version: r.version,
+      ...getTypeDisplay(r.type),
+    }))
   }
 
   const items = flattenInfra()
-  const hasServers = infraData && infraData.servers && infraData.servers.length > 0;
+  const hasServers = Array.isArray(infraData) && infraData.some(r => r.type === 'compute');
   const isNetworkDisabled = (itemType) => itemType === 'network' && hasServers;
 
   return (
@@ -140,16 +155,18 @@ const DeleteInfraModal = ({ project, onClose, onDeletedAll, onInfraUpdated }) =>
                          <div className={`w-10 h-10 ${item.bg} rounded-lg flex items-center justify-center ${item.color} flex-shrink-0`}>
                            <item._icon className="w-5 h-5" />
                          </div>
-                         <div>
-                           <h4 className="text-sm font-bold text-slate-800">{item._label} Resource</h4>
-                           <div className="flex flex-wrap gap-2 mt-1">
-                              {item.vpc_name && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">VPC: {item.vpc_name}</span>}
-                              {item.instance_type && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Type: {item.instance_type}</span>}
-                              {item.service_name && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Name: {item.service_name}</span>}
-                              {item.runtime && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Runtime: {item.runtime}</span>}
-                              <span className="text-[10px] text-slate-400 px-2 py-1 font-mono">{itemId.substring(0,8)}...</span>
-                           </div>
-                         </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-800">{item.name || `${item._label} Resource`}</h4>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                               {item.state && <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md border ${item.state === 'provisioned' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : item.state === 'failed' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{item.state}</span>}
+                               {item.vpc_name && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">VPC: {item.vpc_name}</span>}
+                               {item.instance_type && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Type: {item.instance_type}</span>}
+                               {item.service_name && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Name: {item.service_name}</span>}
+                               {item.runtime && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Runtime: {item.runtime}</span>}
+                               {item.version && <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">v{item.version}</span>}
+                               <span className="text-[10px] text-slate-400 px-2 py-1 font-mono">{itemId.substring(0,8)}...</span>
+                            </div>
+                          </div>
                        </div>
                        
                        <div className="flex items-center flex-shrink-0 gap-3">

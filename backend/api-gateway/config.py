@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     PROJECT_SERVICE_URL: str = os.getenv("PROJECT_SERVICE_URL", "http://localhost:8002")
     CREDENTIAL_SERVICE_URL: str = os.getenv("CREDENTIAL_SERVICE_URL", "http://localhost:8003")
     JENKINS_SERVICE_URL: str = os.getenv("JENKINS_SERVICE_URL", "http://localhost:8081")
+    INFRA_SERVICE_URL: str = os.getenv("INFRA_SERVICE_URL", "http://localhost:8004")
     
     class Config:
         env_file = ".env"
@@ -36,11 +37,12 @@ settings = Settings()
 ROUTE_MAP = [
     ("/api/jenkins/credentials", settings.CREDENTIAL_SERVICE_URL),
     ("/api/jenkins",            settings.JENKINS_SERVICE_URL),
+    ("/api/infrastructure",     settings.PROJECT_SERVICE_URL),
+    ("/api/infra",              settings.INFRA_SERVICE_URL),
     ("/api/users",              settings.AUTH_SERVICE_URL),
     ("/api/crypto",             settings.AUTH_SERVICE_URL),
     ("/api/projects",           settings.PROJECT_SERVICE_URL),
     ("/api/create",             settings.PROJECT_SERVICE_URL),
-    ("/api/infrastructure",     settings.PROJECT_SERVICE_URL),
     ("/api/scm",                settings.CREDENTIAL_SERVICE_URL),
     ("/api/credentials",        settings.CREDENTIAL_SERVICE_URL),
 ]

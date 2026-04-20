@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { fetchProjects } from '../services/projectService'
-import { deleteInfrastructureByProject } from '../services/infrastructureService'
+import { deleteInfrastructureByProject, getResourcesByProject } from '../services/infrastructureService'
 import { useAuth } from '../hooks/useAuth'
 import PageLayout from '../components/PageLayout'
 import InfrastructureCreate from '../components/InfrastructureCreate'
@@ -51,8 +51,86 @@ const InfrastructurePage = () => {
   const [deletingProject, setDeletingProject] = useState(null)
 
   const [infrastructureMap, setInfrastructureMap] = useState(loadInfraMap)
+  const [isLoadingInfra, setIsLoadingInfra] = useState(false)
   const [toast, setToast] = useState(null)
   const hasFetchedRef = useRef(false)
+
+  // ── Fetch infra from BE for a list of projects ─────────────────────
+  const fetchInfraForProjects = useCallback(async (projectsList) => {
+    if (!projectsList || projectsList.length === 0) return
+    setIsLoadingInfra(true)
+    try {
+      const newMap = { ...infrastructureMap }
+      // Fetch in parallel for all projects
+      const results = await Promise.allSettled(
+        projectsList.map(async (project) => {
+          const projectId = project.id
+          if (!projectId) return { projectId: null, items: [] }
+          const resources = await getResourcesByProject(projectId)
+          // Normalise into the flat array format used for rendering
+          const items = (resources || []).map(r => ({
+            id: r.id,
+            _id: r.id,
+            ...r.config,
+            type: r.type,
+            name: r.name,
+            state: r.state,
+            version: r.version,
+            provider: r.provider,
+            region: r.region,
+            env: r.env,
+            depends_on: r.depends_on,
+            infraType: r.type === 'compute' ? 'servers' : r.type === 'database' ? 'cloud-managed' : r.type,
+            createdAt: r.created_at,
+          }))
+          return { projectId, items }
+        })
+      )
+
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.projectId) {
+          newMap[result.value.projectId] = result.value.items
+        }
+      }
+
+      setInfrastructureMap(newMap)
+      saveInfraMap(newMap)
+    } catch (error) {
+      console.error('Failed to fetch infrastructure from backend:', error)
+    } finally {
+      setIsLoadingInfra(false)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Re-fetch infra for a single project ────────────────────────────
+  const refreshInfraForProject = useCallback(async (projectId) => {
+    if (!projectId) return
+    try {
+      const resources = await getResourcesByProject(projectId)
+      const items = (resources || []).map(r => ({
+        id: r.id,
+        _id: r.id,
+        ...r.config,
+        type: r.type,
+        name: r.name,
+        state: r.state,
+        version: r.version,
+        provider: r.provider,
+        region: r.region,
+        env: r.env,
+        depends_on: r.depends_on,
+        infraType: r.type === 'compute' ? 'servers' : r.type === 'database' ? 'cloud-managed' : r.type,
+        createdAt: r.created_at,
+      }))
+      setInfrastructureMap(prev => {
+        const updated = { ...prev, [projectId]: items }
+        saveInfraMap(updated)
+        return updated
+      })
+    } catch (error) {
+      console.error(`Failed to refresh infra for project ${projectId}:`, error)
+    }
+  }, [])
 
   useEffect(() => {
     document.title = 'infraXai - Infrastructure'
@@ -72,6 +150,8 @@ const InfrastructurePage = () => {
       const projectsArray = await fetchProjects()
       const projectsList = Array.isArray(projectsArray) ? projectsArray : []
       setProjects(projectsList)
+      // Fetch infrastructure from BE for all projects
+      fetchInfraForProjects(projectsList)
     } catch (error) {
       setToast({
         message: error.message || 'Failed to load projects',
@@ -180,9 +260,17 @@ const InfrastructurePage = () => {
     if (!deletingProject) return;
     const projectId = deletingProject.id || deletingProject.project_name
     
-    // Flatten freshData into an array matching local map structure
-    const flattened = [];
-    if (freshData) {
+    // Handle both unified array format (new) and legacy categorised format
+    let flattened = [];
+    if (Array.isArray(freshData)) {
+      // New unified format — array of resources with type field
+      flattened = freshData.map(r => ({
+        ...r,
+        ...r.config,
+        infraType: r.type === 'compute' ? 'servers' : r.type === 'database' ? 'cloud-managed' : r.type,
+      }));
+    } else if (freshData) {
+      // Legacy categorised format fallback
       if (freshData.network) freshData.network.forEach(i => flattened.push({ ...i, infraType: 'network' }));
       if (freshData.servers) freshData.servers.forEach(i => flattened.push({ ...i, infraType: 'servers' }));
       if (freshData.serverless) freshData.serverless.forEach(i => flattened.push({ ...i, infraType: 'serverless' }));
@@ -207,6 +295,8 @@ const InfrastructurePage = () => {
     })
     setToast({ message: `Infrastructure for "${deletingProject.project_name}" deleted successfully.`, type: 'success' })
     setDeletingProject(null)
+    // Re-fetch from BE to confirm deletion
+    refreshInfraForProject(projectId)
   }
 
   // Back Navigation Handlers
@@ -228,28 +318,14 @@ const InfrastructurePage = () => {
 
   const handleInfrastructureCreated = (infraData, message) => {
     const projectId = selectedProject?.id || selectedProject?.project_name
-    if (projectId) {
-      setInfrastructureMap((prev) => {
-        const existing = prev[projectId] || []
-        const updated = {
-          ...prev,
-          [projectId]: [
-            ...existing,
-            {
-              ...infraData,
-              infraType: selectedInfraType || 'auto', // If AI, might not have selectedInfraType
-              createdAt: new Date().toISOString(),
-            },
-          ],
-        }
-        saveInfraMap(updated)
-        return updated
-      })
-    }
     setToast({ message: message || 'Infrastructure created successfully!', type: 'success' })
     setSelectedProject(null)
     setCreationMethod(null)
     setSelectedInfraType(null)
+    // Re-fetch from BE to get the actual saved resource
+    if (projectId) {
+      refreshInfraForProject(projectId)
+    }
   }
 
   const getProjectInfra = (project) => {
@@ -335,10 +411,8 @@ const InfrastructurePage = () => {
                 <img src="/Ai_bot.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-indigo-900/60 to-purple-900/70 group-hover:from-indigo-900/70 group-hover:to-purple-900/60 transition-all duration-500"></div>
                 <div className="relative p-8 sm:p-10">
-                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 shadow-md transition-transform duration-500 group-hover:scale-110">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 2a1 1 0 011 1v1a1 1 0 01-2 0V3a1 1 0 011-1zM4 9h16a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2v-6a2 2 0 012-2zm4 4a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2zm-6 5v2m4-2v2" />
-                    </svg>
+                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 shadow-md transition-transform duration-500 group-hover:scale-110 overflow-hidden">
+                    <img src="data:image/png;base64,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" alt="bard" className="w-12 h-12 object-contain drop-shadow-md" />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-indigo-200 transition-colors">
                     Copilot-Assisted Provisioning
@@ -364,10 +438,8 @@ const InfrastructurePage = () => {
                 <img src="/form_bg.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/70 group-hover:from-slate-900/70 group-hover:to-slate-800/60 transition-all duration-500"></div>
                 <div className="relative p-8 sm:p-10">
-                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 shadow-md transition-transform duration-500 group-hover:scale-110">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
+                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 shadow-md transition-transform duration-500 group-hover:scale-110 overflow-hidden">
+                    <img src="https://img.icons8.com/clouds/100/form.png" alt="Form Icon" className="w-12 h-12 object-contain drop-shadow-md" />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-slate-200 transition-colors">
                     Manual Configuration
@@ -411,6 +483,8 @@ const InfrastructurePage = () => {
             <InfrastructureCreate
               selectedOption={selectedInfraType}
               preSelectedProject={selectedProject.project_name}
+              preSelectedProjectId={selectedProject.id}
+              preSelectedProjectData={selectedProject}
               onInfrastructureCreated={handleInfrastructureCreated}
               onCancel={handleBackToTypePicker}
             />
