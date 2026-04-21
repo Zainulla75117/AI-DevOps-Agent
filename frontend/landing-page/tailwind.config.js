@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -8,13 +9,13 @@ export default {
     extend: {
       colors: {
         agentic: {
-          primary: '#30705d',
-          secondary: '#F6F6F1',
+          primary: 'rgb(var(--color-agentic-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--color-agentic-secondary) / <alpha-value>)',
           success: '#16A34A',
           warning: '#D97706',
           danger: '#DC2626',
-          surface: '#FFFFFF',
-          text: '#111827',
+          surface: 'rgb(var(--color-agentic-surface) / <alpha-value>)',
+          text: 'rgb(var(--color-agentic-text) / <alpha-value>)',
         }
       },
       fontFamily: {

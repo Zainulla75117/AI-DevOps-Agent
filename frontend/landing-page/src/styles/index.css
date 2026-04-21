@@ -3,6 +3,20 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-agentic-primary: 48 112 93;
+    --color-agentic-secondary: 246 246 241;
+    --color-agentic-surface: 255 255 255;
+    --color-agentic-text: 17 24 39;
+  }
+
+  .dark, :root.dark {
+    --color-agentic-primary: 66 160 133;
+    --color-agentic-secondary: 15 23 42;
+    --color-agentic-surface: 30 41 59;
+    --color-agentic-text: 248 250 252;
+  }
+
   * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -79,6 +93,11 @@
     background-repeat: repeat;
   }
 
+  .dark .bg-dashed-grid,
+  :root.dark .bg-dashed-grid {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40' fill='none' stroke='rgb(248 250 252 / 0.15)' stroke-width='1.5' stroke-dasharray='4 4'%3e%3cpath d='M0 .5H40V40'/%3e%3c/svg%3e");
+  }
+
   .mask-radial-fade {
     mask-image: radial-gradient(ellipse at center, black 10%, transparent 70%);
     -webkit-mask-image: radial-gradient(ellipse at center, black 10%, transparent 70%);
@@ -100,12 +119,23 @@
   }
 
   .text-shimmer-anim {
-    background: linear-gradient(110deg, #30705d 40%, #6ee7b7 50%, #30705d 60%);
+    background: linear-gradient(110deg, #42a085 40%, #a7f3d0 50%, #42a085 60%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     color: transparent;
     animation: textShineVanilla 2.5s linear infinite;
+  }
+
+  .dark .text-shimmer-anim,
+  :root.dark .text-shimmer-anim {
+    background: linear-gradient(110deg, #10b981 40%, #ccfbf1 50%, #10b981 60%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.4));
   }
 }

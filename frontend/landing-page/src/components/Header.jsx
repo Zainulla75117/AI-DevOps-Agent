@@ -1,10 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        return savedTheme === 'dark';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,7 +56,7 @@ const Header = () => {
             <img
               src="/My_Brand-Logo_1.png"
               alt="InfraX Logo"
-              className="h-8 w-auto object-contain"
+              className="h-5 md:h-6 w-auto object-contain"
             />
           </motion.a>
 
@@ -51,6 +71,25 @@ const Header = () => {
                 {item}
               </a>
             ))}
+            
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 text-agentic-text/80 hover:text-agentic-primary bg-agentic-text/5 hover:bg-agentic-text/10 rounded-full transition-colors focus:outline-none flex items-center justify-center"
+              aria-label="Toggle dark mode"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={isDarkMode ? 'dark' : 'light'}
+                  initial={{ y: -20, opacity: 0, rotate: -90 }}
+                  animate={{ y: 0, opacity: 1, rotate: 0 }}
+                  exit={{ y: 20, opacity: 0, rotate: 90 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                </motion.div>
+              </AnimatePresence>
+            </button>
+
             <a
               href="https://infraxai.vercel.app"
               className="text-agentic-text/80 transition-all duration-300 font-medium hover:bg-clip-text hover:text-transparent hover:bg-gradient-to-r hover:from-agentic-primary hover:to-teal-500"
@@ -97,6 +136,20 @@ const Header = () => {
                   {item}
                 </a>
               ))}
+              
+              <button
+                onClick={() => {
+                  setIsDarkMode(!isDarkMode);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center w-full text-left text-agentic-text/80 hover:text-agentic-primary transition-colors duration-200"
+              >
+                <div className="mr-3 p-1.5 rounded-md bg-agentic-text/5">
+                  {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                </div>
+                {isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              </button>
+
               <a
                 href="https://infraxai.vercel.app"
                 onClick={() => setIsMobileMenuOpen(false)}
