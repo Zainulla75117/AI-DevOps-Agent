@@ -66,7 +66,8 @@ const Pricing = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-display text-agentic-text">
+          <div className="text-xs uppercase font-medium tracking-[0.2em] text-agentic-primary/80 mb-3">Scale Predictably</div>
+          <h2 className="text-4xl md:text-5xl font-light mb-4 font-display text-agentic-text">
             Simple, Transparent <span className="text-agentic-primary">Pricing</span>
           </h2>
           <p className="text-xl text-agentic-text/80 max-w-2xl mx-auto font-sans">
@@ -82,11 +83,10 @@ const Pricing = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative glass-effect rounded-2xl p-8 flex flex-col h-full bg-agentic-surface ${
-                plan.popular
+              className={`relative glass-effect rounded-2xl p-8 flex flex-col h-full bg-agentic-surface ${plan.popular
                   ? 'border-2 border-agentic-primary shadow-lg scale-100 md:scale-105 z-10'
                   : 'border border-agentic-text/10'
-              } transition-all duration-300`}
+                } transition-all duration-300`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-4 py-1 bg-agentic-primary rounded-full text-sm font-semibold text-white shadow-sm">
@@ -95,11 +95,11 @@ const Pricing = () => {
               )}
 
               <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-2 text-agentic-text font-display">{plan.name}</h3>
+                <h3 className="text-2xl font-normal mb-2 text-agentic-text font-display">{plan.name}</h3>
                 <div className="flex items-baseline space-x-2 mb-2">
-                  <span className="text-4xl font-bold text-agentic-text font-display">{plan.price}</span>
+                  <span className="text-6xl font-light tracking-tighter text-agentic-text font-display">{plan.price}</span>
                   {plan.period !== 'forever' && (
-                    <span className="text-agentic-text/60 font-sans">/{plan.period}</span>
+                    <span className="text-xs uppercase tracking-widest font-medium text-agentic-text/50">/{plan.period}</span>
                   )}
                 </div>
                 <p className="text-agentic-text/80 text-sm font-sans">{plan.description}</p>
@@ -120,11 +120,10 @@ const Pricing = () => {
                 href="#get-started"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`block w-full text-center px-6 py-3 rounded-md font-semibold transition-all duration-300 ${
-                  plan.popular
+                className={`block w-full text-center px-6 py-3 rounded-md font-semibold transition-all duration-300 ${plan.popular
                     ? 'bg-agentic-primary text-white hover:bg-[#E64A00] shadow-sm'
                     : 'bg-agentic-surface border border-agentic-text/10 text-agentic-text hover:border-agentic-text/30 shadow-sm'
-                }`}
+                  }`}
               >
                 {plan.cta}
               </motion.a>

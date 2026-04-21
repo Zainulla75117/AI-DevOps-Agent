@@ -88,4 +88,24 @@
     mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
   }
+
+  @keyframes textShineVanilla {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    100% {
+      background-position: 200% 50%;
+    }
+  }
+
+  .text-shimmer-anim {
+    background: linear-gradient(110deg, #30705d 40%, #6ee7b7 50%, #30705d 60%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    animation: textShineVanilla 2.5s linear infinite;
+  }
 }

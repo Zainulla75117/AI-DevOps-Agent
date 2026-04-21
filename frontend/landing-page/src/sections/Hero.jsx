@@ -1,5 +1,15 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight, Play, Github } from 'lucide-react';
+
+const GoogleIcon = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    <path fill="none" d="M0 0h48v48H0z" />
+  </svg>
+);
 
 const Hero = () => {
   return (
@@ -18,15 +28,15 @@ const Hero = () => {
           >
             <div className="inline-flex items-center space-x-2 px-4 py-2 bg-agentic-surface border border-agentic-text/10 rounded-full">
               <span className="w-2 h-2 bg-agentic-primary rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-agentic-text">AI-First Infrastructure Engine</span>
+              <span className="text-sm font-light text-agentic-text tracking-wide">AI-First Infrastructure Engine</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold font-display leading-tight text-agentic-text">
-              Delegate Your <span className="text-agentic-primary">DevOps</span> Workflows
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-light font-display leading-tight text-agentic-text">
+              Delegate Your <span className="text-shimmer-anim font-light inline-block pb-2">DevOps</span> Workflows
             </h1>
 
-            <p className="text-xl text-agentic-text/80 leading-relaxed max-w-2xl font-sans mx-auto">
-              <span className="font-semibold italic">InfraX</span> builds cloud infrastructure, configures pipelines, and acts as your autonomous SRE. Tell it what you need, and consider it done.
+            <p className="text-xl text-agentic-text/80 leading-relaxed max-w-2xl font-sans mx-auto font-light">
+              <span className="font-normal italic">InfraX</span> builds cloud infrastructure and configures pipelines autonomously. Think of it as your AI-powered DevOps guy. Just describe what you need, and consider it done.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
@@ -49,6 +59,19 @@ const Hero = () => {
                 <span>Watch Product Demo</span>
               </motion.a>
             </div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="mt-6 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 text-agentic-text/60 text-sm font-medium"
+            >
+              <span className="opacity-80">Seamless access via</span>
+              <div className="flex items-center space-x-3">
+                <GoogleIcon className="w-5 h-5 opacity-80 hover:opacity-100 transition-opacity" />
+                <Github className="w-5 h-5 opacity-80 hover:opacity-100 transition-opacity" />
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>

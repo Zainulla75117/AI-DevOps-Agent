@@ -5,6 +5,7 @@ import Features from './sections/Features';
 import HowItWorks from './sections/HowItWorks';
 import Showcase from './sections/Showcase';
 import Integrations from './sections/Integrations';
+import FAQ from './sections/FAQ';
 
 import Footer from './components/Footer';
 import './styles/index.css';
@@ -37,7 +38,7 @@ function App() {
         <HowItWorks />
         <Showcase />
         <Integrations />
-
+        <FAQ />
       </main>
       <Footer />
     </div>

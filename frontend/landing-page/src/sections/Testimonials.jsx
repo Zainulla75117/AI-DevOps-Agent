@@ -43,7 +43,8 @@ const Testimonials = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-display text-agentic-text">
+          <div className="text-xs uppercase font-medium tracking-[0.2em] text-agentic-primary/80 mb-3">Customer Success</div>
+          <h2 className="text-4xl md:text-5xl font-light mb-4 font-display text-agentic-text">
             Loved by <span className="text-agentic-primary">DevOps Teams</span>
           </h2>
           <p className="text-xl text-agentic-text/70 max-w-2xl mx-auto font-sans">
@@ -62,16 +63,16 @@ const Testimonials = () => {
               className="glass-effect rounded-xl p-8 transition-all duration-300 relative border border-agentic-text/10 hover:border-agentic-text/20"
             >
               <Quote className="w-8 h-8 text-agentic-primary/40 mb-4" />
-              <p className="text-agentic-text/80 leading-relaxed mb-6 text-lg font-sans">
+              <p className="text-2xl md:text-3xl font-light italic leading-relaxed tracking-tight font-display text-agentic-text/80 mb-8">
                 "{testimonial.content}"
               </p>
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-full bg-agentic-primary flex items-center justify-center text-white font-bold shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-agentic-primary flex items-center justify-center text-white font-medium shadow-sm">
                   {testimonial.avatar}
                 </div>
                 <div>
-                  <div className="font-semibold text-agentic-text text-lg font-sans">{testimonial.name}</div>
-                  <div className="text-sm text-agentic-text/60 font-sans">
+                  <div className="text-xs uppercase tracking-widest font-bold text-agentic-text">{testimonial.name}</div>
+                  <div className="text-xs uppercase text-agentic-text/50 font-sans tracking-wider">
                     {testimonial.role} at {testimonial.company}
                   </div>
                 </div>

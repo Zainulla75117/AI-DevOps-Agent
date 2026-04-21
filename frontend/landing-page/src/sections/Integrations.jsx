@@ -20,7 +20,7 @@ const Integrations = () => {
     <section className="py-24 relative overflow-hidden bg-agentic-secondary">
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 z-0 pointer-events-none bg-dashed-grid mask-radial-fade"></div>
-      
+
       <div className="container mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -29,7 +29,8 @@ const Integrations = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-display text-agentic-text">
+          <div className="text-xs uppercase font-medium tracking-[0.2em] text-agentic-primary/80 mb-3">Ecosystem</div>
+          <h2 className="text-4xl md:text-5xl font-light mb-4 font-display text-agentic-text">
             Seamless <span className="text-agentic-primary">Integrations</span>
           </h2>
           <p className="text-xl text-agentic-text/80 max-w-2xl mx-auto font-sans">

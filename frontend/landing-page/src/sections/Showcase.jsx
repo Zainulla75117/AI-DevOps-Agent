@@ -137,11 +137,10 @@ const Showcase = () => {
                     <button
                       key={index}
                       onClick={() => setActiveTab(index)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        activeTab === index
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === index
                           ? 'bg-agentic-primary/10 text-agentic-primary border border-agentic-primary/20 shadow-sm'
                           : 'text-agentic-text/50 hover:text-agentic-text hover:bg-agentic-text/5 border border-transparent'
-                      }`}
+                        }`}
                     >
                       {snippet.title}
                     </button>
@@ -180,8 +179,8 @@ const Showcase = () => {
                     <Code2 className="w-6 h-6 text-agentic-primary" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-agentic-text font-display">Auto-Generated Code</h3>
-                    <p className="text-agentic-text/80 font-sans">
+                    <h3 className="text-xl font-normal mb-2 text-agentic-text font-display">Auto-Generated Code</h3>
+                    <p className="text-sm leading-loose text-agentic-text/70 font-sans">
                       <span className="font-semibold italic">InfraX</span> generates production-ready infrastructure code following best practices and security standards.
                     </p>
                   </div>
@@ -194,8 +193,8 @@ const Showcase = () => {
                     <CheckCircle className="w-6 h-6 text-agentic-primary" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-agentic-text font-display">Validated & Tested</h3>
-                    <p className="text-agentic-text/80 font-sans">
+                    <h3 className="text-xl font-normal mb-2 text-agentic-text font-display">Validated & Tested</h3>
+                    <p className="text-sm leading-loose text-agentic-text/70 font-sans">
                       All generated configurations are validated against cloud provider requirements and tested before deployment.
                     </p>
                   </div>
@@ -208,8 +207,8 @@ const Showcase = () => {
                     <Terminal className="w-6 h-6 text-agentic-primary" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-agentic-text font-display">One-Click Deploy</h3>
-                    <p className="text-agentic-text/80 font-sans">
+                    <h3 className="text-xl font-normal mb-2 text-agentic-text font-display">One-Click Deploy</h3>
+                    <p className="text-sm leading-loose text-agentic-text/70 font-sans">
                       Review, approve, and deploy with a single click. <span className="font-semibold italic">InfraX</span> handles the entire deployment process.
                     </p>
                   </div>

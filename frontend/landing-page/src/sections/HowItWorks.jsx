@@ -33,7 +33,7 @@ const HowItWorks = () => {
     <section id="solutions" className="py-24 relative overflow-hidden bg-agentic-secondary">
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 z-0 pointer-events-none bg-dashed-grid mask-radial-fade"></div>
-      
+
       <div className="container mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -42,7 +42,8 @@ const HowItWorks = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-display text-agentic-text">
+          <div className="text-xs uppercase font-medium tracking-[0.2em] text-agentic-primary/80 mb-3">Operational Flow</div>
+          <h2 className="text-4xl md:text-5xl font-light mb-4 font-display text-agentic-text">
             How <span className="text-agentic-primary">InfraX</span> Works
           </h2>
           <p className="text-xl text-agentic-text/80 max-w-2xl mx-auto font-sans">
@@ -74,10 +75,10 @@ const HowItWorks = () => {
                         <div className="w-12 h-12 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center">
                           <Icon className="w-6 h-6 text-agentic-primary" />
                         </div>
-                        <span className="text-2xl font-bold text-agentic-primary font-mono">{step.number}</span>
+                        <span className="text-4xl font-light tracking-tighter opacity-50 text-agentic-primary font-mono">{step.number}</span>
                       </div>
-                      <h3 className="text-2xl font-bold mb-3 text-agentic-text font-display">{step.title}</h3>
-                      <p className="text-agentic-text/80 leading-relaxed font-sans">{step.description}</p>
+                      <h3 className="text-2xl font-normal mb-3 text-agentic-text font-display">{step.title}</h3>
+                      <p className="text-sm leading-loose text-agentic-text/70 font-sans">{step.description}</p>
                     </div>
                   </div>
 
@@ -116,10 +117,10 @@ const HowItWorks = () => {
 
                   <div className="glass-effect p-6">
                     <div className="flex items-center space-x-3 mb-4">
-                      <span className="text-xl font-bold text-agentic-primary font-mono">{step.number}</span>
+                      <span className="text-3xl font-light tracking-tighter opacity-50 text-agentic-primary font-mono">{step.number}</span>
                     </div>
-                    <h3 className="text-xl font-bold mb-3 text-agentic-text font-display">{step.title}</h3>
-                    <p className="text-agentic-text/80 leading-relaxed font-sans">{step.description}</p>
+                    <h3 className="text-xl font-normal mb-3 text-agentic-text font-display">{step.title}</h3>
+                    <p className="text-sm leading-loose text-agentic-text/70 font-sans">{step.description}</p>
                   </div>
                 </motion.div>
               );
