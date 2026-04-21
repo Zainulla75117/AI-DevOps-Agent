@@ -72,11 +72,8 @@ const ChatWidget = ({ initialMessage }) => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-[#F0F7FF] text-[#2196F3] rounded-full shadow-lg hover:bg-[#E3F2FD] hover:shadow-md transition-all duration-300 flex items-center justify-center z-50 group"
+          className="fixed bottom-6 right-6 w-14 h-14 bg-[#F0F7FF] text-[#2196F3] rounded-full shadow-lg hover:bg-[#E3F2FD] hover:shadow-md transition-all duration-300 flex items-center justify-center z-50 group animate-float-smooth"
           aria-label="Open chat"
-          style={{
-            animation: 'bounce-subtle 2s ease-in-out infinite'
-          }}
         >
           <svg
             className="w-6 h-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12"
@@ -174,9 +171,9 @@ const ChatWidget = ({ initialMessage }) => {
                   <div className="flex justify-start">
                     <div className="bg-white border border-gray-200 rounded-lg px-4 py-2">
                       <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse-soft"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse-soft" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse-soft" style={{ animationDelay: '0.4s' }}></div>
                       </div>
                     </div>
                   </div>

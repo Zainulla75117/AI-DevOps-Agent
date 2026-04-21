@@ -21,6 +21,7 @@ from datetime import datetime
 from gitlab_downloader import download_repository_zip
 from techstack_analyzer import analyze_codebase
 from jenkinsfile_generator import generate_jenkinsfile, is_jenkinsfile_generator_available
+from project_client import project_client
 
 # Import RAG module
 try:
@@ -141,6 +142,7 @@ class ChatRequest(BaseModel):
     message: Optional[str] = Field(None, description="User message")
     query: Optional[str] = Field(None, description="Query string for form submissions (alternative to message)")
     session_id: Optional[str] = Field(None, description="Chat session ID")
+    project_id: Optional[str] = Field(None, description="Project ID to fetch metadata")
     has_form_data: bool = Field(default=False, description="Whether form data is included")
     form_data: Optional[Dict[str, Any]] = Field(None, description="Form submission data")
     is_form_submission: bool = Field(default=False, description="Whether this is a form submission")
@@ -1636,6 +1638,18 @@ async def chat_stream_post(
     # Initialize session if needed
     if session_id not in sessions:
         sessions[session_id] = {"messages": []}
+        
+        # Fetch project_info if project_id is provided
+        if request.project_id:
+            try:
+                auth_token = authorization[7:] if authorization and authorization.startswith("Bearer ") else ""
+                if auth_token:
+                    project_info = await project_client.get_project(request.project_id, auth_token)
+                    if project_info:
+                        sessions[session_id]["project_info"] = project_info
+                        logger.info(f"Loaded project metadata for project {request.project_id}")
+            except Exception as e:
+                logger.warning(f"Could not fetch project metadata: {e}")
     
     # Determine message content - use query if provided, otherwise message
     user_message = request.get_message()
@@ -1710,6 +1724,7 @@ async def chat_stream_post(
 async def chat_stream_get(
     message: str = Query(..., description="User message"),
     session_id: Optional[str] = Query(None, description="Chat session ID"),
+    project_id: Optional[str] = Query(None, description="Project ID for contextual metadata"),
     token: Optional[str] = Query(None, description="JWT token (required for SSE - EventSource can't send headers)"),
     authorization: Optional[str] = Header(None, alias="Authorization"),
     is_form_submission: Optional[bool] = Query(False, description="Whether this is a form submission"),
@@ -1758,6 +1773,18 @@ async def chat_stream_get(
     # Initialize session if needed
     if session_id not in sessions:
         sessions[session_id] = {"messages": []}
+        
+        # Fetch project_info if project_id is provided
+        if project_id:
+            try:
+                auth_token = token or (authorization[7:] if authorization and authorization.startswith("Bearer ") else "")
+                if auth_token:
+                    project_info = await project_client.get_project(project_id, auth_token)
+                    if project_info:
+                        sessions[session_id]["project_info"] = project_info
+                        logger.info(f"Loaded project metadata for project {project_id}")
+            except Exception as e:
+                logger.warning(f"Could not fetch project metadata: {e}")
     
     # Prepare form_data if this is a form submission
     form_data = None

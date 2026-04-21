@@ -56,7 +56,7 @@ const RegistrationPage = () => {
           
           {/* Onboarding Value Proposition */}
           <div className="text-center space-y-6 bg-white/5 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
-            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-blue-300 via-emerald-100 to-blue-200 tracking-tight font-display">
+            <h2 className="text-3xl font-bold text-white tracking-tight font-display">
               Build the Future Faster
             </h2>
             <div className="space-y-4">

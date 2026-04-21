@@ -27,6 +27,7 @@ PyObjectId = Annotated[
 class Project(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=ObjectId, alias="_id")
     project_name: str
+    owner_username: str
     description: Optional[str] = None
     domain: Optional[str] = None
     platform: Optional[str] = None

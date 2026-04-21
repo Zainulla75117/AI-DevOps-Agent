@@ -28,8 +28,12 @@ class User(BaseModel):
     """User model (read-only lookup from shared users collection)."""
     id: Optional[PyObjectId] = Field(default_factory=ObjectId, alias="_id")
     username: str
-    password: str
+    password: Optional[str] = None
     email: Optional[str] = None
+    avatar_url: Optional[str] = None
+    github_id: Optional[int] = None
+    google_id: Optional[str] = None
+    auth_provider: str = "local"
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None

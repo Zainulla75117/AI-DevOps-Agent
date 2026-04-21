@@ -7,6 +7,7 @@ import InfrastructurePage from './pages/InfrastructurePage';
 import AutomationPage from './pages/AutomationPage';
 import MonitoringPage from './pages/MonitoringPage';
 import SettingsPage from './pages/SettingsPage';
+import GitHubCallbackPage from './pages/GitHubCallbackPage';
 
 import { isAuthenticated } from './services/authService';
 import './App.css';
@@ -83,6 +84,8 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/auth/github/callback" element={<GitHubCallbackPage />} />
+      <Route path="/auth/google/callback" element={<GitHubCallbackPage />} />
       <Route path="/" element={<Navigate to="/home" replace />} />
     </Routes>
 </Router>

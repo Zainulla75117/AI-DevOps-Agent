@@ -54,6 +54,8 @@ export default {
         'slide-in-error': 'slideInError 0.2s ease-out',
         'slide-in-right': 'slideInRight 0.2s ease-out',
         'spin-slow': 'spin 0.6s linear infinite',
+        'pulse-soft': 'pulseSoft 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite',
+        'float-smooth': 'floatSmooth 3s cubic-bezier(0.16, 1, 0.3, 1) infinite',
       },
       keyframes: {
         float: {
@@ -106,6 +108,14 @@ export default {
         slideInRight: {
           'from': { opacity: '0', transform: 'translateX(100%)' },
           'to': { opacity: '1', transform: 'translateX(0)' },
+        },
+        pulseSoft: {
+          '0%, 100%': { opacity: '0.3', transform: 'scale(0.95)' },
+          '50%': { opacity: '1', transform: 'scale(1)' },
+        },
+        floatSmooth: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
         },
       },
     },

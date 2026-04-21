@@ -33,10 +33,16 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
+class GitHubCallbackRequest(BaseModel):
+    """Schema for GitHub OAuth callback."""
+    code: str
+
 class TokenUser(BaseModel):
     """Schema for user info in token response."""
     username: str
     email: Optional[str] = None
+    avatar_url: Optional[str] = None
+    auth_provider: str = "local"
 
 class TokenResponse(BaseModel):
     """Schema for JWT token response."""

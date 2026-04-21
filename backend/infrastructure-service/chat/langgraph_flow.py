@@ -58,6 +58,7 @@ class InfraChatState(TypedDict):
     session_id: str
     project_id: str
     project_name: str
+    project_info: Dict[str, Any]
     user_message: str
     auth_token: str
 
@@ -99,7 +100,23 @@ def parse_extraction(text: str) -> dict | None:
 
 def strip_extraction(text: str) -> str:
     """Remove the hidden extraction block from the response shown to the user."""
-    return re.sub(r"<<<EXTRACT>>>.*?<<<END_EXTRACT>>>", "", text, flags=re.DOTALL).strip()
+    # 1. Remove the extract block if it's perfectly wrapped in its own code block
+    cleaned = re.sub(r"```(?:json|)\s*<<<EXTRACT>>>.*?<<<END_EXTRACT>>>\s*```", "", text, flags=re.DOTALL | re.IGNORECASE)
+    
+    # 2. Remove the extract block normally
+    cleaned = re.sub(r"<<<EXTRACT>>>.*?<<<END_EXTRACT>>>", "", cleaned, flags=re.DOTALL)
+    
+    # 3. Un-wrap if the LLM wrapped the ENTIRE response (Text included) in a single ```json or ``` block
+    cleaned = cleaned.strip()
+    if cleaned.startswith("```json") or cleaned.startswith("```markdown"):
+        cleaned = re.sub(r"^```(?:json|markdown)\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+    elif cleaned.startswith("```") and cleaned.count("```") == 2 and cleaned.endswith("```"):
+        # If it's a completely generic ``` wrapper with no language, and only 1 pair exists
+        cleaned = re.sub(r"^```\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+        
+    return cleaned.strip()
 
 
 def get_required_fields(resource_type: str) -> list[str]:
@@ -184,10 +201,12 @@ async def process_message(state: InfraChatState) -> InfraChatState:
         # Build conversation history for LLM
         history = state.get("messages", [])
         existing_resources = state.get("existing_resources", [])
+        project_info = state.get("project_info", {})
         system_prompt = build_system_prompt(
             project_name=state.get("project_name", "Unknown"),
             project_id=state.get("project_id", ""),
             existing_resources=existing_resources or state.get("saved_resources", []),
+            project_info=project_info,
         )
 
         llm_messages = [SystemMessage(content=system_prompt)]
@@ -271,7 +290,12 @@ async def process_message(state: InfraChatState) -> InfraChatState:
                             resource_name = ex.get("name", "existing-resource")
                             collected["name"] = resource_name
                             break
-                if current_type and collected and resource_name:
+                
+                if current_type and collected:
+                    if not resource_name:
+                        resource_name = f"{current_type}-resource"
+                        collected["name"] = resource_name
+                        
                     pending_item = {
                         "type": current_type,
                         "fields": {k: v for k, v in collected.items() if not k.startswith("__")},
@@ -312,12 +336,12 @@ async def process_message(state: InfraChatState) -> InfraChatState:
         response_type = "text"
         if intent == "confirm" and pending:
             response_type = "saving"
-        elif intent == "update_infra" and current_type and collected.get("name"):
+        elif intent == "update_infra" and current_type:
             # Updates are ready to confirm as soon as we have fields to change
             has_changes = any(k for k in collected if not k.startswith("__") and k != "name")
             if has_changes:
                 response_type = "ready_to_confirm"
-        elif not missing and current_type and collected.get("name") and intent == "create_infra":
+        elif not missing and current_type and intent == "create_infra":
             response_type = "ready_to_confirm"
 
         return {
@@ -566,6 +590,7 @@ async def run_turn(
         "session_id": session_state.get("session_id", ""),
         "project_id": session_state.get("project_id", ""),
         "project_name": session_state.get("project_name", "Unknown"),
+        "project_info": session_state.get("project_info", {}),
         "user_message": user_message,
         "auth_token": session_state.get("auth_token", ""),
         "intent": session_state.get("intent", "general"),

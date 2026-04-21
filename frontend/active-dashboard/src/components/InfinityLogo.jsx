@@ -19,10 +19,9 @@ const InfinityLogo = () => {
       ></div>
       <svg
         className="w-full h-full drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]"
-        style={{ willChange: 'transform' }}
         viewBox="0 0 200 100"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ opacity: 1 }}
+        style={{ opacity: 1, willChange: 'transform' }}
       >
         {/* DevOps Gear Icon - Left */}
         <g className="animate-[spin-slow_8s_linear_infinite]" transform="translate(25, 50)">

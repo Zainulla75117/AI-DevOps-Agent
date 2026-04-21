@@ -86,10 +86,21 @@ async def get_or_create_session(
         except Exception as e:
             logger.warning(f"Could not fetch existing resources: {e}")
 
+        # Fetch full project metadata for LLM context
+        project_info = {}
+        try:
+            res = await project_client.get_project(project_id, auth_token)
+            if res:
+                project_info = res
+                logger.info(f"Loaded project metadata for project {project_id}")
+        except Exception as e:
+            logger.warning(f"Could not fetch project metadata: {e}")
+
         sessions[session_id] = {
             "session_id": session_id,
             "project_id": project_id,
             "project_name": project_name,
+            "project_info": project_info,
             "auth_token": auth_token,
             "messages": [],
             # LangGraph state fields

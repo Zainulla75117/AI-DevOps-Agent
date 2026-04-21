@@ -154,7 +154,7 @@ const LeftSidebar = ({
       {/* Mobile Overlay */}
       {isMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-950/50 z-40 lg:hidden"
           onClick={onMenuToggle}
         />
       )}

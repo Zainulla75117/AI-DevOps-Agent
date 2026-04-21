@@ -40,3 +40,12 @@ yarn-error.log*
 
 #zip_files
 *.zip
+
+# Logs
+*.log
+logs/
+
+# Antigravity / Gemini Agent
+.gemini/
+.agents/*
+skills-lock.json

@@ -151,3 +151,125 @@ async def delete_user(db: AsyncIOMotorDatabase, user_id: str) -> bool:
     result = await db.users.delete_one({"_id": ObjectId(user_id)})
     return result.deleted_count > 0
 
+
+async def get_or_create_github_user(
+    db: AsyncIOMotorDatabase,
+    github_id: int,
+    username: str,
+    email: str,
+    avatar_url: str,
+) -> User:
+    """
+    Find an existing user by GitHub ID, or create a new one.
+    Updates profile info (avatar, email) on each login.
+    
+    Args:
+        db: MongoDB database instance
+        github_id: GitHub user ID (numeric)
+        username: GitHub login name
+        email: GitHub email
+        avatar_url: GitHub avatar URL
+        
+    Returns:
+        User model (existing or newly created)
+    """
+    # 1. Try to find by github_id
+    existing = await db.users.find_one({"github_id": github_id})
+    if existing:
+        # Update profile info on each login
+        await db.users.update_one(
+            {"_id": existing["_id"]},
+            {"$set": {
+                "avatar_url": avatar_url,
+                "email": email or existing.get("email"),
+                "updated_at": datetime.utcnow(),
+            }}
+        )
+        updated = await db.users.find_one({"_id": existing["_id"]})
+        print(f"✅ GitHub user found and updated: {username} (github_id={github_id})")
+        return User(**updated)
+
+    # 2. Check for username collision with local users
+    final_username = username
+    collision = await db.users.find_one({"username": username})
+    if collision:
+        final_username = f"{username}_gh"
+        print(f"⚠️ Username '{username}' taken, using '{final_username}' for GitHub user")
+
+    # 3. Create new user
+    user_dict = {
+        "username": final_username,
+        "password": None,
+        "email": email,
+        "avatar_url": avatar_url,
+        "github_id": github_id,
+        "auth_provider": "github",
+        "is_active": True,
+        "created_at": datetime.utcnow(),
+    }
+    result = await db.users.insert_one(user_dict)
+    created = await db.users.find_one({"_id": result.inserted_id})
+    print(f"✅ GitHub user created: {final_username} (github_id={github_id})")
+    return User(**created)
+
+
+async def get_or_create_google_user(
+    db: AsyncIOMotorDatabase,
+    google_id: str,
+    username: str,
+    email: str,
+    avatar_url: str,
+) -> User:
+    """
+    Find an existing user by Google ID, or create a new one.
+    Updates profile info (avatar, email) on each login.
+    
+    Args:
+        db: MongoDB database instance
+        google_id: Google 'sub' claim (string)
+        username: Display name from Google
+        email: Google email
+        avatar_url: Google profile picture URL
+        
+    Returns:
+        User model (existing or newly created)
+    """
+    # 1. Try to find by google_id
+    existing = await db.users.find_one({"google_id": google_id})
+    if existing:
+        await db.users.update_one(
+            {"_id": existing["_id"]},
+            {"$set": {
+                "avatar_url": avatar_url,
+                "email": email or existing.get("email"),
+                "updated_at": datetime.utcnow(),
+            }}
+        )
+        updated = await db.users.find_one({"_id": existing["_id"]})
+        print(f"✅ Google user found and updated: {username} (google_id={google_id})")
+        return User(**updated)
+
+    # 2. Check for username collision
+    final_username = username
+    collision = await db.users.find_one({"username": username})
+    if collision:
+        # Use email prefix as fallback username
+        email_prefix = email.split("@")[0] if email else username
+        final_username = f"{email_prefix}_google"
+        print(f"⚠️ Username '{username}' taken, using '{final_username}' for Google user")
+
+    # 3. Create new user
+    user_dict = {
+        "username": final_username,
+        "password": None,
+        "email": email,
+        "avatar_url": avatar_url,
+        "google_id": google_id,
+        "auth_provider": "google",
+        "is_active": True,
+        "created_at": datetime.utcnow(),
+    }
+    result = await db.users.insert_one(user_dict)
+    created = await db.users.find_one({"_id": result.inserted_id})
+    print(f"✅ Google user created: {final_username} (google_id={google_id})")
+    return User(**created)

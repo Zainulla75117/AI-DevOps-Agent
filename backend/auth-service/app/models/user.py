@@ -32,8 +32,12 @@ class User(BaseModel):
     """
     id: Optional[PyObjectId] = Field(default_factory=ObjectId, alias="_id")
     username: str
-    password: str  # In production, this should be hashed
+    password: Optional[str] = None  # None for OAuth users
     email: Optional[str] = None
+    avatar_url: Optional[str] = None
+    github_id: Optional[int] = None
+    google_id: Optional[str] = None
+    auth_provider: str = "local"  # "local", "github", or "google"
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None

@@ -219,7 +219,7 @@ const createMarkdownComponents = (messages, message, handleRegenerateCode, handl
     ol: ({ children }) => <ol className="list-decimal pl-6 mb-3 space-y-1.5 text-slate-700 marker:text-slate-400">{children}</ol>,
     li: ({ children }) => <li className="leading-relaxed">{children}</li>,
     strong: ({ children }) => <strong className="font-semibold text-slate-900">{children}</strong>,
-    blockquote: ({ children }) => <blockquote className="border-l-4 border-emerald-500 pl-4 py-1 my-3 bg-emerald-50/50 italic text-slate-700 rounded-r">{children}</blockquote>,
+    blockquote: ({ children }) => <blockquote className="border border-emerald-100/50 px-4 py-2 my-3 bg-emerald-50/50 italic text-emerald-900 rounded">{children}</blockquote>,
     a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 font-medium">{children}</a>,
     table: ({ children }) => (
       <div className="overflow-x-auto my-4 rounded border border-slate-200">
@@ -237,6 +237,19 @@ const createMarkdownComponents = (messages, message, handleRegenerateCode, handl
       const language = match ? match[1].toLowerCase().trim() : '';
       const isGroovy = language === 'groovy';
       
+      const isText = language === 'text' || (!match && !inline);
+
+      if (isText) {
+        if (value.includes('\n')) {
+          return (
+            <div className="font-medium text-slate-800 bg-slate-50 border border-slate-200 rounded-md p-3 my-3 whitespace-pre-wrap shadow-sm text-[13.5px] leading-relaxed">
+              {value}
+            </div>
+          );
+        }
+        return <span className="font-bold text-slate-900 mx-1">{value}</span>;
+      }
+      
       return !inline && match ? (
         <CodeBlock 
           language={language} 
@@ -245,8 +258,6 @@ const createMarkdownComponents = (messages, message, handleRegenerateCode, handl
           onRegenerate={isGroovy && handleRegenerateCode ? () => handleRegenerateCode(messageIndex) : undefined}
           onConfirmed={isGroovy && handleConfirmCode ? handleConfirmCode : undefined}
         />
-      ) : !inline && !match ? (
-        <CodeBlock language="text" value={value} />
       ) : (
         <code className="bg-slate-100 text-emerald-700 px-1.5 py-0.5 rounded text-[13px] font-mono border border-slate-200/60" {...props}>
           {children}
@@ -1386,9 +1397,14 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
     }
   }, [isOpen])
 
+  const initializedRef = useRef(false)
+
   // On open: load most recent session or create new
   useEffect(() => {
     if (isOpen) {
+      if (initializedRef.current) return
+      initializedRef.current = true
+
       const sessions = loadJenkinsSessions()
       setChatSessions(sessions)
       if (sessions.length > 0 && !activeLocalSessionId) {
@@ -1400,6 +1416,8 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
       } else if (sessions.length === 0 && !activeLocalSessionId) {
         handleNewJenkinsChat()
       }
+    } else {
+      initializedRef.current = false
     }
   }, [isOpen])
 
@@ -1570,6 +1588,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
           body: JSON.stringify({
             message: userMessage,
             session_id: session,
+            project_id: project?.id,
             has_form_data: !!formData,
             form_data: formData,
           }),
@@ -1661,6 +1680,10 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
     
     if (currentSessionId) {
       params.append('session_id', currentSessionId)
+    }
+    
+    if (project?.id) {
+      params.append('project_id', project.id)
     }
     
     if (chatToken) {
@@ -1820,6 +1843,10 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
       
       if (chatToken) {
         params.append('token', chatToken)
+      }
+
+      if (project?.id) {
+        params.append('project_id', project.id)
       }
       
       const sseUrl = `${chatApiUrl}/api/jenkins/chat/stream?${params.toString()}`
@@ -2026,6 +2053,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
     const requestPayload = {
       query: 'submit',
       session_id: formSessionId || sessionId,
+      project_id: project?.id,
       is_form_submission: true,
       form_data: submissionPayload,
     }
@@ -2544,9 +2572,9 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: '4px' }}>
-                        <div style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%', animation: 'bounce 1s infinite' }}></div>
-                        <div style={{ width: '8px', height: '8px', backgroundColor: '#0d9488', borderRadius: '50%', animation: 'bounce 1s infinite', animationDelay: '0.1s' }}></div>
-                        <div style={{ width: '8px', height: '8px', backgroundColor: '#14b8a6', borderRadius: '50%', animation: 'bounce 1s infinite', animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse-soft"></div>
+                        <div className="w-2 h-2 bg-teal-600 rounded-full animate-pulse-soft" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-teal-500 rounded-full animate-pulse-soft" style={{ animationDelay: '0.2s' }}></div>
                       </div>
                     )}
                   </div>

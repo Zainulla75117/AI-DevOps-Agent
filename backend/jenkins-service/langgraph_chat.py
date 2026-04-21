@@ -73,6 +73,7 @@ class ChatState(TypedDict):
     """State for the chat workflow"""
     messages: Annotated[list, add_messages]
     session_id: str
+    project_info: Dict[str, Any]
     user_message: str
     form_data: Optional[Dict[str, Any]]
     requires_form: bool
@@ -216,8 +217,30 @@ async def generate_llm_response(state: ChatState) -> ChatState:
         # Get conversation history
         messages = state.get("messages", [])
         
-        # Prepare messages for LLM
-        llm_messages = [SystemMessage(content=SYSTEM_PROMPT)]
+        # Prepare dynamic system prompt with project context
+        project_info = state.get("project_info", {})
+        dynamic_system_prompt = SYSTEM_PROMPT
+        
+        if project_info:
+            domain = project_info.get("domain", "general")
+            env = project_info.get("environment", "development")
+            traffic = project_info.get("expectedTraffic", "unknown")
+            cost_pref = project_info.get("costPreference", "balanced")
+            desc = project_info.get("description", "")
+            
+            project_context = f"""
+PROJECT METADATA AND CONTEXT:
+- Domain / Type: {domain}
+- Primary Environment: {env}
+- Expected Traffic Load: {traffic}
+- Cost Preference: {cost_pref}
+- Description: {desc}
+
+You MUST align your CI/CD pipeline decisions with these project settings. For example, if environment is 'production', suggest manual approval steps. If traffic is 'high', suggest load testing steps.
+"""
+            dynamic_system_prompt += "\n" + project_context
+            
+        llm_messages = [SystemMessage(content=dynamic_system_prompt)]
         
         # Add conversation history (last 20 messages)
         for msg in messages[-20:]:
@@ -470,6 +493,7 @@ async def process_chat_message(
         initial_state = {
             "messages": messages,
             "session_id": session_id,
+            "project_info": session.get("project_info", {}),
             "user_message": message,
             "form_data": form_data,
             "requires_form": False,
@@ -566,8 +590,32 @@ async def stream_chat_message(
             elif role == "assistant":
                 messages.append(AIMessage(content=content))
         
+        # Prepare dynamic system prompt with project context
+        session = sessions.get(session_id, {})
+        project_info = session.get("project_info", {})
+        dynamic_system_prompt = SYSTEM_PROMPT
+        
+        if project_info:
+            domain = project_info.get("domain", "general")
+            env = project_info.get("environment", "development")
+            traffic = project_info.get("expectedTraffic", "unknown")
+            cost_pref = project_info.get("costPreference", "balanced")
+            desc = project_info.get("description", "")
+            
+            project_context = f"""
+PROJECT METADATA AND CONTEXT:
+- Domain / Type: {domain}
+- Primary Environment: {env}
+- Expected Traffic Load: {traffic}
+- Cost Preference: {cost_pref}
+- Description: {desc}
+
+You MUST align your CI/CD pipeline decisions with these project settings. For example, if environment is 'production', suggest manual approval steps. If traffic is 'high', suggest load testing steps.
+"""
+            dynamic_system_prompt += "\n" + project_context
+            
         # Prepare messages for streaming
-        llm_messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages + [HumanMessage(content=message)]
+        llm_messages = [SystemMessage(content=dynamic_system_prompt)] + messages + [HumanMessage(content=message)]
         
         # Stream response
         accumulated = ""

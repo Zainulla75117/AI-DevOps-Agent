@@ -1,49 +1,20 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Play } from 'lucide-react';
-import { useState, useEffect } from 'react';
 
 const Hero = () => {
-  const [codeLines, setCodeLines] = useState([
-    '> infrax deploy --target aws-us-east-1',
-    '✓ Analyzing infrastructure requirements...',
-    '✓ Provisioning AWS EKS cluster...',
-    '✓ Configuring VPC & networking...',
-    '✓ Deploying monitoring stack...',
-    '✓ Infrastructure ready. Latency check: OK.',
-  ]);
-  const [currentLine, setCurrentLine] = useState(0);
-  const [isResetting, setIsResetting] = useState(false);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentLine((prev) => {
-        if (prev >= codeLines.length - 1) {
-          setIsResetting(true);
-          setTimeout(() => {
-            setCurrentLine(0);
-            setIsResetting(false);
-          }, 3000);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 1500);
-    return () => clearInterval(interval);
-  }, [codeLines.length]);
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-agentic-secondary">
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 z-0 pointer-events-none bg-dashed-grid mask-vertical-fade opacity-60"></div>
 
       <div className="container mx-auto px-6 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
+        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
+          {/* Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-8"
+            className="space-y-8 flex flex-col items-center"
           >
             <div className="inline-flex items-center space-x-2 px-4 py-2 bg-agentic-surface border border-agentic-text/10 rounded-full">
               <span className="w-2 h-2 bg-agentic-primary rounded-full animate-pulse" />
@@ -54,11 +25,11 @@ const Hero = () => {
               Delegate Your <span className="text-agentic-primary">DevOps</span> Workflows
             </h1>
 
-            <p className="text-xl text-agentic-text/80 leading-relaxed max-w-2xl font-sans">
+            <p className="text-xl text-agentic-text/80 leading-relaxed max-w-2xl font-sans mx-auto">
               <span className="font-semibold italic">InfraX</span> builds cloud infrastructure, configures pipelines, and acts as your autonomous SRE. Tell it what you need, and consider it done.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
               <motion.a
                 href="https://infraxai.vercel.app"
                 whileHover={{ scale: 1.02 }}
@@ -77,48 +48,6 @@ const Hero = () => {
                 <Play className="w-5 h-5" />
                 <span>Watch Product Demo</span>
               </motion.a>
-            </div>
-          </motion.div>
-
-          {/* Right - Terminal/Dashboard Preview */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className="relative"
-          >
-            <div className="bg-agentic-surface rounded-xl p-6 border border-agentic-text/10 shadow-lg">
-              {/* Terminal Header */}
-              <div className="flex items-center space-x-2 mb-4 border-b border-agentic-text/5 pb-4">
-                <div className="w-3 h-3 rounded-full bg-agentic-danger" />
-                <div className="w-3 h-3 rounded-full bg-agentic-warning" />
-                <div className="w-3 h-3 rounded-full bg-agentic-success" />
-                <span className="ml-4 text-sm font-medium text-agentic-text/50 font-sans tracking-wide">Terminal</span>
-              </div>
-
-              {/* Terminal Content */}
-              <div className="bg-agentic-text text-agentic-surface rounded-md p-6 font-mono text-sm space-y-3 min-h-[300px] shadow-inner">
-                {!isResetting && codeLines.slice(0, currentLine + 1).map((line, idx) => (
-                  <motion.div
-                    key={`${line}-${idx}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
-                    className={line.startsWith('✓') ? 'text-agentic-success' : 'text-agentic-secondary/80'}
-                  >
-                    {line}
-                  </motion.div>
-                ))}
-                {!isResetting && currentLine < codeLines.length - 1 && (
-                  <motion.span
-                    animate={{ opacity: [1, 0] }}
-                    transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
-                    className="text-agentic-primary font-bold inline-block"
-                  >
-                    ▋
-                  </motion.span>
-                )}
-              </div>
             </div>
           </motion.div>
         </div>

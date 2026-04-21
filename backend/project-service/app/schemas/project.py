@@ -29,6 +29,7 @@ class ProjectUpdate(BaseModel):
 class ProjectResponse(BaseModel):
     id: str
     project_name: str
+    owner_username: str
     description: Optional[str] = None
     domain: Optional[str] = None
     platform: Optional[str] = None

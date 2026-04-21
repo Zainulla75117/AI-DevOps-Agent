@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
 from datetime import timedelta
+import httpx
+from urllib.parse import quote
 from app.database.connection import get_db
 from app.schemas.user import UserCreate, UserResponse, UserLogin, UserUpdate, TokenResponse, TokenUser
 from app.crud import user as crud_user
@@ -75,6 +78,12 @@ async def login(user: UserLogin, db: AsyncIOMotorDatabase = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"
+        )
+    
+    if db_user.password is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="This account uses GitHub login. Please use 'Continue with GitHub' instead."
         )
     
     if db_user.password != user.password:
@@ -236,3 +245,284 @@ async def delete_user(user_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
     
     return None
 
+
+# ═══════════════════════════════════════════════════════════════════════
+#  GitHub OAuth Endpoints
+# ═══════════════════════════════════════════════════════════════════════
+
+@router.get("/github/login")
+async def github_login():
+    """
+    Redirect the user to GitHub's OAuth authorization page.
+    The user will be asked to authorize the InfraX application.
+    """
+    if not settings.GITHUB_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="GitHub OAuth is not configured. Set GITHUB_CLIENT_ID in .env"
+        )
+    
+    github_auth_url = (
+        f"https://github.com/login/oauth/authorize"
+        f"?client_id={settings.GITHUB_CLIENT_ID}"
+        f"&redirect_uri={quote(settings.GITHUB_REDIRECT_URI)}"
+        f"&scope=user:email"
+    )
+    return RedirectResponse(url=github_auth_url)
+
+
+@router.get("/github/callback")
+async def github_callback(code: str, db: AsyncIOMotorDatabase = Depends(get_db)):
+    """
+    Handle the GitHub OAuth callback.
+    
+    Flow:
+    1. Exchange the authorization code for a GitHub access token.
+    2. Fetch the GitHub user's profile.
+    3. Find or create the user in MongoDB.
+    4. Create a JWT token and redirect to the frontend.
+    """
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing authorization code"
+        )
+
+    # 1. Exchange code for GitHub access token
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            token_resp = await client.post(
+                "https://github.com/login/oauth/access_token",
+                json={
+                    "client_id": settings.GITHUB_CLIENT_ID,
+                    "client_secret": settings.GITHUB_CLIENT_SECRET,
+                    "code": code,
+                },
+                headers={"Accept": "application/json"},
+            )
+            token_data = token_resp.json()
+    except Exception as e:
+        print(f"❌ GitHub token exchange failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to exchange code with GitHub: {str(e)}"
+        )
+
+    gh_access_token = token_data.get("access_token")
+    if not gh_access_token:
+        error_desc = token_data.get("error_description", token_data.get("error", "Unknown error"))
+        print(f"❌ GitHub OAuth error: {error_desc}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"GitHub OAuth error: {error_desc}"
+        )
+
+    # 2. Fetch GitHub user profile
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            user_resp = await client.get(
+                "https://api.github.com/user",
+                headers={
+                    "Authorization": f"Bearer {gh_access_token}",
+                    "Accept": "application/vnd.github+json",
+                },
+            )
+            gh_user = user_resp.json()
+
+            # Fetch primary email if not public
+            email = gh_user.get("email") or ""
+            if not email:
+                emails_resp = await client.get(
+                    "https://api.github.com/user/emails",
+                    headers={
+                        "Authorization": f"Bearer {gh_access_token}",
+                        "Accept": "application/vnd.github+json",
+                    },
+                )
+                if emails_resp.status_code == 200:
+                    emails = emails_resp.json()
+                    primary = next((e for e in emails if e.get("primary")), None)
+                    if primary:
+                        email = primary["email"]
+    except Exception as e:
+        print(f"❌ GitHub user fetch failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to fetch GitHub user profile: {str(e)}"
+        )
+
+    github_id = gh_user.get("id")
+    username = gh_user.get("login", "")
+    avatar_url = gh_user.get("avatar_url", "")
+
+    if not github_id or not username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid GitHub user profile"
+        )
+
+    print(f"🔑 GitHub user authenticated: {username} (id={github_id}, email={email})")
+
+    # 3. Find or create user in MongoDB
+    db_user = await crud_user.get_or_create_github_user(
+        db,
+        github_id=github_id,
+        username=username,
+        email=email,
+        avatar_url=avatar_url,
+    )
+
+    # 4. Create JWT token
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": db_user.username},
+        expires_delta=access_token_expires,
+    )
+
+    # 5. Redirect to frontend with token in URL params
+    frontend_url = settings.FRONTEND_URL
+    redirect_url = (
+        f"{frontend_url}/auth/github/callback"
+        f"?token={access_token}"
+        f"&username={quote(db_user.username)}"
+        f"&email={quote(db_user.email or '')}"
+        f"&avatar_url={quote(db_user.avatar_url or '')}"
+    )
+    
+    print(f"✅ GitHub OAuth complete for {db_user.username}, redirecting to frontend")
+    return RedirectResponse(url=redirect_url)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Google OAuth Endpoints
+# ═══════════════════════════════════════════════════════════════════════
+
+@router.get("/google/login")
+async def google_login():
+    """
+    Redirect the user to Google's OAuth authorization page.
+    """
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google OAuth is not configured. Set GOOGLE_CLIENT_ID in .env"
+        )
+    
+    google_auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth"
+        f"?client_id={settings.GOOGLE_CLIENT_ID}"
+        f"&redirect_uri={quote(settings.GOOGLE_REDIRECT_URI)}"
+        f"&response_type=code"
+        f"&scope=openid%20email%20profile"
+        f"&access_type=offline"
+    )
+    return RedirectResponse(url=google_auth_url)
+
+
+@router.get("/google/callback")
+async def google_callback(code: str, db: AsyncIOMotorDatabase = Depends(get_db)):
+    """
+    Handle the Google OAuth callback.
+    
+    Flow:
+    1. Exchange the authorization code for tokens.
+    2. Fetch the Google user's profile from the userinfo endpoint.
+    3. Find or create the user in MongoDB.
+    4. Create a JWT token and redirect to the frontend.
+    """
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing authorization code"
+        )
+
+    # 1. Exchange code for Google tokens
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            token_resp = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": settings.GOOGLE_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                    "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+                    "grant_type": "authorization_code",
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+            token_data = token_resp.json()
+    except Exception as e:
+        print(f"❌ Google token exchange failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to exchange code with Google: {str(e)}"
+        )
+
+    google_access_token = token_data.get("access_token")
+    if not google_access_token:
+        error_desc = token_data.get("error_description", token_data.get("error", "Unknown error"))
+        print(f"❌ Google OAuth error: {error_desc}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Google OAuth error: {error_desc}"
+        )
+
+    # 2. Fetch Google user profile
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            user_resp = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {google_access_token}"},
+            )
+            g_user = user_resp.json()
+    except Exception as e:
+        print(f"❌ Google user fetch failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to fetch Google user profile: {str(e)}"
+        )
+
+    google_id = g_user.get("sub")
+    email = g_user.get("email", "")
+    name = g_user.get("name", "")
+    avatar_url = g_user.get("picture", "")
+
+    if not google_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid Google user profile"
+        )
+
+    # Use email prefix as username (Google doesn't have a 'login' like GitHub)
+    username = email.split("@")[0] if email else name.replace(" ", "").lower()
+
+    print(f"🔑 Google user authenticated: {username} (id={google_id}, email={email})")
+
+    # 3. Find or create user in MongoDB
+    db_user = await crud_user.get_or_create_google_user(
+        db,
+        google_id=google_id,
+        username=username,
+        email=email,
+        avatar_url=avatar_url,
+    )
+
+    # 4. Create JWT token
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": db_user.username},
+        expires_delta=access_token_expires,
+    )
+
+    # 5. Redirect to frontend with token
+    frontend_url = settings.FRONTEND_URL
+    redirect_url = (
+        f"{frontend_url}/auth/google/callback"
+        f"?token={access_token}"
+        f"&username={quote(db_user.username)}"
+        f"&email={quote(db_user.email or '')}"
+        f"&avatar_url={quote(db_user.avatar_url or '')}"
+    )
+    
+    print(f"✅ Google OAuth complete for {db_user.username}, redirecting to frontend")
+    return RedirectResponse(url=redirect_url)

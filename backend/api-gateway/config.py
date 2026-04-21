@@ -51,6 +51,10 @@ ROUTE_MAP = [
 PUBLIC_ROUTES = [
     "/api/users/login",
     "/api/users/register",
+    "/api/users/github/login",
+    "/api/users/github/callback",
+    "/api/users/google/login",
+    "/api/users/google/callback",
     "/api/crypto/public-key",
     "/api/health",
     "/docs",

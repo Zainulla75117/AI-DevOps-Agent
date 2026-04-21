@@ -20,11 +20,10 @@ const Header = () => {
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
           ? 'bg-agentic-surface/95 backdrop-blur-md border-b border-agentic-text/10 shadow-sm'
           : 'bg-transparent'
-      }`}
+        }`}
     >
       <nav className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
@@ -34,10 +33,10 @@ const Header = () => {
             whileHover={{ scale: 1.05 }}
             className="flex items-center"
           >
-            <img 
-              src="/My_Brand-Logo_1.png" 
-              alt="InfraX Logo" 
-              className="h-10 w-auto object-contain"
+            <img
+              src="/My_Brand-Logo_1.png"
+              alt="InfraX Logo"
+              className="h-8 w-auto object-contain"
             />
           </motion.a>
 
@@ -58,7 +57,7 @@ const Header = () => {
             >
               Login
             </a>
-            
+
             <motion.a
               href="https://infraxai.vercel.app/register"
               whileHover={{ scale: 1.05 }}

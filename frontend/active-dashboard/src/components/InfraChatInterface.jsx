@@ -58,6 +58,12 @@ const createDefaultMessage = (projectName) => ({
   text: `Hello! I'm your Infrastructure Copilot. I can help you provision AWS resources for **${projectName}**. What kind of application or infrastructure are you looking to build today?`,
 })
 
+// Helper function to preprocess markdown content to clean up LLM code block hallucinations
+const preprocessMarkdown = (content) => {
+  if (!content || typeof content !== 'string') return '';
+  return content.replace(/```(?:text|)\s*\n(.*?)\n\s*```/ig, (match, p1) => ` **${p1.trim()}** `);
+};
+
 // ============================================================
 // InfraChatInterface
 // ============================================================
@@ -118,7 +124,7 @@ const markdownComponents = {
   ol: ({ children }) => <ol className="list-decimal pl-6 mb-3 space-y-1.5 text-slate-700 marker:text-slate-400">{children}</ol>,
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   strong: ({ children }) => <strong className="font-semibold text-slate-900">{children}</strong>,
-  blockquote: ({ children }) => <blockquote className="border-l-4 border-emerald-500 pl-4 py-1 my-3 bg-emerald-50/50 italic text-slate-700 rounded-r">{children}</blockquote>,
+  blockquote: ({ children }) => <blockquote className="border border-emerald-100/50 px-4 py-2 my-3 bg-emerald-50/50 italic text-emerald-900 rounded">{children}</blockquote>,
   a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 font-medium">{children}</a>,
   table: ({ children }) => (
     <div className="overflow-x-auto my-4 rounded border border-slate-200">
@@ -133,11 +139,23 @@ const markdownComponents = {
   code({ node, inline, className, children, ...props }) {
     const match = /language-(\w+)/.exec(className || '');
     const value = String(children).replace(/\n$/, '');
+    const language = match ? match[1].toLowerCase().trim() : '';
+    
+    const isText = language === 'text' || (!match && !inline);
+
+    if (isText) {
+      if (value.includes('\n')) {
+        return (
+          <div className="font-medium text-slate-800 bg-slate-50 border border-slate-200 rounded-md p-3 my-3 whitespace-pre-wrap shadow-sm text-[13.5px] leading-relaxed">
+            {value}
+          </div>
+        );
+      }
+      return <span className="font-bold text-slate-900 mx-1">{value}</span>;
+    }
     
     return !inline && match ? (
       <CodeBlock language={match[1]} value={value} />
-    ) : !inline && !match ? (
-      <CodeBlock language="text" value={value} />
     ) : (
       <code className="bg-slate-100 text-emerald-700 px-1.5 py-0.5 rounded text-[13px] font-mono border border-slate-200/60" {...props}>
         {children}
@@ -163,8 +181,13 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
   const messagesEndRef = useRef(null)
   const eventSourceRef = useRef(null)
 
+  const initializedRef = useRef(false)
+
   // On mount: if sessions exist, load the most recent one; otherwise create a new session
   useEffect(() => {
+    if (initializedRef.current) return
+    initializedRef.current = true
+
     const sessions = loadSessions(projectId)
     if (sessions.length > 0) {
       const sorted = [...sessions].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
@@ -627,7 +650,7 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
                   }`}
               >
                 <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
-                  {msg.text}
+                  {preprocessMarkdown(msg.text)}
                 </ReactMarkdown>
               </div>
             </div>
@@ -638,7 +661,7 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
             <div className="flex justify-start">
               <div className="max-w-[80%] rounded-2xl rounded-tl-sm px-5 py-3.5 shadow-sm text-sm leading-relaxed bg-white border border-slate-100 text-slate-700">
                 <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
-                  {streamingMessage}
+                  {preprocessMarkdown(streamingMessage)}
                 </ReactMarkdown>
               </div>
             </div>
@@ -648,9 +671,9 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
           {isTyping && !streamingMessage && (
             <div className="flex justify-start">
               <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
-                <span className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse-soft"></span>
+                <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse-soft" style={{ animationDelay: '150ms' }}></span>
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse-soft" style={{ animationDelay: '300ms' }}></span>
               </div>
             </div>
           )}

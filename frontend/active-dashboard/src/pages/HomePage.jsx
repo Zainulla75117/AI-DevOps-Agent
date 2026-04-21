@@ -271,7 +271,7 @@ const HomePage = () => {
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <button
                               onClick={(e) => handleMenuClick(project, e)}
-                              className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-150"
+                              className="p-2 text-blue-900/60 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-all duration-150"
                               title="View Details"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,7 +280,7 @@ const HomePage = () => {
                               </svg>
                             </button>
                             <button
-                              className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-150"
+                              className="p-2 text-blue-900/60 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-all duration-150"
                               title="Edit Project"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,7 +288,7 @@ const HomePage = () => {
                               </svg>
                             </button>
                             <button
-                              className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-150"
+                              className="p-2 text-blue-900/60 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-all duration-150"
                               title="Infrastructure"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -297,7 +297,7 @@ const HomePage = () => {
                             </button>
                             <button
                               onClick={(e) => handleDeleteProject(project, e)}
-                              className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-150"
+                              className="p-2 text-red-900/60 hover:text-red-900 hover:bg-red-50 rounded-lg transition-all duration-150"
                               title="Delete Project"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -329,11 +329,9 @@ const HomePage = () => {
                     {!searchQuery && !showCreateForm && (
                       <button
                         onClick={() => setShowCreateForm(true)}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 hover:shadow-[0_8px_20px_-6px_rgba(37,99,235,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300"
+                        className="inline-flex items-center gap-2 py-3 text-slate-800 text-sm font-semibold hover:text-blue-600 hover:-translate-y-0.5 focus:outline-none transition-all duration-300"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
+                        <img src="/add_project_icon.png" alt="Create Project" className="w-8 h-8 object-contain" />
                         Create Project
                       </button>
                     )}
@@ -352,10 +350,8 @@ const HomePage = () => {
               ) : (
                 <div className="glass-panel rounded-2xl border border-white p-8 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.1)] hover:border-blue-200/50">
                   <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
+                    <div className="w-16 h-16 mx-auto mb-5 flex items-center justify-center">
+                      <img src="/add_project_icon.png" alt="Create Project" className="w-14 h-14 object-contain drop-shadow-md" />
                     </div>
                     <h3 className="text-base font-semibold text-slate-900 mb-1">Create New Project</h3>
                     <p className="text-sm text-slate-500 mb-6">
@@ -387,7 +383,7 @@ const HomePage = () => {
       {/* Project Details Modal */}
       {showProjectDetails && selectedProject && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
           onClick={handleCloseProjectDetails}
         >
           <div

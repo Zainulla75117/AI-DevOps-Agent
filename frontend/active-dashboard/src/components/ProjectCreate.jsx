@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createProject } from '../services/projectService'
+import { getCloudCredentials } from '../services/credentialService'
 
 const ProjectCreate = ({ onProjectCreated, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -9,10 +10,32 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
     primaryEnvironment: 'dev',
     expectedTraffic: 'medium',
     costPreference: 'balanced',
+    platform: 'cloud',
+    cloudProvider: 'aws',
+    region: 'us-east-1',
+    iamName: '',
   })
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cloudCredentials, setCloudCredentials] = useState([])
+  const [isLoadingCreds, setIsLoadingCreds] = useState(false)
+
+  useEffect(() => {
+    const fetchCreds = async () => {
+      setIsLoadingCreds(true)
+      try {
+        const creds = await getCloudCredentials()
+        const credsArray = Array.isArray(creds) ? creds : (creds.data || [])
+        setCloudCredentials(credsArray)
+      } catch (err) {
+        console.error('Failed to fetch cloud credentials:', err)
+      } finally {
+        setIsLoadingCreds(false)
+      }
+    }
+    fetchCreds()
+  }, [])
 
   const projectTypeOptions = [
     { value: 'web', label: 'Web Application' },
@@ -36,6 +59,20 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
     { value: 'cost-optimised', label: 'Cost-Optimised' },
     { value: 'balanced', label: 'Balanced' },
     { value: 'performance-first', label: 'Performance-First' },
+  ]
+
+  const cloudProviderOptions = [
+    { value: 'aws', label: 'Amazon Web Services (AWS)' },
+    { value: 'azure', label: 'Microsoft Azure' },
+    { value: 'gcp', label: 'Google Cloud Platform' },
+  ]
+
+  const regionOptions = [
+    { value: 'us-east-1', label: 'US East (N. Virginia)' },
+    { value: 'us-west-2', label: 'US West (Oregon)' },
+    { value: 'eu-west-1', label: 'Europe (Ireland)' },
+    { value: 'ap-south-1', label: 'Asia Pacific (Mumbai)' },
+    { value: 'ap-southeast-1', label: 'Asia Pacific (Singapore)' },
   ]
 
   const handleChange = (e) => {
@@ -79,9 +116,10 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
         domain: formData.projectType,
         expectedTraffic: formData.expectedTraffic,
         costPreference: formData.costPreference,
-        platform: '',
-        cloudProvider: '',
-        region: '',
+        platform: formData.platform,
+        cloudProvider: formData.cloudProvider,
+        region: formData.region,
+        iamName: formData.iamName,
       }
 
       const response = await createProject(projectData)
@@ -94,6 +132,10 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
         primaryEnvironment: 'dev',
         expectedTraffic: 'medium',
         costPreference: 'balanced',
+        platform: 'cloud',
+        cloudProvider: 'aws',
+        region: 'us-east-1',
+        iamName: '',
       })
       setErrors({})
 
@@ -271,6 +313,88 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
               </label>
             ))}
           </div>
+        </div>
+
+        {/* Platform (read-only) */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-900 mb-2">
+            Platform
+          </label>
+          <div className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700 cursor-default">
+            Cloud
+          </div>
+        </div>
+
+        {/* Cloud Provider */}
+        <div>
+          <label htmlFor="cloudProvider" className="block text-sm font-semibold text-slate-900 mb-2">
+            Cloud Provider
+          </label>
+          <select
+            id="cloudProvider"
+            name="cloudProvider"
+            value={formData.cloudProvider}
+            onChange={handleChange}
+            className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-500 transition-all duration-200 bg-white cursor-pointer"
+          >
+            {cloudProviderOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Region */}
+        <div>
+          <label htmlFor="region" className="block text-sm font-semibold text-slate-900 mb-2">
+            Region
+          </label>
+          <select
+            id="region"
+            name="region"
+            value={formData.region}
+            onChange={handleChange}
+            className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-500 transition-all duration-200 bg-white cursor-pointer"
+          >
+            {regionOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* IAM User Name */}
+        <div>
+          <label htmlFor="iamName" className="block text-sm font-semibold text-slate-900 mb-2">
+            IAM User Name <span className="text-slate-400 text-xs font-normal">(optional)</span>
+          </label>
+          {isLoadingCreds ? (
+            <div className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-400 flex items-center gap-2">
+              <span className="w-3.5 h-3.5 border-2 border-blue-400/30 border-t-blue-500 rounded-full animate-spin"></span>
+              Loading credentials...
+            </div>
+          ) : cloudCredentials.length > 0 ? (
+            <select
+              id="iamName"
+              name="iamName"
+              value={formData.iamName}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-500 transition-all duration-200 bg-white cursor-pointer"
+            >
+              <option value="">Select IAM User</option>
+              {cloudCredentials.map((cred, idx) => (
+                <option key={cred.id || cred._id || idx} value={cred.name}>
+                  {cred.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-500">
+              No cloud credentials saved. <span className="text-blue-600 font-medium">Add them in Settings → Cloud Credentials.</span>
+            </div>
+          )}
         </div>
 
         {/* Error Message */}

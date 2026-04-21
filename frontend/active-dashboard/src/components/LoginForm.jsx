@@ -165,8 +165,18 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
         <button
           type="button"
           onClick={() => {
-            // Placeholder for Google login - to be implemented later
-            console.log('Google login clicked')
+            const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+            if (!clientId) {
+              if (onToast) {
+                onToast({
+                  message: 'Google login is not configured. Add VITE_GOOGLE_CLIENT_ID to your .env file.',
+                  type: 'error',
+                })
+              }
+              return
+            }
+            const redirectUri = encodeURIComponent('http://localhost:8000/api/users/google/callback')
+            window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20email%20profile&access_type=offline`
           }}
           className="w-full px-4 py-3.5 md:py-3 bg-white border border-slate-300 text-slate-700 text-base font-semibold md:font-medium rounded-xl md:rounded-md transition-all flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-slate-400 shadow-sm md:shadow-none active:bg-slate-100"
         >
@@ -182,8 +192,18 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
         <button
           type="button"
           onClick={() => {
-            // Placeholder for GitHub login - to be implemented later
-            console.log('GitHub login clicked')
+            const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
+            if (!clientId) {
+              if (onToast) {
+                onToast({
+                  message: 'GitHub login is not configured. Add VITE_GITHUB_CLIENT_ID to your .env file.',
+                  type: 'error',
+                })
+              }
+              return
+            }
+            const redirectUri = encodeURIComponent('http://localhost:8000/api/users/github/callback')
+            window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`
           }}
           className="w-full px-4 py-3.5 md:py-3 bg-white border border-slate-300 text-slate-700 text-base font-semibold md:font-medium rounded-xl md:rounded-md transition-all flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-slate-400 shadow-sm md:shadow-none active:bg-slate-100"
         >
