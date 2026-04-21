@@ -169,7 +169,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
             if (!clientId) {
               if (onToast) {
                 onToast({
-                  message: 'Google login is not configured. Add VITE_GOOGLE_CLIENT_ID to your .env file.',
+                  message: 'Google login is not configured. Please contact the administrator.',
                   type: 'error',
                 })
               }
@@ -196,7 +196,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
             if (!clientId) {
               if (onToast) {
                 onToast({
-                  message: 'GitHub login is not configured. Add VITE_GITHUB_CLIENT_ID to your .env file.',
+                  message: 'GitHub login is not configured. Please contact the administrator.',
                   type: 'error',
                 })
               }
