@@ -13,7 +13,7 @@ const GoogleIcon = ({ className }) => (
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-agentic-secondary">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-32 bg-agentic-secondary">
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 z-0 pointer-events-none bg-dashed-grid mask-vertical-fade opacity-60"></div>
 
@@ -64,10 +64,10 @@ const Hero = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="mt-6 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 text-agentic-text/60 text-sm font-medium"
+              className="mt-12 flex flex-col items-center justify-center space-y-4 text-agentic-text/60 text-sm font-medium"
             >
-              <span className="opacity-80">Seamless access via</span>
-              <div className="flex items-center space-x-3">
+              <span className="opacity-60 uppercase tracking-[0.2em] text-xs">Seamless access via</span>
+              <div className="flex items-center space-x-4">
                 <GoogleIcon className="w-5 h-5 opacity-80 hover:opacity-100 transition-opacity" />
                 <Github className="w-5 h-5 opacity-80 hover:opacity-100 transition-opacity" />
               </div>
@@ -81,18 +81,18 @@ const Hero = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 hidden md:block"
+        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 hidden md:block pointer-events-none"
       >
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: [0.4, 0, 0.6, 1] }}
           className="relative flex flex-col items-center"
         >
-          <div className="relative w-8 h-12 border-2 border-agentic-text/20 rounded-full flex justify-center bg-agentic-surface">
+          <div className="relative w-6 h-10 border-2 border-agentic-text/20 rounded-full flex justify-center bg-agentic-surface">
             <motion.div
-              animate={{ y: [0, 10, 0] }}
+              animate={{ y: [0, 8, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: [0.4, 0, 0.6, 1] }}
-              className="mt-2 w-1.5 h-2.5 bg-agentic-primary rounded-full"
+              className="mt-1.5 w-1 h-2 bg-agentic-primary rounded-full"
             />
           </div>
         </motion.div>
