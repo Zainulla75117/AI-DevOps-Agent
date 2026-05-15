@@ -24,6 +24,12 @@ PyObjectId = Annotated[
     core_schema.json_schema(get_pydantic_json_schema)
 ]
 
+class LinkedRepository(BaseModel):
+    repo_full_name: str
+    credential_id: str
+    provider: str
+    repo_id: Optional[str] = None  # ObjectId ref to user_scm_data document
+
 class Project(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=ObjectId, alias="_id")
     project_name: str
@@ -37,6 +43,7 @@ class Project(BaseModel):
     environment: Optional[str] = None
     expected_traffic: Optional[str] = None
     cost_preference: Optional[str] = None
+    linked_repositories: list[LinkedRepository] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 

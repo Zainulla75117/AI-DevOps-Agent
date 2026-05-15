@@ -115,6 +115,7 @@ async def health():
             ("auth", settings.AUTH_SERVICE_URL),
             ("project", settings.PROJECT_SERVICE_URL),
             ("credential", settings.CREDENTIAL_SERVICE_URL),
+            ("scm", settings.SCM_SERVICE_URL),
         ]:
             try:
                 r = await client.get(f"{url}/api/health")
@@ -212,7 +213,7 @@ async def proxy(request: Request, path: str):
     except httpx.ConnectError:
         return JSONResponse(
             status_code=502,
-            content={"detail": f"Cannot connect to downstream service at {downstream_url}"}
+            content={"detail": "Cannot connect to downstream service"}
         )
     except httpx.TimeoutException:
         return JSONResponse(

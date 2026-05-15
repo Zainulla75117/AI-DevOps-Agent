@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createProject } from '../services/projectService'
-import { getCloudCredentials } from '../services/credentialService'
+import { getCloudCredentials, getSCMRepos } from '../services/credentialService'
 
 const ProjectCreate = ({ onProjectCreated, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -14,27 +14,43 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
     cloudProvider: 'aws',
     region: 'us-east-1',
     iamName: '',
+    linkedRepositories: [],
   })
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [cloudCredentials, setCloudCredentials] = useState([])
   const [isLoadingCreds, setIsLoadingCreds] = useState(false)
+  const [scmRepos, setScmRepos] = useState([])
+  const [isLoadingRepos, setIsLoadingRepos] = useState(false)
 
   useEffect(() => {
-    const fetchCreds = async () => {
+    const fetchCredsAndRepos = async () => {
       setIsLoadingCreds(true)
+      setIsLoadingRepos(true)
       try {
         const creds = await getCloudCredentials()
         const credsArray = Array.isArray(creds) ? creds : (creds.data || [])
         setCloudCredentials(credsArray)
       } catch (err) {
         console.error('Failed to fetch cloud credentials:', err)
+        setCloudCredentials([])
       } finally {
         setIsLoadingCreds(false)
       }
+
+      try {
+        const repos = await getSCMRepos()
+        const reposArray = Array.isArray(repos) ? repos : (repos.data || [])
+        setScmRepos(reposArray)
+      } catch (err) {
+        console.error('Failed to fetch repos:', err)
+        setScmRepos([])
+      } finally {
+        setIsLoadingRepos(false)
+      }
     }
-    fetchCreds()
+    fetchCredsAndRepos()
   }, [])
 
   const projectTypeOptions = [
@@ -120,6 +136,7 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
         cloudProvider: formData.cloudProvider,
         region: formData.region,
         iamName: formData.iamName,
+        linkedRepositories: formData.linkedRepositories || [],
       }
 
       const response = await createProject(projectData)
@@ -136,6 +153,7 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
         cloudProvider: 'aws',
         region: 'us-east-1',
         iamName: '',
+        linkedRepositories: [],
       })
       setErrors({})
 
@@ -393,6 +411,82 @@ const ProjectCreate = ({ onProjectCreated, onCancel }) => {
           ) : (
             <div className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-500">
               No cloud credentials saved. <span className="text-blue-600 font-medium">Add them in Settings → Cloud Credentials.</span>
+            </div>
+          )}
+        </div>
+
+        {/* Linked Repositories */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-900 mb-2">
+            Link Repositories <span className="text-slate-400 text-xs font-normal">(optional)</span>
+          </label>
+          <p className="text-xs text-slate-500 mb-3">
+            Select repositories to automatically target during resource creation.
+          </p>
+          
+          {isLoadingRepos ? (
+            <div className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-400 flex items-center gap-2">
+              <span className="w-3.5 h-3.5 border-2 border-blue-400/30 border-t-blue-500 rounded-full animate-spin"></span>
+              Loading repositories...
+            </div>
+          ) : scmRepos.length > 0 ? (
+            <div className="w-full max-h-48 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50 p-2 space-y-1">
+              {scmRepos.map((repo) => {
+                const isSelected = (formData.linkedRepositories || []).some(
+                  r => r.repo_full_name === repo.name_with_namespace
+                )
+                
+                return (
+                  <label 
+                    key={repo.id} 
+                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors duration-150 ${
+                      isSelected ? 'bg-blue-50 border border-blue-200' : 'hover:bg-slate-100 border border-transparent'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setFormData(prev => {
+                          const currentRepos = prev.linkedRepositories || [];
+                          if (checked) {
+                            return {
+                              ...prev,
+                              linkedRepositories: [...currentRepos, {
+                                repo_full_name: repo.name_with_namespace,
+                                credential_id: repo.scm_id,
+                                provider: repo.scm_provider,
+                                repo_id: repo.id || null
+                              }]
+                            };
+                          } else {
+                            return {
+                              ...prev,
+                              linkedRepositories: currentRepos.filter(
+                                r => r.repo_full_name !== repo.name_with_namespace
+                              )
+                            };
+                          }
+                        });
+                      }}
+                      className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {repo.name_with_namespace}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate capitalize">
+                        {repo.scm_provider}
+                      </p>
+                    </div>
+                  </label>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-500">
+              No synced repositories found. <span className="text-blue-600 font-medium">Sync them in Settings → SCM Integrations.</span>
             </div>
           )}
         </div>

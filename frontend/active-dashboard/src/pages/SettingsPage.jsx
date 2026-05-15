@@ -4,11 +4,37 @@ import { saveCloudCredentials, saveSCMCredentials, getSCMCredentials, syncSCMRep
 import { useAuth } from '../hooks/useAuth'
 import PageLayout from '../components/PageLayout'
 
+// --- SlideOver Component ---
+const SlideOver = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex justify-end">
+      <div 
+        className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity cursor-pointer" 
+        onClick={onClose} 
+      />
+      <div className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 ease-out">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white/50 backdrop-blur-md">
+          <h3 className="text-lg font-bold text-slate-800 tracking-tight">{title}</h3>
+          <button 
+            onClick={onClose} 
+            className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto flex-1 bg-slate-50/30">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SettingsPage = () => {
   const { userInfo, handleLogout } = useAuth()
-  const [expandedProvider, setExpandedProvider] = useState(null) // 'aws', 'gcp', 'azure', etc.
-  const [expandedSCM, setExpandedSCM] = useState(false)
-  const [expandedJenkins, setExpandedJenkins] = useState(false)
   const [awsCredentials, setAwsCredentials] = useState({
     name: '',
     access_key: '',
@@ -24,14 +50,14 @@ const SettingsPage = () => {
     jenkins_url: '',
     username: '',
     token: '',
-    type: 'public', // 'public' or 'private'
+    type: 'public',
   })
-  const [savedSCMTools, setSavedSCMTools] = useState([]) // Array to store saved SCM tools
-  const [savedSCMCredentials, setSavedSCMCredentials] = useState([]) // Array to store full SCM credential objects
-  const [savedJenkinsCredentials, setSavedJenkinsCredentials] = useState([]) // Array to store full Jenkins credential objects
+  const [savedSCMTools, setSavedSCMTools] = useState([])
+  const [savedSCMCredentials, setSavedSCMCredentials] = useState([])
+  const [savedJenkinsCredentials, setSavedJenkinsCredentials] = useState([])
   const [isLoadingSCM, setIsLoadingSCM] = useState(false)
   const [isLoadingJenkins, setIsLoadingJenkins] = useState(false)
-  const [editingJenkinsId, setEditingJenkinsId] = useState(null) // Track which Jenkins credential is being edited
+  const [editingJenkinsId, setEditingJenkinsId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmittingSCM, setIsSubmittingSCM] = useState(false)
   const [isSubmittingJenkins, setIsSubmittingJenkins] = useState(false)
@@ -41,20 +67,38 @@ const SettingsPage = () => {
   const [scmSuccess, setScmSuccess] = useState('')
   const [jenkinsError, setJenkinsError] = useState('')
   const [jenkinsSuccess, setJenkinsSuccess] = useState('')
-  const [syncingRepos, setSyncingRepos] = useState({}) // Track syncing state per credential: { scmId: boolean }
-  const [syncMessages, setSyncMessages] = useState({}) // Track sync messages per credential: { scmId: string }
-  const [syncingJenkins, setSyncingJenkins] = useState({}) // Track syncing state per Jenkins credential: { jenkinsId: boolean }
-  const [jenkinsSyncMessages, setJenkinsSyncMessages] = useState({}) // Track sync messages per Jenkins credential: { jenkinsId: string }
-  const [editingCredentialId, setEditingCredentialId] = useState(null) // Track which credential is being edited
+  const [syncingRepos, setSyncingRepos] = useState({})
+  const [syncMessages, setSyncMessages] = useState({})
+  const [syncingJenkins, setSyncingJenkins] = useState({})
+  const [jenkinsSyncMessages, setJenkinsSyncMessages] = useState({})
+  const [editingCredentialId, setEditingCredentialId] = useState(null)
+  const [expandedManualPAT, setExpandedManualPAT] = useState(false)
+
+  // New states for redesign
+  const [activeTab, setActiveTab] = useState('integrations')
+  const [slideOverState, setSlideOverState] = useState({ isOpen: false, type: null, title: '' })
 
   useEffect(() => {
     document.title = 'infraXai - Settings'
   }, [])
 
   useEffect(() => {
-    // Fetch saved SCM credentials
+    const params = new URLSearchParams(window.location.search)
+    const oauthStatus = params.get('scm_oauth')
+    const provider = params.get('provider')
+    const message = params.get('message')
+
+    if (oauthStatus === 'success' && provider) {
+      setScmSuccess(`${provider.charAt(0).toUpperCase() + provider.slice(1)} connected successfully via OAuth!`)
+      window.history.replaceState({}, '', '/settings')
+    } else if (oauthStatus === 'error') {
+      setScmError(message ? decodeURIComponent(message) : 'OAuth connection failed')
+      window.history.replaceState({}, '', '/settings')
+    }
+  }, [])
+
+  useEffect(() => {
     fetchSCMCredentials()
-    // Fetch saved Jenkins credentials
     fetchJenkinsCredentials()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -63,16 +107,12 @@ const SettingsPage = () => {
     setIsLoadingSCM(true)
     try {
       const credentials = await getSCMCredentials()
-      // Handle both array and object responses
       const credentialsArray = Array.isArray(credentials) ? credentials : (credentials.data || [])
       setSavedSCMCredentials(credentialsArray)
-
-      // Extract unique SCM names for logo display
       const scmNames = credentialsArray.map(cred => cred.scm_name?.toLowerCase().trim()).filter(Boolean)
       setSavedSCMTools([...new Set(scmNames)])
     } catch (err) {
       console.error('Failed to fetch SCM credentials:', err)
-      // Don't show error to user on initial load, just log it
     } finally {
       setIsLoadingSCM(false)
     }
@@ -82,12 +122,10 @@ const SettingsPage = () => {
     setIsLoadingJenkins(true)
     try {
       const credentials = await getJenkinsCredentials()
-      // Handle both array and object responses
       const credentialsArray = Array.isArray(credentials) ? credentials : (credentials.data || [])
       setSavedJenkinsCredentials(credentialsArray)
     } catch (err) {
       console.error('Failed to fetch Jenkins credentials:', err)
-      // Don't show error to user on initial load, just log it
     } finally {
       setIsLoadingJenkins(false)
     }
@@ -95,10 +133,7 @@ const SettingsPage = () => {
 
   const handleAwsCredentialsChange = (e) => {
     const { name, value } = e.target
-    setAwsCredentials((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setAwsCredentials(prev => ({ ...prev, [name]: value }))
     setError('')
     setSuccess('')
   }
@@ -107,27 +142,20 @@ const SettingsPage = () => {
     e.preventDefault()
     setError('')
     setSuccess('')
-
     if (!awsCredentials.name || !awsCredentials.access_key || !awsCredentials.secret_key) {
       setError('Please fill in all fields')
       return
     }
-
     setIsSubmitting(true)
-
     try {
       await saveCloudCredentials({
         name: awsCredentials.name,
         accessKey: awsCredentials.access_key,
         secretKey: awsCredentials.secret_key,
       })
-
       setSuccess('AWS credentials saved successfully!')
-      setAwsCredentials({
-        name: '',
-        access_key: '',
-        secret_key: '',
-      })
+      setAwsCredentials({ name: '', access_key: '', secret_key: '' })
+      setTimeout(() => closeSlideOver(), 1500)
     } catch (err) {
       setError(err.message || 'Failed to save credentials')
     } finally {
@@ -137,10 +165,7 @@ const SettingsPage = () => {
 
   const handleSCMCredentialsChange = (e) => {
     const { name, value } = e.target
-    setScmCredentials((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setScmCredentials(prev => ({ ...prev, [name]: value }))
     setScmError('')
     setScmSuccess('')
   }
@@ -151,22 +176,17 @@ const SettingsPage = () => {
     setScmCredentials({
       scm_name: credential.scm_name || '',
       username: credential.username || '',
-      pat: '', // Don't pre-fill PAT for security
+      pat: '',
       base_url: credential.base_url || '',
     })
-    setExpandedSCM(true) // Expand the form
+    setExpandedManualPAT(true)
     setScmError('')
     setScmSuccess('')
   }
 
   const handleCancelEdit = () => {
     setEditingCredentialId(null)
-    setScmCredentials({
-      scm_name: '',
-      username: '',
-      pat: '',
-      base_url: '',
-    })
+    setScmCredentials({ scm_name: '', username: '', pat: '', base_url: '' })
     setScmError('')
     setScmSuccess('')
   }
@@ -176,44 +196,35 @@ const SettingsPage = () => {
     setScmError('')
     setScmSuccess('')
 
-    // Validation: PAT is required for new credentials, optional for updates
     if (!scmCredentials.scm_name || !scmCredentials.username || (!scmCredentials.pat && !editingCredentialId)) {
       setScmError('Please fill in all required fields')
       return
     }
 
     setIsSubmittingSCM(true)
-
     try {
       if (editingCredentialId) {
-        // Update existing credential
         await updateSCMCredentials(editingCredentialId, {
           scm_name: scmCredentials.scm_name,
           username: scmCredentials.username,
           pat: scmCredentials.pat,
-          base_url: scmCredentials.base_url || undefined, // Only include if provided
+          base_url: scmCredentials.base_url || undefined,
         })
         setScmSuccess('SCM credentials updated successfully!')
       } else {
-        // Create new credential
         await saveSCMCredentials({
           scm_name: scmCredentials.scm_name,
           username: scmCredentials.username,
           pat: scmCredentials.pat,
-          base_url: scmCredentials.base_url || undefined, // Only include if provided
+          base_url: scmCredentials.base_url || undefined,
         })
         setScmSuccess('SCM credentials saved successfully!')
       }
 
-      // Refresh the SCM credentials list
       await fetchSCMCredentials()
-      setScmCredentials({
-        scm_name: '',
-        username: '',
-        pat: '',
-        base_url: '',
-      })
+      setScmCredentials({ scm_name: '', username: '', pat: '', base_url: '' })
       setEditingCredentialId(null)
+      setTimeout(() => closeSlideOver(), 1500)
     } catch (err) {
       setScmError(err.message || (editingCredentialId ? 'Failed to update SCM credentials' : 'Failed to save SCM credentials'))
     } finally {
@@ -221,7 +232,6 @@ const SettingsPage = () => {
     }
   }
 
-  // SCM tool logos mapping - using Wikipedia Commons
   const scmLogos = {
     github: 'https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg',
     gitlab: 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Gitlab_meaningful_logo.svg',
@@ -230,36 +240,23 @@ const SettingsPage = () => {
 
   const getSCMLogo = (scmName) => {
     const name = scmName.toLowerCase().trim()
-    // Direct match for saved values
-    if (name === 'github') return scmLogos.github
-    if (name === 'gitlab') return scmLogos.gitlab
-    if (name === 'bitbucket') return scmLogos.bitbucket
-    // Fallback for partial matches
-    if (name.includes('github')) return scmLogos.github
-    if (name.includes('gitlab')) return scmLogos.gitlab
-    if (name.includes('bitbucket')) return scmLogos.bitbucket
+    if (name === 'github' || name.includes('github')) return scmLogos.github
+    if (name === 'gitlab' || name.includes('gitlab')) return scmLogos.gitlab
+    if (name === 'bitbucket' || name.includes('bitbucket')) return scmLogos.bitbucket
     return null
   }
 
   const getSCMDisplayName = (scmName) => {
     const name = scmName.toLowerCase().trim()
-    // Direct match for saved values
-    if (name === 'github') return 'GitHub'
-    if (name === 'gitlab') return 'GitLab'
-    if (name === 'bitbucket') return 'Bitbucket'
-    // Fallback for partial matches
-    if (name.includes('github')) return 'GitHub'
-    if (name.includes('gitlab')) return 'GitLab'
-    if (name.includes('bitbucket')) return 'Bitbucket'
+    if (name === 'github' || name.includes('github')) return 'GitHub'
+    if (name === 'gitlab' || name.includes('gitlab')) return 'GitLab'
+    if (name === 'bitbucket' || name.includes('bitbucket')) return 'Bitbucket'
     return scmName
   }
 
   const handleJenkinsCredentialsChange = (e) => {
     const { name, value } = e.target
-    setJenkinsCredentials((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setJenkinsCredentials(prev => ({ ...prev, [name]: value }))
     setJenkinsError('')
     setJenkinsSuccess('')
   }
@@ -270,22 +267,16 @@ const SettingsPage = () => {
     setJenkinsCredentials({
       jenkins_url: credential.jenkins_url || '',
       username: credential.username || '',
-      token: '', // Don't pre-fill token for security
+      token: '',
       type: credential.type || 'public',
     })
-    setExpandedJenkins(true) // Expand the form
     setJenkinsError('')
     setJenkinsSuccess('')
   }
 
   const handleCancelEditJenkins = () => {
     setEditingJenkinsId(null)
-    setJenkinsCredentials({
-      jenkins_url: '',
-      username: '',
-      token: '',
-      type: 'public',
-    })
+    setJenkinsCredentials({ jenkins_url: '', username: '', token: '', type: 'public' })
     setJenkinsError('')
     setJenkinsSuccess('')
   }
@@ -295,18 +286,14 @@ const SettingsPage = () => {
     setJenkinsError('')
     setJenkinsSuccess('')
 
-    // Validation: Token is required for new credentials, optional for updates
     if (!jenkinsCredentials.jenkins_url || !jenkinsCredentials.username || (!jenkinsCredentials.token && !editingJenkinsId)) {
       setJenkinsError('Please fill in all required fields')
       return
     }
 
     setIsSubmittingJenkins(true)
-
     try {
-      // Get user info to include user name in payload
       const user = getUserInfo()
-      // user_info in localStorage has: { username, email }
       const userName = user?.username || user?.email || user?.name || ''
 
       await saveJenkinsCredentials({
@@ -314,21 +301,14 @@ const SettingsPage = () => {
         username: jenkinsCredentials.username,
         token: jenkinsCredentials.token,
         type: jenkinsCredentials.type || 'public',
-        user_name: userName, // Include user's name
+        user_name: userName,
       })
 
       setJenkinsSuccess(editingJenkinsId ? 'Jenkins configuration updated successfully!' : 'Jenkins configuration saved successfully!')
-
-      // Refresh the Jenkins credentials list
       await fetchJenkinsCredentials()
-
-      setJenkinsCredentials({
-        jenkins_url: '',
-        username: '',
-        token: '',
-        type: 'public',
-      })
+      setJenkinsCredentials({ jenkins_url: '', username: '', token: '', type: 'public' })
       setEditingJenkinsId(null)
+      setTimeout(() => closeSlideOver(), 1500)
     } catch (err) {
       setJenkinsError(err.message || (editingJenkinsId ? 'Failed to update Jenkins configuration' : 'Failed to save Jenkins configuration'))
     } finally {
@@ -339,1080 +319,538 @@ const SettingsPage = () => {
   const handleSyncRepositories = async (credential) => {
     const scmId = credential.id || credential._id
     if (!scmId) {
-      setSyncMessages((prev) => ({
-        ...prev,
-        [scmId]: 'Error: Invalid credential ID'
-      }))
+      setSyncMessages(prev => ({ ...prev, [scmId]: 'Error: Invalid credential ID' }))
       return
     }
 
-    // Set syncing state
-    setSyncingRepos((prev) => ({ ...prev, [scmId]: true }))
-    setSyncMessages((prev) => ({
-      ...prev,
-      [scmId]: ''
-    }))
+    setSyncingRepos(prev => ({ ...prev, [scmId]: true }))
+    setSyncMessages(prev => ({ ...prev, [scmId]: '' }))
 
     try {
       const result = await syncSCMRepositories(scmId)
       const message = result.message || `Successfully synced ${result.repositories_count || 0} repositories from ${getSCMDisplayName(credential.scm_name)}`
-      setSyncMessages((prev) => ({
-        ...prev,
-        [scmId]: message
-      }))
-
-      // Clear success message after 5 seconds
+      setSyncMessages(prev => ({ ...prev, [scmId]: message }))
       setTimeout(() => {
-        setSyncMessages((prev) => {
-          const updated = { ...prev }
-          delete updated[scmId]
-          return updated
-        })
+        setSyncMessages(prev => { const updated = { ...prev }; delete updated[scmId]; return updated })
       }, 5000)
     } catch (err) {
-      setSyncMessages((prev) => ({
-        ...prev,
-        [scmId]: err.message || 'Failed to sync repositories'
-      }))
-
-      // Clear error message after 5 seconds
+      setSyncMessages(prev => ({ ...prev, [scmId]: err.message || 'Failed to sync repositories' }))
       setTimeout(() => {
-        setSyncMessages((prev) => {
-          const updated = { ...prev }
-          delete updated[scmId]
-          return updated
-        })
+        setSyncMessages(prev => { const updated = { ...prev }; delete updated[scmId]; return updated })
       }, 5000)
     } finally {
-      setSyncingRepos((prev) => ({ ...prev, [scmId]: false }))
+      setSyncingRepos(prev => ({ ...prev, [scmId]: false }))
     }
   }
 
   const handleSyncJenkinsJobs = async (credential) => {
     const jenkinsId = credential.id || credential._id
     if (!jenkinsId) {
-      setJenkinsSyncMessages((prev) => ({
-        ...prev,
-        [jenkinsId]: 'Error: Invalid credential ID'
-      }))
+      setJenkinsSyncMessages(prev => ({ ...prev, [jenkinsId]: 'Error: Invalid credential ID' }))
       return
     }
 
-    // Set syncing state
-    setSyncingJenkins((prev) => ({ ...prev, [jenkinsId]: true }))
-    setJenkinsSyncMessages((prev) => ({
-      ...prev,
-      [jenkinsId]: ''
-    }))
+    setSyncingJenkins(prev => ({ ...prev, [jenkinsId]: true }))
+    setJenkinsSyncMessages(prev => ({ ...prev, [jenkinsId]: '' }))
 
     try {
-      // Get user info to include user name in payload
       const user = getUserInfo()
-      // user_info in localStorage has: { username, email }
       const userName = user?.username || user?.email || user?.name || ''
-
-      if (!userName) {
-        console.warn('No username found in user info:', user)
-      }
-
       const result = await syncJenkinsJobs(jenkinsId, userName)
-      // Use the message from backend which includes jobs, nodes, and plugins counts
       const message = result.message || `Successfully synced ${result.jobs_count || 0} jobs, ${result.nodes_count || 0} nodes, ${result.plugins_count || 0} plugins from Jenkins`
-      setJenkinsSyncMessages((prev) => ({
-        ...prev,
-        [jenkinsId]: message
-      }))
-
-      // Clear success message after 5 seconds
+      setJenkinsSyncMessages(prev => ({ ...prev, [jenkinsId]: message }))
       setTimeout(() => {
-        setJenkinsSyncMessages((prev) => {
-          const updated = { ...prev }
-          delete updated[jenkinsId]
-          return updated
-        })
+        setJenkinsSyncMessages(prev => { const updated = { ...prev }; delete updated[jenkinsId]; return updated })
       }, 5000)
     } catch (err) {
-      setJenkinsSyncMessages((prev) => ({
-        ...prev,
-        [jenkinsId]: err.message || 'Failed to sync Jenkins jobs'
-      }))
-
-      // Clear error message after 5 seconds
+      setJenkinsSyncMessages(prev => ({ ...prev, [jenkinsId]: err.message || 'Failed to sync Jenkins jobs' }))
       setTimeout(() => {
-        setJenkinsSyncMessages((prev) => {
-          const updated = { ...prev }
-          delete updated[jenkinsId]
-          return updated
-        })
+        setJenkinsSyncMessages(prev => { const updated = { ...prev }; delete updated[jenkinsId]; return updated })
       }, 5000)
     } finally {
-      setSyncingJenkins((prev) => ({ ...prev, [jenkinsId]: false }))
+      setSyncingJenkins(prev => ({ ...prev, [jenkinsId]: false }))
     }
+  }
+
+  const openSlideOver = (type, title) => {
+    setSlideOverState({ isOpen: true, type, title })
+  }
+
+  const closeSlideOver = () => {
+    setSlideOverState({ isOpen: false, type: null, title: '' })
+    if (editingCredentialId) handleCancelEdit()
+    if (editingJenkinsId) handleCancelEditJenkins()
+    setAwsCredentials({ name: '', access_key: '', secret_key: '' })
+    setError('')
+    setSuccess('')
+    setExpandedManualPAT(false)
+  }
+
+  const onEditSCM = (credential) => {
+    handleEditCredential(credential)
+    openSlideOver('scm', 'Update SCM Configuration')
+  }
+
+  const onEditJenkins = (credential) => {
+    handleEditJenkinsCredential(credential)
+    openSlideOver('jenkins', 'Update Jenkins Configuration')
   }
 
   return (
     <PageLayout userInfo={userInfo} onLogout={handleLogout}>
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col bg-slate-50/50 backdrop-blur-3xl w-full">
-        <div className="max-w-6xl mx-auto flex-1 flex flex-col">
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60 mb-8 mt-4 flex-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">Settings</h2>
-
-            <div className="space-y-4 sm:space-y-5">
-              {/* Credentials & Integrations */}
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-3 sm:mb-4">
-                  Credentials & Integrations
-                </h3>
-
-                <div className="space-y-3 sm:space-y-4">
-                  {/* SCM Credentials */}
-                  <div className="bg-slate-50/50 backdrop-blur-sm border border-white rounded-2xl p-4 sm:p-6 shadow-sm">
-                    <h4 className="text-sm sm:text-base font-semibold text-slate-800 mb-2 sm:mb-3">SCM Credentials</h4>
-                    <p className="text-xs text-slate-600 mb-2 sm:mb-3">
-                      Configure your Source Control Management (SCM) credentials for version control
-                      integration. This allows the platform to access your repositories and manage
-                      infrastructure as code.
-                    </p>
-
-                    {/* Saved SCM Credentials Display */}
-                    {isLoadingSCM ? (
-                      <div className="mb-4 flex items-center gap-2 text-slate-600">
-                        <span className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></span>
-                        <span className="text-sm">Loading SCM credentials...</span>
-                      </div>
-                    ) : savedSCMCredentials.length > 0 ? (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-slate-700 mb-3">Saved SCM Credentials:</p>
-                        <div className="space-y-3">
-                          {savedSCMCredentials.map((credential, index) => {
-                            const scmName = credential.scm_name?.toLowerCase().trim() || ''
-                            const logo = getSCMLogo(scmName)
-                            const displayName = getSCMDisplayName(scmName)
-                            const scmId = credential.id || credential._id || index
-                            const isSyncing = syncingRepos[scmId] || false
-                            const syncMessage = syncMessages[scmId] || ''
-                            const isSuccessMessage = syncMessage && !syncMessage.includes('Error') && !syncMessage.includes('Failed')
-
-                            return (
-                              <div
-                                key={`${scmId}`}
-                                className="px-4 py-3 bg-white/90 rounded-lg border border-blue-200/50 shadow-sm hover:shadow-md transition-shadow duration-150"
-                              >
-                                {/* Credential Details */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <div className="flex items-center gap-2">
-                                      {/* Logo beside SCM name */}
-                                      {logo ? (
-                                        <img
-                                          src={logo}
-                                          alt={displayName}
-                                          className="w-8 h-8 object-contain flex-shrink-0"
-                                          onError={(e) => {
-                                            console.error(`Failed to load logo for ${scmName}:`, logo)
-                                            e.target.style.display = 'none'
-                                          }}
-                                          onLoad={() => {
-                                            console.log(`Successfully loaded logo for ${scmName}`)
-                                          }}
-                                          style={{ minWidth: '32px', minHeight: '32px' }}
-                                        />
-                                      ) : (
-                                        <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
-                                          <span className="text-xs text-gray-500">?</span>
-                                        </div>
-                                      )}
-                                      <h5 className="text-base font-semibold text-slate-800">{displayName}</h5>
-                                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded">
-                                        Connected
-                                      </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                      {/* Update Button */}
-                                      <button
-                                        onClick={() => handleEditCredential(credential)}
-                                        disabled={isSyncing || editingCredentialId === scmId}
-                                        className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 hover:border-orange-300"
-                                        title={`Update ${displayName} credentials`}
-                                      >
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                          />
-                                        </svg>
-                                        <span className="hidden sm:inline">Update</span>
-                                      </button>
-
-                                      {/* Sync/Reload Button */}
-                                      <button
-                                        onClick={() => handleSyncRepositories(credential)}
-                                        disabled={isSyncing}
-                                        className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 hover:border-blue-300"
-                                        title={`Sync repositories from ${displayName}`}
-                                      >
-                                        {isSyncing ? (
-                                          <>
-                                            <span className="w-3 h-3 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></span>
-                                            <span className="hidden sm:inline">Syncing...</span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <svg
-                                              className="w-4 h-4"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              viewBox="0 0 24 24"
-                                            >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                              />
-                                            </svg>
-                                            <span className="hidden sm:inline">Sync Repos</span>
-                                            <span className="sm:hidden">Sync</span>
-                                          </>
-                                        )}
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* Sync Status Message */}
-                                  {syncMessage && (
-                                    <div className={`mt-2 px-3 py-2 rounded-lg text-xs ${isSuccessMessage
-                                        ? 'bg-green-50 border border-green-200 text-green-700'
-                                        : 'bg-red-50 border border-red-200 text-red-700'
-                                      }`}>
-                                      {syncMessage}
-                                    </div>
-                                  )}
-
-                                  <div className="space-y-1 mt-2">
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                                      <span className="font-medium min-w-[80px]">Username:</span>
-                                      <span className="text-slate-800">{credential.username || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                                      <span className="font-medium min-w-[80px]">PAT:</span>
-                                      <span className="text-slate-800">
-                                        {credential.pat ? (
-                                          credential.pat.length > 8 ? (
-                                            <span className="font-mono">
-                                              {credential.pat.substring(0, 4)}••••••••{credential.pat.substring(credential.pat.length - 4)}
-                                            </span>
-                                          ) : (
-                                            <span className="font-mono">••••••••</span>
-                                          )
-                                        ) : (
-                                          <span className="text-slate-400 italic">Not set</span>
-                                        )}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mb-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg">
-                        <p className="text-sm text-slate-600">No SCM credentials saved yet.</p>
-                      </div>
-                    )}
-
-                    {/* SCM Credentials Form */}
-                    <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] overflow-hidden transition-all duration-300">
-                      {/* Clickable Header */}
-                      <button
-                        onClick={() => {
-                          if (editingCredentialId) {
-                            handleCancelEdit()
-                          }
-                          setExpandedSCM(!expandedSCM)
-                        }}
-                        className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-white/90 transition-colors duration-150"
-                      >
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#2196F3] to-[#8b5cf6] rounded-lg flex items-center justify-center flex-shrink-0">
-                            <svg
-                              className="w-5 h-5 sm:w-6 sm:h-6 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                              />
-                            </svg>
-                          </div>
-                          <div className="text-left min-w-0">
-                            <h5 className="text-base sm:text-lg font-semibold text-slate-800 mb-1">
-                              {editingCredentialId ? 'Update SCM Credentials' : 'Add SCM Credentials'}
-                            </h5>
-                            <p className="text-xs sm:text-sm text-slate-600">
-                              {editingCredentialId
-                                ? 'Update your Source Control Management credentials'
-                                : 'Configure your Source Control Management credentials (GitHub, GitLab, Bitbucket)'}
-                            </p>
-                          </div>
-                        </div>
-                        <svg
-                          className={`w-6 h-6 text-slate-600 transition-transform duration-150 ${expandedSCM ? 'rotate-180' : ''
-                            }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-
-                      {/* Expandable Form */}
-                      {expandedSCM && (
-                        <div className="px-4 pb-4 border-t border-blue-200/30 pt-4 transition-colors duration-150 ease-in-out">
-                          {editingCredentialId && (
-                            <div className="mb-4 flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                              <p className="text-sm text-orange-700">
-                                <span className="font-medium">Editing mode:</span> Updating existing credentials. Leave PAT empty to keep current value.
-                              </p>
-                              <button
-                                type="button"
-                                onClick={handleCancelEdit}
-                                className="text-orange-700 hover:text-orange-900 transition-colors"
-                                title="Cancel editing"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
-                          <form onSubmit={handleSCMSubmit} className="space-y-4">
-                            {/* SCM Name */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="scmName"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                SCM Name <span className="text-red-500">*</span>
-                              </label>
-                              <select
-                                id="scmName"
-                                name="scm_name"
-                                value={scmCredentials.scm_name}
-                                onChange={handleSCMCredentialsChange}
-                                className="w-full px-5 py-3.5 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-800 text-sm font-medium rounded-xl transition-all duration-300 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm hover:border-blue-300"
-                                required
-                              >
-                                <option value="">Select SCM Tool</option>
-                                <option value="github">GitHub</option>
-                                <option value="gitlab">GitLab</option>
-                                <option value="bitbucket">Bitbucket</option>
-                              </select>
-                            </div>
-
-                            {/* Username */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="scmUsername"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Username <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                id="scmUsername"
-                                name="username"
-                                value={scmCredentials.username}
-                                onChange={handleSCMCredentialsChange}
-                                className="w-full px-3 py-2 bg-white border border-[#2196F3]/20 text-slate-800 text-sm transition-colors duration-150 outline-none shadow-sm placeholder:text-slate-400 focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                placeholder="Enter SCM username"
-                                required
-                              />
-                            </div>
-
-                            {/* PAT (Personal Access Token) */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="scmPAT"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Personal Access Token (PAT) {!editingCredentialId && <span className="text-red-500">*</span>}
-                                {editingCredentialId && <span className="text-slate-400 text-xs">(Leave empty to keep current)</span>}
-                              </label>
-                              <input
-                                type="password"
-                                id="scmPAT"
-                                name="pat"
-                                value={scmCredentials.pat}
-                                onChange={handleSCMCredentialsChange}
-                                className="w-full px-3 py-2 bg-white border border-[#2196F3]/20 text-slate-800 text-sm transition-colors duration-150 outline-none shadow-sm placeholder:text-slate-400 focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                placeholder={editingCredentialId ? "Enter new PAT (leave empty to keep current)" : "Enter Personal Access Token"}
-                                required={!editingCredentialId}
-                              />
-                            </div>
-
-                            {/* Base URL (Optional) */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="scmBaseUrl"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Base URL <span className="text-slate-400 text-xs">(Optional)</span>
-                              </label>
-                              <input
-                                type="url"
-                                id="scmBaseUrl"
-                                name="base_url"
-                                value={scmCredentials.base_url}
-                                onChange={handleSCMCredentialsChange}
-                                className="w-full px-3 py-2 bg-white border border-[#2196F3]/20 text-slate-800 text-sm transition-colors duration-150 outline-none shadow-sm placeholder:text-slate-400 focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                placeholder="https://gitlab.example.com (for self-hosted instances)"
-                              />
-                              <p className="text-xs text-slate-500 mt-1">
-                                Leave empty for default (gitlab.com, github.com, bitbucket.org). Required for self-hosted instances.
-                              </p>
-                            </div>
-
-                            {scmError && (
-                              <div
-                                className="flex items-center gap-2 px-4 py-3 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg"
-                                role="alert"
-                              >
-                                <span>⚠️</span>
-                                <span>{scmError}</span>
-                              </div>
-                            )}
-
-                            {scmSuccess && (
-                              <div
-                                className="flex items-center gap-2 px-4 py-3 text-sm bg-green-50 border border-green-200 text-green-700 rounded-lg"
-                                role="alert"
-                              >
-                                <span>✅</span>
-                                <span>{scmSuccess}</span>
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-3">
-                              {editingCredentialId && (
-                                <button
-                                  type="button"
-                                  onClick={handleCancelEdit}
-                                  disabled={isSubmittingSCM}
-                                  className="px-6 py-3 bg-white border border-slate-300 text-slate-700 text-base font-medium rounded-lg hover:bg-slate-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                              <button
-                                type="submit"
-                                disabled={isSubmittingSCM}
-                                className="flex-1 px-6 py-3 bg-gradient-to-r from-[#42A5F5] to-[#30705d] text-white text-base font-semibold cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group hover:from-[#1E88E5] hover:to-[#215646] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
-                                style={{ borderRadius: '12px 4px 12px 4px' }}
-                              >
-                                {isSubmittingSCM ? (
-                                  <>
-                                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-                                    {editingCredentialId ? 'Updating...' : 'Saving...'}
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>{editingCredentialId ? 'Update SCM Credentials' : 'Save SCM Credentials'}</span>
-                                    <span className="text-xl transition-transform duration-300 group-hover:translate-x-1">
-                                      →
-                                    </span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Cloud Credentials */}
-                  <div className="border border-blue-200/50 rounded-xl p-3 sm:p-4">
-                    <h4 className="text-sm sm:text-base font-semibold text-slate-800 mb-2 sm:mb-3">Cloud Credentials</h4>
-
-                    {/* AWS Credentials Card */}
-                    <div className="bg-white/80 rounded-lg border border-orange-200/30 overflow-hidden transition-colors duration-150">
-                      {/* Clickable Header */}
-                      <button
-                        onClick={() => setExpandedProvider(expandedProvider === 'aws' ? null : 'aws')}
-                        className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-white/90 transition-colors duration-150"
-                      >
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <img
-                            src="https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg"
-                            alt="AWS"
-                            className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0"
-                          />
-                          <div className="text-left min-w-0">
-                            <h5 className="text-base sm:text-lg font-semibold text-slate-800 mb-1">AWS</h5>
-                            <p className="text-xs sm:text-sm text-slate-600">
-                              Configure your Amazon Web Services credentials to manage infrastructure
-                            </p>
-                          </div>
-                        </div>
-                        <svg
-                          className={`w-6 h-6 text-slate-600 transition-transform duration-150 ${expandedProvider === 'aws' ? 'rotate-180' : ''
-                            }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-
-                      {/* Expandable Form */}
-                      {expandedProvider === 'aws' && (
-                        <div className="px-6 pb-6 border-t border-orange-200/30 pt-6 transition-colors duration-150 ease-in-out">
-                          <form onSubmit={handleAwsSubmit} className="space-y-4">
-                            {/* Credential Name */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="awsName"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Name <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                id="awsName"
-                                name="name"
-                                value={awsCredentials.name}
-                                onChange={handleAwsCredentialsChange}
-                                className="w-full px-3 py-2 bg-white border border-[#2196F3]/20 text-slate-800 text-sm transition-colors duration-150 outline-none shadow-sm placeholder:text-slate-400 focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                placeholder="Enter credential name"
-                                required
-                              />
-                            </div>
-
-                            {/* Access Key */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="awsAccessKey"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Access Key <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                id="awsAccessKey"
-                                name="access_key"
-                                value={awsCredentials.access_key}
-                                onChange={handleAwsCredentialsChange}
-                                className="w-full px-3 py-2 bg-white border border-[#2196F3]/20 text-slate-800 text-sm transition-colors duration-150 outline-none shadow-sm placeholder:text-slate-400 focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                placeholder="Enter AWS Access Key"
-                                required
-                              />
-                            </div>
-
-                            {/* Secret Key */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="awsSecretKey"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Secret Key <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                type="password"
-                                id="awsSecretKey"
-                                name="secret_key"
-                                value={awsCredentials.secret_key}
-                                onChange={handleAwsCredentialsChange}
-                                className="w-full px-3 py-2 bg-white border border-[#2196F3]/20 text-slate-800 text-sm transition-colors duration-150 outline-none shadow-sm placeholder:text-slate-400 focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                placeholder="Enter AWS Secret Key"
-                                required
-                              />
-                            </div>
-
-                            {error && (
-                              <div
-                                className="flex items-center gap-2 px-4 py-3 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg"
-                                role="alert"
-                              >
-                                <span>⚠️</span>
-                                <span>{error}</span>
-                              </div>
-                            )}
-
-                            {success && (
-                              <div
-                                className="flex items-center gap-2 px-4 py-3 text-sm bg-green-50 border border-green-200 text-green-700 rounded-lg"
-                                role="alert"
-                              >
-                                <span>✅</span>
-                                <span>{success}</span>
-                              </div>
-                            )}
-
-                            <button
-                              type="submit"
-                              disabled={isSubmitting}
-                              className="px-5 py-2.5 bg-gradient-to-r from-[#42A5F5] to-[#30705d] text-white text-sm font-semibold cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group hover:from-[#1E88E5] hover:to-[#215646] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
-                              style={{ borderRadius: '12px 4px 12px 4px' }}
-                            >
-                              {isSubmitting ? (
-                                <>
-                                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-                                  Saving...
-                                </>
-                              ) : (
-                                <>
-                                  <span>Save AWS Credentials</span>
-                                  <span className="text-xl transition-transform duration-300 group-hover:translate-x-1">
-                                    →
-                                  </span>
-                                </>
-                              )}
-                            </button>
-                          </form>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Jenkins Configuration */}
-                  <div className="border border-blue-200/50 rounded-xl p-3 sm:p-4">
-                    <h4 className="text-sm sm:text-base font-semibold text-slate-800 mb-2 sm:mb-3">Jenkins Configuration</h4>
-                    <p className="text-xs text-slate-600 mb-2 sm:mb-3">
-                      Configure your Jenkins server connection details to enable CI/CD pipeline automation
-                      and build management.
-                    </p>
-
-                    {/* Saved Jenkins Credentials Display */}
-                    {isLoadingJenkins ? (
-                      <div className="mb-4 flex items-center gap-2 text-slate-600">
-                        <span className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></span>
-                        <span className="text-sm">Loading Jenkins credentials...</span>
-                      </div>
-                    ) : savedJenkinsCredentials.length > 0 ? (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-slate-700 mb-3">Saved Jenkins Configurations:</p>
-                        <div className="space-y-3">
-                          {savedJenkinsCredentials.map((credential, index) => {
-                            const jenkinsId = credential.id || credential._id || index
-                            const isSyncing = syncingJenkins[jenkinsId] || false
-                            const syncMessage = jenkinsSyncMessages[jenkinsId] || ''
-                            const isSuccessMessage = syncMessage && !syncMessage.includes('Error') && !syncMessage.includes('Failed')
-
-                            return (
-                              <div
-                                key={`${jenkinsId}`}
-                                className="px-4 py-3 bg-white/90 rounded-lg border border-blue-200/50 shadow-sm hover:shadow-md transition-shadow duration-150"
-                              >
-                                {/* Credential Details */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <div className="flex items-center gap-2">
-                                      {/* Jenkins Logo */}
-                                      <img
-                                        src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Jenkins_logo.svg"
-                                        alt="Jenkins"
-                                        className="w-8 h-8 object-contain flex-shrink-0"
-                                        onError={(e) => {
-                                          e.target.style.display = 'none'
-                                        }}
-                                      />
-                                      <h5 className="text-base font-semibold text-slate-800">Jenkins</h5>
-                                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded">
-                                        Connected
-                                      </span>
-                                      <span className={`px-2 py-0.5 text-xs font-medium rounded ${credential.type === 'public'
-                                          ? 'bg-blue-100 text-blue-700'
-                                          : 'bg-purple-100 text-purple-700'
-                                        }`}>
-                                        {credential.type === 'public' ? 'Public' : 'Private'}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                      {/* Update Button */}
-                                      <button
-                                        onClick={() => handleEditJenkinsCredential(credential)}
-                                        disabled={isSyncing || editingJenkinsId === jenkinsId}
-                                        className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 hover:border-orange-300"
-                                        title="Update Jenkins configuration"
-                                      >
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                          />
-                                        </svg>
-                                        <span className="hidden sm:inline">Update</span>
-                                      </button>
-
-                                      {/* Sync/Reload Button */}
-                                      <button
-                                        onClick={() => handleSyncJenkinsJobs(credential)}
-                                        disabled={isSyncing}
-                                        className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 hover:border-blue-300"
-                                        title="Sync jobs/pipelines from Jenkins"
-                                      >
-                                        {isSyncing ? (
-                                          <>
-                                            <span className="w-3 h-3 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></span>
-                                            <span className="hidden sm:inline">Syncing...</span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <svg
-                                              className="w-4 h-4"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              viewBox="0 0 24 24"
-                                            >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                              />
-                                            </svg>
-                                            <span>Sync</span>
-                                          </>
-                                        )}
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* Sync Status Message */}
-                                  {syncMessage && (
-                                    <div className={`mt-2 px-3 py-2 rounded-lg text-xs ${isSuccessMessage
-                                        ? 'bg-green-50 border border-green-200 text-green-700'
-                                        : 'bg-red-50 border border-red-200 text-red-700'
-                                      }`}>
-                                      {syncMessage}
-                                    </div>
-                                  )}
-
-                                  <div className="space-y-1 mt-2">
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                                      <span className="font-medium min-w-[100px]">Jenkins URL:</span>
-                                      <span className="text-slate-800 break-all">{credential.jenkins_url || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                                      <span className="font-medium min-w-[100px]">Username:</span>
-                                      <span className="text-slate-800">{credential.username || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                                      <span className="font-medium min-w-[100px]">Token:</span>
-                                      <span className="text-slate-800">
-                                        {credential.token ? (
-                                          credential.token.length > 8 ? (
-                                            <span className="font-mono">
-                                              {credential.token.substring(0, 4)}••••••••{credential.token.substring(credential.token.length - 4)}
-                                            </span>
-                                          ) : (
-                                            <span className="font-mono">••••••••</span>
-                                          )
-                                        ) : (
-                                          <span className="text-slate-400 italic">Not set</span>
-                                        )}
-                                      </span>
-                                    </div>
-                                    {credential.user_name && (
-                                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                                        <span className="font-medium min-w-[100px]">User:</span>
-                                        <span className="text-slate-800">{credential.user_name}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mb-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg">
-                        <p className="text-sm text-slate-600">No Jenkins configurations saved yet.</p>
-                      </div>
-                    )}
-
-                    {/* Jenkins Configuration Form */}
-                    <div className="bg-white/80 rounded-lg border border-blue-200/30 overflow-hidden transition-colors duration-150">
-                      {/* Clickable Header */}
-                      <button
-                        onClick={() => {
-                          if (editingJenkinsId) {
-                            handleCancelEditJenkins()
-                          }
-                          setExpandedJenkins(!expandedJenkins)
-                        }}
-                        className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-white/90 transition-colors duration-150"
-                      >
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <img
-                            src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Jenkins_logo.svg"
-                            alt="Jenkins"
-                            className="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0"
-                            onError={(e) => {
-                              e.target.style.display = 'none'
-                            }}
-                          />
-                          <div className="text-left min-w-0">
-                            <h5 className="text-base sm:text-lg font-semibold text-slate-800 mb-1">
-                              {editingJenkinsId ? 'Update Jenkins Configuration' : 'Add Jenkins Configuration'}
-                            </h5>
-                            <p className="text-xs sm:text-sm text-slate-600">
-                              {editingJenkinsId
-                                ? 'Update your Jenkins server configuration'
-                                : 'Configure your Jenkins server URL, credentials, and access type'}
-                            </p>
-                          </div>
-                        </div>
-                        <svg
-                          className={`w-6 h-6 text-slate-600 transition-transform duration-150 ${expandedJenkins ? 'rotate-180' : ''
-                            }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-
-                      {/* Expandable Form */}
-                      {expandedJenkins && (
-                        <div className="px-4 pb-4 border-t border-blue-200/30 pt-4 transition-colors duration-150 ease-in-out">
-                          {editingJenkinsId && (
-                            <div className="mb-4 flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                              <p className="text-sm text-orange-700">
-                                <span className="font-medium">Editing mode:</span> Updating existing configuration. Leave token empty to keep current value.
-                              </p>
-                              <button
-                                type="button"
-                                onClick={handleCancelEditJenkins}
-                                className="text-orange-700 hover:text-orange-900 transition-colors"
-                                title="Cancel editing"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
-                          <form onSubmit={handleJenkinsSubmit} className="space-y-4">
-                            {/* Jenkins URL */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="jenkinsUrl"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Jenkins URL <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                type="url"
-                                id="jenkinsUrl"
-                                name="jenkins_url"
-                                value={jenkinsCredentials.jenkins_url}
-                                onChange={handleJenkinsCredentialsChange}
-                                className="w-full px-3 py-2 bg-white border border-[#2196F3]/20 text-slate-800 text-sm transition-colors duration-150 outline-none shadow-sm placeholder:text-slate-400 focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                placeholder="https://jenkins.example.com"
-                                required
-                              />
-                            </div>
-
-                            {/* Username */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="jenkinsUsername"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Username <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                id="jenkinsUsername"
-                                name="username"
-                                value={jenkinsCredentials.username}
-                                onChange={handleJenkinsCredentialsChange}
-                                className="w-full px-3 py-2 bg-white border border-[#2196F3]/20 text-slate-800 text-sm transition-colors duration-150 outline-none shadow-sm placeholder:text-slate-400 focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                placeholder="Enter Jenkins username"
-                                required
-                              />
-                            </div>
-
-                            {/* Token */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="jenkinsToken"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Token {!editingJenkinsId && <span className="text-red-500">*</span>}
-                                {editingJenkinsId && <span className="text-slate-400 text-xs">(Leave empty to keep current)</span>}
-                              </label>
-                              <input
-                                type="password"
-                                id="jenkinsToken"
-                                name="token"
-                                value={jenkinsCredentials.token}
-                                onChange={handleJenkinsCredentialsChange}
-                                className="w-full px-3 py-2 bg-white border border-[#2196F3]/20 text-slate-800 text-sm transition-colors duration-150 outline-none shadow-sm placeholder:text-slate-400 focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                placeholder={editingJenkinsId ? "Enter new token (leave empty to keep current)" : "Enter Jenkins API token"}
-                                required={!editingJenkinsId}
-                              />
-                            </div>
-
-                            {/* Type (Private/Public) */}
-                            <div className="flex flex-col gap-2">
-                              <label
-                                htmlFor="jenkinsType"
-                                className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-                              >
-                                Type <span className="text-red-500">*</span>
-                              </label>
-                              <select
-                                id="jenkinsType"
-                                name="type"
-                                value={jenkinsCredentials.type}
-                                onChange={handleJenkinsCredentialsChange}
-                                className="w-full px-4 py-3 bg-white border border-[#2196F3]/20 text-slate-800 text-base transition-colors duration-150 outline-none shadow-sm focus:border-[#2196F3] focus:shadow-[0_0_0_2px_rgba(33,150,243,0.08)]"
-                                style={{ borderRadius: '6px 12px 6px 12px' }}
-                                required
-                              >
-                                <option value="public">Public</option>
-                                <option value="private">Private</option>
-                              </select>
-                            </div>
-
-                            {jenkinsError && (
-                              <div
-                                className="flex items-center gap-2 px-4 py-3 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg"
-                                role="alert"
-                              >
-                                <span>⚠️</span>
-                                <span>{jenkinsError}</span>
-                              </div>
-                            )}
-
-                            {jenkinsSuccess && (
-                              <div
-                                className="flex items-center gap-2 px-4 py-3 text-sm bg-green-50 border border-green-200 text-green-700 rounded-lg"
-                                role="alert"
-                              >
-                                <span>✅</span>
-                                <span>{jenkinsSuccess}</span>
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-3">
-                              {editingJenkinsId && (
-                                <button
-                                  type="button"
-                                  onClick={handleCancelEditJenkins}
-                                  disabled={isSubmittingJenkins}
-                                  className="px-6 py-3 bg-white border border-slate-300 text-slate-700 text-base font-medium rounded-lg hover:bg-slate-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                              <button
-                                type="submit"
-                                disabled={isSubmittingJenkins}
-                                className="flex-1 px-6 py-3 bg-gradient-to-r from-[#42A5F5] to-[#30705d] text-white text-base font-semibold cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group hover:from-[#1E88E5] hover:to-[#215646] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
-                                style={{ borderRadius: '12px 4px 12px 4px' }}
-                              >
-                                {isSubmittingJenkins ? (
-                                  <>
-                                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-                                    {editingJenkinsId ? 'Updating...' : 'Saving...'}
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>{editingJenkinsId ? 'Update Jenkins Configuration' : 'Save Jenkins Configuration'}</span>
-                                    <span className="text-xl transition-transform duration-300 group-hover:translate-x-1">
-                                      →
-                                    </span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Account Actions */}
-              <div className="pt-6 sm:pt-8 mt-6 sm:mt-8 border-t border-slate-200/60">
-                <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-3 sm:mb-4 font-display">
-                  Account Management
-                </h3>
-                <div className="bg-white/50 border border-slate-200/60 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h4 className="text-sm sm:text-base font-semibold text-slate-800 mb-1">Sign Out</h4>
-                    <p className="text-xs text-slate-600">Securely sign out of your infraXai account</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="px-6 py-2 bg-white text-red-600 font-semibold text-sm rounded-xl border border-red-200 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm whitespace-nowrap"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col bg-slate-50/30 w-full relative">
+        <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col lg:flex-row gap-8 lg:gap-12">
+          
+          {/* Sidebar */}
+          <aside className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-6">
+            <div className="px-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">Settings</h2>
+              <p className="text-sm text-slate-500 mt-1">Manage your integrations and account preferences.</p>
             </div>
+            
+            <nav className="flex flex-row lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0">
+              <button 
+                onClick={() => setActiveTab('integrations')}
+                className={`text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'integrations' 
+                    ? 'bg-white shadow-sm text-[#2196F3] border border-blue-100/50' 
+                    : 'text-slate-600 hover:bg-white/60 hover:text-slate-900 border border-transparent'
+                }`}
+              >
+                Integrations
+              </button>
+              <button 
+                onClick={() => setActiveTab('account')}
+                className={`text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'account' 
+                    ? 'bg-white shadow-sm text-[#2196F3] border border-blue-100/50' 
+                    : 'text-slate-600 hover:bg-white/60 hover:text-slate-900 border border-transparent'
+                }`}
+              >
+                Account Management
+              </button>
+            </nav>
+          </aside>
+
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0">
+             
+             {activeTab === 'integrations' && (
+               <div className="space-y-8 animate-in fade-in duration-300">
+                 
+                 {/* SCM Credentials */}
+                 <section className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60">
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                     <div>
+                       <h3 className="text-lg font-bold text-slate-800">SCM Integrations</h3>
+                       <p className="text-sm text-slate-500 mt-1">Connect GitHub, GitLab, or Bitbucket to manage repositories.</p>
+                     </div>
+                     <button 
+                       onClick={() => openSlideOver('scm', 'Add SCM Integration')}
+                       className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                     >
+                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                       Add Integration
+                     </button>
+                   </div>
+
+                   {isLoadingSCM ? (
+                     <div className="flex items-center gap-3 text-slate-500 p-4">
+                       <span className="w-4 h-4 border-2 border-[#2196F3]/30 border-t-[#2196F3] rounded-full animate-spin"></span>
+                       <span className="text-sm font-medium">Loading SCM credentials...</span>
+                     </div>
+                   ) : savedSCMCredentials.length > 0 ? (
+                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                       {savedSCMCredentials.map((credential, index) => {
+                         const scmName = credential.scm_name?.toLowerCase().trim() || ''
+                         const logo = getSCMLogo(scmName)
+                         const displayName = getSCMDisplayName(scmName)
+                         const scmId = credential.id || credential._id || index
+                         const isSyncing = syncingRepos[scmId] || false
+                         const syncMessage = syncMessages[scmId] || ''
+                         const isSuccessMessage = syncMessage && !syncMessage.includes('Error') && !syncMessage.includes('Failed')
+
+                         return (
+                           <div key={`${scmId}`} className="group relative flex flex-col p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-200 hover:border-blue-200/50">
+                             <div className="flex items-start justify-between mb-4">
+                               <div className="flex items-center gap-3">
+                                 {logo ? (
+                                   <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2">
+                                     <img src={logo} alt={displayName} className="w-full h-full object-contain" />
+                                   </div>
+                                 ) : (
+                                   <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                                     <span className="text-sm font-bold text-slate-500">{displayName.charAt(0)}</span>
+                                   </div>
+                                 )}
+                                 <div>
+                                   <h4 className="font-bold text-slate-800">{displayName}</h4>
+                                   <div className="flex items-center gap-2 mt-0.5">
+                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                     <span className="text-xs font-medium text-slate-500">Connected</span>
+                                     <span className="text-xs font-medium text-slate-400 border border-slate-200 rounded px-1.5 py-0.5 ml-1">
+                                       {credential.auth_type === 'github_app' ? 'App' : credential.auth_type === 'oauth' ? 'OAuth' : 'PAT'}
+                                     </span>
+                                   </div>
+                                 </div>
+                               </div>
+                             </div>
+
+                             <div className="space-y-2 mb-4 flex-1">
+                               <div className="flex items-center justify-between text-sm">
+                                 <span className="text-slate-500">Username</span>
+                                 <span className="font-medium text-slate-700">{credential.username || 'N/A'}</span>
+                               </div>
+                               {credential.auth_type === 'oauth' && (
+                                 <div className="flex items-center justify-between text-sm">
+                                   <span className="text-slate-500">Scopes</span>
+                                   <span className="font-mono text-xs text-slate-600 bg-slate-50 px-2 py-0.5 rounded">{credential.oauth_scopes || 'repo'}</span>
+                                 </div>
+                               )}
+                             </div>
+
+                             {syncMessage && (
+                               <div className={`mb-4 px-3 py-2 rounded-lg text-xs font-medium ${isSuccessMessage ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                 {syncMessage}
+                               </div>
+                             )}
+
+                             <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                               <button 
+                                 onClick={() => onEditSCM(credential)}
+                                 disabled={isSyncing}
+                                 className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-50"
+                               >
+                                 Configure
+                               </button>
+                               <button 
+                                 onClick={() => handleSyncRepositories(credential)}
+                                 disabled={isSyncing}
+                                 className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 ${
+                                   isSyncing ? 'bg-blue-50 text-blue-500' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                 }`}
+                               >
+                                 {isSyncing ? (
+                                   <><span className="w-3.5 h-3.5 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></span> Syncing</>
+                                 ) : 'Sync Repos'}
+                               </button>
+                             </div>
+                           </div>
+                         )
+                       })}
+                     </div>
+                   ) : (
+                     <div className="px-6 py-8 bg-slate-50/50 border border-slate-200 border-dashed rounded-2xl text-center">
+                       <svg className="w-8 h-8 text-slate-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                       <p className="text-sm font-medium text-slate-600">No SCM integrations configured.</p>
+                       <p className="text-xs text-slate-400 mt-1">Connect your repositories to get started.</p>
+                     </div>
+                   )}
+                 </section>
+
+                 {/* Jenkins Configuration */}
+                 <section className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60">
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                     <div>
+                       <h3 className="text-lg font-bold text-slate-800">Jenkins Configuration</h3>
+                       <p className="text-sm text-slate-500 mt-1">Connect your Jenkins servers for pipeline automation.</p>
+                     </div>
+                     <button 
+                       onClick={() => openSlideOver('jenkins', 'Add Jenkins Server')}
+                       className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                     >
+                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                       Add Server
+                     </button>
+                   </div>
+
+                   {isLoadingJenkins ? (
+                     <div className="flex items-center gap-3 text-slate-500 p-4">
+                       <span className="w-4 h-4 border-2 border-[#2196F3]/30 border-t-[#2196F3] rounded-full animate-spin"></span>
+                       <span className="text-sm font-medium">Loading Jenkins configurations...</span>
+                     </div>
+                   ) : savedJenkinsCredentials.length > 0 ? (
+                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                       {savedJenkinsCredentials.map((credential, index) => {
+                         const jenkinsId = credential.id || credential._id || index
+                         const isSyncing = syncingJenkins[jenkinsId] || false
+                         const syncMessage = jenkinsSyncMessages[jenkinsId] || ''
+                         const isSuccessMessage = syncMessage && !syncMessage.includes('Error') && !syncMessage.includes('Failed')
+
+                         return (
+                           <div key={`${jenkinsId}`} className="group relative flex flex-col p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-200 hover:border-blue-200/50">
+                             <div className="flex items-start justify-between mb-4">
+                               <div className="flex items-center gap-3">
+                                 <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-1.5">
+                                   <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Jenkins_logo.svg" alt="Jenkins" className="w-full h-full object-contain" />
+                                 </div>
+                                 <div>
+                                   <h4 className="font-bold text-slate-800">Jenkins Server</h4>
+                                   <div className="flex items-center gap-2 mt-0.5">
+                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                     <span className="text-xs font-medium text-slate-500">Connected</span>
+                                     <span className="text-xs font-medium text-slate-400 border border-slate-200 rounded px-1.5 py-0.5 ml-1">
+                                       {credential.type === 'public' ? 'Public' : 'Private'}
+                                     </span>
+                                   </div>
+                                 </div>
+                               </div>
+                             </div>
+
+                             <div className="space-y-2 mb-4 flex-1">
+                               <div className="flex items-center justify-between text-sm">
+                                 <span className="text-slate-500">URL</span>
+                                 <span className="font-medium text-slate-700 truncate max-w-[200px]" title={credential.jenkins_url}>{credential.jenkins_url}</span>
+                               </div>
+                               <div className="flex items-center justify-between text-sm">
+                                 <span className="text-slate-500">User</span>
+                                 <span className="font-medium text-slate-700">{credential.username}</span>
+                               </div>
+                             </div>
+
+                             {syncMessage && (
+                               <div className={`mb-4 px-3 py-2 rounded-lg text-xs font-medium ${isSuccessMessage ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                 {syncMessage}
+                               </div>
+                             )}
+
+                             <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                               <button 
+                                 onClick={() => onEditJenkins(credential)}
+                                 disabled={isSyncing}
+                                 className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-50"
+                               >
+                                 Configure
+                               </button>
+                               <button 
+                                 onClick={() => handleSyncJenkinsJobs(credential)}
+                                 disabled={isSyncing}
+                                 className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 ${
+                                   isSyncing ? 'bg-blue-50 text-blue-500' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                 }`}
+                               >
+                                 {isSyncing ? (
+                                   <><span className="w-3.5 h-3.5 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></span> Syncing</>
+                                 ) : 'Sync Jobs'}
+                               </button>
+                             </div>
+                           </div>
+                         )
+                       })}
+                     </div>
+                   ) : (
+                     <div className="px-6 py-8 bg-slate-50/50 border border-slate-200 border-dashed rounded-2xl text-center">
+                       <p className="text-sm font-medium text-slate-600">No Jenkins servers configured.</p>
+                     </div>
+                   )}
+                 </section>
+
+                 {/* Cloud Credentials */}
+                 <section className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60">
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                     <div>
+                       <h3 className="text-lg font-bold text-slate-800">Cloud Credentials</h3>
+                       <p className="text-sm text-slate-500 mt-1">Configure AWS, GCP, or Azure keys for infrastructure provisioning.</p>
+                     </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     {/* AWS Card */}
+                     <button 
+                       onClick={() => openSlideOver('aws', 'Configure AWS')}
+                       className="group flex flex-col items-center justify-center gap-3 p-6 bg-white rounded-2xl border border-slate-200/60 hover:border-orange-300 hover:shadow-md transition-all text-center"
+                     >
+                       <img src="https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg" alt="AWS" className="h-10 object-contain group-hover:scale-105 transition-transform" />
+                       <span className="font-semibold text-slate-700">Amazon Web Services</span>
+                     </button>
+                     {/* Placeholder for others */}
+                     <div className="flex flex-col items-center justify-center gap-3 p-6 bg-slate-50/50 rounded-2xl border border-slate-200 border-dashed opacity-50 cursor-not-allowed">
+                       <span className="font-semibold text-slate-500">Google Cloud (Coming Soon)</span>
+                     </div>
+                     <div className="flex flex-col items-center justify-center gap-3 p-6 bg-slate-50/50 rounded-2xl border border-slate-200 border-dashed opacity-50 cursor-not-allowed">
+                       <span className="font-semibold text-slate-500">Azure (Coming Soon)</span>
+                     </div>
+                   </div>
+                 </section>
+
+               </div>
+             )}
+
+             {activeTab === 'account' && (
+               <div className="space-y-8 animate-in fade-in duration-300">
+                 <section className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] border border-white/60">
+                   <div className="flex items-center gap-5 mb-8">
+                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold text-2xl font-display shadow-inner">
+                       {(userInfo?.name || userInfo?.username || userInfo?.email || 'U')[0].toUpperCase()}
+                     </div>
+                     <div>
+                       <h3 className="text-xl font-bold text-slate-800">{userInfo?.name || userInfo?.username || 'User'}</h3>
+                       <p className="text-slate-500">{userInfo?.email}</p>
+                     </div>
+                   </div>
+
+                   <div className="border-t border-slate-100 pt-8">
+                     <h4 className="text-base font-semibold text-slate-800 mb-4">Danger Zone</h4>
+                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-red-50/50 border border-red-100 rounded-2xl">
+                       <div>
+                         <h5 className="font-semibold text-red-900">Sign Out</h5>
+                         <p className="text-sm text-red-700/80 mt-0.5">Securely end your current session.</p>
+                       </div>
+                       <button
+                         onClick={handleLogout}
+                         className="px-6 py-2.5 bg-white text-red-600 font-semibold text-sm rounded-xl border border-red-200 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"
+                       >
+                         Sign Out
+                       </button>
+                     </div>
+                   </div>
+                 </section>
+               </div>
+             )}
           </div>
         </div>
+
+        {/* --- SlideOver Contents --- */}
+        <SlideOver 
+          isOpen={slideOverState.isOpen && slideOverState.type === 'scm'} 
+          onClose={closeSlideOver} 
+          title={slideOverState.title}
+        >
+          <div className="space-y-6">
+            {!editingCredentialId && (
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const token = localStorage.getItem('jwt_token')
+                    if (!token) {
+                      setScmError('Please log in first to connect via OAuth')
+                      return
+                    }
+                    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+                    window.location.href = `${apiUrl}/api/scm/oauth/github/login?token=${token}`
+                  }}
+                  className="group flex flex-col items-center gap-2 p-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all shadow-md relative overflow-hidden"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"/></svg>
+                  <span className="text-sm font-semibold">GitHub App</span>
+                  <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 rounded">Rec</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExpandedManualPAT(true)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all border ${expandedManualPAT ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                  <span className="text-sm font-semibold">Manual PAT</span>
+                </button>
+              </div>
+            )}
+
+            {(expandedManualPAT || editingCredentialId) && (
+              <form onSubmit={handleSCMSubmit} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">SCM Provider</label>
+                  <select name="scm_name" value={scmCredentials.scm_name} onChange={handleSCMCredentialsChange} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required>
+                    <option value="">Select Provider</option>
+                    <option value="github">GitHub</option>
+                    <option value="gitlab">GitLab</option>
+                    <option value="bitbucket">Bitbucket</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Username</label>
+                  <input type="text" name="username" value={scmCredentials.username} onChange={handleSCMCredentialsChange} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Personal Access Token</label>
+                  <input type="password" name="pat" value={scmCredentials.pat} onChange={handleSCMCredentialsChange} placeholder={editingCredentialId ? "Leave empty to keep current" : ""} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required={!editingCredentialId} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Base URL <span className="text-slate-400 normal-case">(Optional)</span></label>
+                  <input type="url" name="base_url" value={scmCredentials.base_url} onChange={handleSCMCredentialsChange} placeholder="For self-hosted instances" className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" />
+                </div>
+
+                {scmError && <div className="p-3 text-sm bg-red-50 text-red-700 rounded-lg">{scmError}</div>}
+                {scmSuccess && <div className="p-3 text-sm bg-emerald-50 text-emerald-700 rounded-lg">{scmSuccess}</div>}
+
+                <button type="submit" disabled={isSubmittingSCM} className="w-full mt-4 px-6 py-3 bg-[#2196F3] hover:bg-blue-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all flex justify-center items-center gap-2">
+                  {isSubmittingSCM ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : null}
+                  {editingCredentialId ? 'Update Settings' : 'Save Connection'}
+                </button>
+              </form>
+            )}
+          </div>
+        </SlideOver>
+
+        <SlideOver 
+          isOpen={slideOverState.isOpen && slideOverState.type === 'jenkins'} 
+          onClose={closeSlideOver} 
+          title={slideOverState.title}
+        >
+          <form onSubmit={handleJenkinsSubmit} className="space-y-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Jenkins URL</label>
+              <input type="url" name="jenkins_url" value={jenkinsCredentials.jenkins_url} onChange={handleJenkinsCredentialsChange} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Username</label>
+              <input type="text" name="username" value={jenkinsCredentials.username} onChange={handleJenkinsCredentialsChange} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">API Token</label>
+              <input type="password" name="token" value={jenkinsCredentials.token} onChange={handleJenkinsCredentialsChange} placeholder={editingJenkinsId ? "Leave empty to keep current" : ""} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required={!editingJenkinsId} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</label>
+              <select name="type" value={jenkinsCredentials.type} onChange={handleJenkinsCredentialsChange} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required>
+                <option value="public">Publicly Accessible</option>
+                <option value="private">Private / Internal</option>
+              </select>
+            </div>
+
+            {jenkinsError && <div className="p-3 text-sm bg-red-50 text-red-700 rounded-lg">{jenkinsError}</div>}
+            {jenkinsSuccess && <div className="p-3 text-sm bg-emerald-50 text-emerald-700 rounded-lg">{jenkinsSuccess}</div>}
+
+            <button type="submit" disabled={isSubmittingJenkins} className="w-full mt-4 px-6 py-3 bg-[#2196F3] hover:bg-blue-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all flex justify-center items-center gap-2">
+              {isSubmittingJenkins ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : null}
+              {editingJenkinsId ? 'Update Server' : 'Add Server'}
+            </button>
+          </form>
+        </SlideOver>
+
+        <SlideOver 
+          isOpen={slideOverState.isOpen && slideOverState.type === 'aws'} 
+          onClose={closeSlideOver} 
+          title={slideOverState.title}
+        >
+          <form onSubmit={handleAwsSubmit} className="space-y-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Credential Name</label>
+              <input type="text" name="name" value={awsCredentials.name} onChange={handleAwsCredentialsChange} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Access Key ID</label>
+              <input type="text" name="access_key" value={awsCredentials.access_key} onChange={handleAwsCredentialsChange} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Secret Access Key</label>
+              <input type="password" name="secret_key" value={awsCredentials.secret_key} onChange={handleAwsCredentialsChange} className="w-full px-4 py-2.5 bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3]/20 outline-none" required />
+            </div>
+
+            {error && <div className="p-3 text-sm bg-red-50 text-red-700 rounded-lg">{error}</div>}
+            {success && <div className="p-3 text-sm bg-emerald-50 text-emerald-700 rounded-lg">{success}</div>}
+
+            <button type="submit" disabled={isSubmitting} className="w-full mt-4 px-6 py-3 bg-[#2196F3] hover:bg-blue-600 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all flex justify-center items-center gap-2">
+              {isSubmitting ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : null}
+              Save AWS Credentials
+            </button>
+          </form>
+        </SlideOver>
+
       </main>
     </PageLayout>
   )
 }
 
 export default SettingsPage
-

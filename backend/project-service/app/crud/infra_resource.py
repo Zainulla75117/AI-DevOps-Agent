@@ -48,6 +48,7 @@ async def create_resource(
         "env": data.env,
         "config": data.config,
         "actual_state": None,
+        "iac_context": data.iac_context,
         "state": data.state,
         "version": 1,
         "depends_on": [ObjectId(dep) for dep in data.depends_on] if data.depends_on else [],
@@ -65,6 +66,7 @@ async def create_resource(
         "resource_id": resource_id,
         "version": 1,
         "config": data.config,
+        "iac_context": data.iac_context,
         "changed_by": changed_by,
         "change_reason": "Initial creation",
         "created_at": now,
@@ -137,6 +139,8 @@ async def update_resource(
 
     if data.config is not None:
         update_fields["config"] = data.config
+    if data.iac_context is not None:
+        update_fields["iac_context"] = data.iac_context
     if data.name is not None:
         update_fields["name"] = data.name
     if data.state is not None:
@@ -153,6 +157,7 @@ async def update_resource(
         "resource_id": oid,
         "version": new_version,
         "config": data.config if data.config is not None else existing.get("config", {}),
+        "iac_context": data.iac_context if data.iac_context is not None else existing.get("iac_context"),
         "changed_by": data.changed_by,
         "change_reason": data.change_reason,
         "created_at": now,

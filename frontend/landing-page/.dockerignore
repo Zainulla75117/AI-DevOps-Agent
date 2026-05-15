@@ -13,4 +13,7 @@ README.md
 .idea
 coverage
 .nyc_output
-
+Dockerfile
+.dockerignore
+*.md
+My_Brand-Logo.png

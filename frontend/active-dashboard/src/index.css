@@ -58,6 +58,20 @@
     }
   }
 
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .slide-in-from-right {
+    animation-name: slideInRight;
+  }
+
+
 @keyframes fadeInUp {
     from {
       opacity: 0;

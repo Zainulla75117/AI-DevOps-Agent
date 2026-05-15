@@ -1,0 +1,15 @@
+# FastAPI + Server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# LLM
+langchain-google-genai>=1.0.0
+langchain-core>=0.3.0
+
+# JWT verification
+PyJWT>=2.8.0
+
+# Environment / Config
+python-dotenv>=1.2.1
+pydantic-settings>=2.6.1
+pydantic>=2.12.0

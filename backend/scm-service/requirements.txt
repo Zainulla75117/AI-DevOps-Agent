@@ -1,0 +1,23 @@
+# FastAPI and Server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Data Validation
+pydantic>=2.12.0
+pydantic-settings>=2.6.1
+
+# MongoDB
+motor>=3.6.0
+pymongo>=4.9.0
+
+# JWT Verification
+python-jose[cryptography]>=3.3.0
+
+# Environment Variables
+python-dotenv>=1.2.1
+
+# HTTP Client (for SCM API calls)
+httpx>=0.27.0
+
+# Date Parsing (for SCM timestamps)
+python-dateutil>=2.9.0

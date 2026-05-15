@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import PageLayout from '../components/PageLayout'
-import ChatWidget from '../components/ChatWidget'
 import JenkinsChatInterface from '../components/JenkinsChatInterface'
 
 const AutomationPage = () => {
@@ -219,10 +218,7 @@ const AutomationPage = () => {
         </div>
       </main>
 
-      {/* Chat Widget - Only show on CI/CD page */}
-      {selectedOption === 'cicd' && (
-        <ChatWidget initialMessage="HI Iam CI/CD agent how can i help you?" />
-      )}
+      {/* Chat Widget Removed - Replaced by GlobalAgentWidget in PageLayout */}
 
       {/* Jenkins Chat Interface - Full screen ChatGPT-like interface */}
       {showJenkinsChat && (

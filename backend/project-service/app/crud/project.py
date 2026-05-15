@@ -7,6 +7,7 @@ from app.schemas.project import ProjectCreate
 
 async def create_project(db: AsyncIOMotorDatabase, project: ProjectCreate, owner_username: str) -> Project:
     project_dict = project.model_dump()
+    print(f"🔍 [CRUD] create_project payload: platform={project_dict.get('platform')!r}, cloud_provider={project_dict.get('cloud_provider')!r}, region={project_dict.get('region')!r}, iam_name={project_dict.get('iam_name')!r}")
     project_dict["owner_username"] = owner_username
     project_dict["created_at"] = datetime.utcnow()
     result = await db.user_projects.insert_one(project_dict)

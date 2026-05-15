@@ -8,6 +8,7 @@ import AutomationPage from './pages/AutomationPage';
 import MonitoringPage from './pages/MonitoringPage';
 import SettingsPage from './pages/SettingsPage';
 import GitHubCallbackPage from './pages/GitHubCallbackPage';
+import ToolPlaceholderPage from './pages/ToolPlaceholderPage';
 
 import { isAuthenticated } from './services/authService';
 import './App.css';
@@ -81,6 +82,14 @@ function App() {
         element={
           <ProtectedRoute>
             <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tools/:toolId"
+        element={
+          <ProtectedRoute>
+            <ToolPlaceholderPage />
           </ProtectedRoute>
         }
       />

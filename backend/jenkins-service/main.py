@@ -143,6 +143,7 @@ class ChatRequest(BaseModel):
     query: Optional[str] = Field(None, description="Query string for form submissions (alternative to message)")
     session_id: Optional[str] = Field(None, description="Chat session ID")
     project_id: Optional[str] = Field(None, description="Project ID to fetch metadata")
+    repo_id: Optional[str] = Field(None, description="SCM Repository ID to fetch file tree")
     has_form_data: bool = Field(default=False, description="Whether form data is included")
     form_data: Optional[Dict[str, Any]] = Field(None, description="Form submission data")
     is_form_submission: bool = Field(default=False, description="Whether this is a form submission")
@@ -1640,9 +1641,9 @@ async def chat_stream_post(
         sessions[session_id] = {"messages": []}
         
         # Fetch project_info if project_id is provided
+        auth_token = authorization[7:] if authorization and authorization.startswith("Bearer ") else ""
         if request.project_id:
             try:
-                auth_token = authorization[7:] if authorization and authorization.startswith("Bearer ") else ""
                 if auth_token:
                     project_info = await project_client.get_project(request.project_id, auth_token)
                     if project_info:
@@ -1650,6 +1651,30 @@ async def chat_stream_post(
                         logger.info(f"Loaded project metadata for project {request.project_id}")
             except Exception as e:
                 logger.warning(f"Could not fetch project metadata: {e}")
+                
+            try:
+                if auth_token:
+                    existing_resources = await project_client.get_project_resources(request.project_id, auth_token)
+                    if existing_resources:
+                        sessions[session_id]["existing_resources"] = existing_resources
+                        logger.info(f"Loaded {len(existing_resources)} existing resources for project {request.project_id}")
+            except Exception as e:
+                logger.warning(f"Could not fetch existing resources: {e}")
+
+        # Fetch repo_tree if repo_id is provided
+        if request.repo_id and auth_token:
+            try:
+                import httpx
+                scm_url = f"{os.getenv('SCM_SERVICE_URL', 'http://localhost:8006')}/api/scm/repos/{request.repo_id}/tree"
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.get(scm_url, headers={"Authorization": f"Bearer {auth_token}"})
+                    if resp.status_code == 200:
+                        sessions[session_id]["repo_tree"] = resp.json()
+                        logger.info(f"Loaded repo tree for repo {request.repo_id}")
+                    else:
+                        logger.warning(f"Failed to fetch repo tree: {resp.text}")
+            except Exception as e:
+                logger.warning(f"Could not fetch repo tree: {e}")
     
     # Determine message content - use query if provided, otherwise message
     user_message = request.get_message()
@@ -1725,6 +1750,7 @@ async def chat_stream_get(
     message: str = Query(..., description="User message"),
     session_id: Optional[str] = Query(None, description="Chat session ID"),
     project_id: Optional[str] = Query(None, description="Project ID for contextual metadata"),
+    repo_id: Optional[str] = Query(None, description="SCM Repository ID to fetch file tree"),
     token: Optional[str] = Query(None, description="JWT token (required for SSE - EventSource can't send headers)"),
     authorization: Optional[str] = Header(None, alias="Authorization"),
     is_form_submission: Optional[bool] = Query(False, description="Whether this is a form submission"),
@@ -1775,9 +1801,9 @@ async def chat_stream_get(
         sessions[session_id] = {"messages": []}
         
         # Fetch project_info if project_id is provided
+        auth_token = token or (authorization[7:] if authorization and authorization.startswith("Bearer ") else "")
         if project_id:
             try:
-                auth_token = token or (authorization[7:] if authorization and authorization.startswith("Bearer ") else "")
                 if auth_token:
                     project_info = await project_client.get_project(project_id, auth_token)
                     if project_info:
@@ -1785,6 +1811,30 @@ async def chat_stream_get(
                         logger.info(f"Loaded project metadata for project {project_id}")
             except Exception as e:
                 logger.warning(f"Could not fetch project metadata: {e}")
+                
+            try:
+                if auth_token:
+                    existing_resources = await project_client.get_project_resources(project_id, auth_token)
+                    if existing_resources:
+                        sessions[session_id]["existing_resources"] = existing_resources
+                        logger.info(f"Loaded {len(existing_resources)} existing resources for project {project_id}")
+            except Exception as e:
+                logger.warning(f"Could not fetch existing resources: {e}")
+
+        # Fetch repo_tree if repo_id is provided
+        if repo_id and auth_token:
+            try:
+                import httpx
+                scm_url = f"{os.getenv('SCM_SERVICE_URL', 'http://localhost:8006')}/api/scm/repos/{repo_id}/tree"
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.get(scm_url, headers={"Authorization": f"Bearer {auth_token}"})
+                    if resp.status_code == 200:
+                        sessions[session_id]["repo_tree"] = resp.json()
+                        logger.info(f"Loaded repo tree for repo {repo_id}")
+                    else:
+                        logger.warning(f"Failed to fetch repo tree: {resp.text}")
+            except Exception as e:
+                logger.warning(f"Could not fetch repo tree: {e}")
     
     # Prepare form_data if this is a form submission
     form_data = None

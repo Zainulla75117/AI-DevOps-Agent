@@ -34,6 +34,7 @@ class InfraResource(BaseModel):
     # ── Core state fields ────────────────────────────────────────────
     config: Dict[str, Any] = Field(default_factory=dict)
     actual_state: Optional[Dict[str, Any]] = None
+    iac_context: Optional[Dict[str, Any]] = None  # LLM's IaC reasoning, Terraform hints, cost estimates
     state: str = "planned"  # "planned" | "provisioning" | "provisioned" | "failed"
     version: int = 1
 

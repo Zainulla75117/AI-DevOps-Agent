@@ -40,4 +40,31 @@ class ProjectServiceClient:
             logger.warning(f"  ⚠️ Could not fetch project info: {e}")
             return None
 
+    async def get_project_resources(self, project_id: str, auth_token: str) -> list:
+        """
+        GET /api/infrastructure/resources/project/{project_id}
+        Fetch all existing infrastructure resources.
+        """
+        url = f"{self.base_url}/api/infrastructure/resources/project/{project_id}"
+        logger.info(f"Fetching project resources: {url}")
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    url,
+                    headers={"Authorization": f"Bearer {auth_token}"},
+                )
+
+            if response.status_code == 200:
+                resources = response.json()
+                logger.info(f"  ✅ Found {len(resources)} existing resources")
+                return resources
+            else:
+                logger.warning(f"  ⚠️ project_client return {response.status_code}: {response.text}")
+                return []
+
+        except Exception as e:
+            logger.warning(f"  ⚠️ Could not fetch existing resources: {e}")
+            return []
+
 project_client = ProjectServiceClient()

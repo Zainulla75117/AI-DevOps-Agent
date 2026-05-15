@@ -2,6 +2,12 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+class LinkedRepositorySchema(BaseModel):
+    repo_full_name: str
+    credential_id: str
+    provider: str
+    repo_id: Optional[str] = None  # ObjectId ref to user_scm_data document
+
 class ProjectCreate(BaseModel):
     project_name: str
     description: Optional[str] = None
@@ -13,6 +19,7 @@ class ProjectCreate(BaseModel):
     environment: Optional[str] = None
     expected_traffic: Optional[str] = None
     cost_preference: Optional[str] = None
+    linked_repositories: Optional[list[LinkedRepositorySchema]] = None
 
 class ProjectUpdate(BaseModel):
     project_name: Optional[str] = None
@@ -25,6 +32,7 @@ class ProjectUpdate(BaseModel):
     environment: Optional[str] = None
     expected_traffic: Optional[str] = None
     cost_preference: Optional[str] = None
+    linked_repositories: Optional[list[LinkedRepositorySchema]] = None
 
 class ProjectResponse(BaseModel):
     id: str
@@ -39,6 +47,7 @@ class ProjectResponse(BaseModel):
     environment: Optional[str] = None
     expected_traffic: Optional[str] = None
     cost_preference: Optional[str] = None
+    linked_repositories: Optional[list[LinkedRepositorySchema]] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     

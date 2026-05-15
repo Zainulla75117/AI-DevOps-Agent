@@ -1,11 +1,12 @@
 """
 InfraX Credential Service (port 8003)
-Handles SCM credentials, Jenkins credentials, and repository sync.
+Handles SCM credential storage (PATs) and Jenkins credentials.
+SCM business logic (sync, repos, namespaces) is handled by scm-service (port 8005).
 """
 
 from fastapi import FastAPI
 from app.config import settings
-from app.routers import scm_router, scm_repo_router, jenkins_credentials_router
+from app.routers import scm_router, jenkins_credentials_router
 from app.database.connection import close_db, check_db_connection
 
 app = FastAPI(
@@ -15,7 +16,6 @@ app = FastAPI(
 
 # Include routers
 app.include_router(scm_router)
-app.include_router(scm_repo_router)
 app.include_router(jenkins_credentials_router)
 
 @app.on_event("startup")

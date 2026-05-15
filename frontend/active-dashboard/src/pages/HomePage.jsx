@@ -100,7 +100,12 @@ const HomePage = () => {
       setToast({ message: 'Project deleted successfully!', type: 'success' })
       loadProjects()
     } catch (error) {
-      setToast({ message: error.message || 'Failed to delete project', type: 'error' })
+      const msg = error.message || 'Failed to delete project'
+      if (msg.toLowerCase().includes('resource') && msg.toLowerCase().includes('exist')) {
+        setToast({ message: msg + ' Go to Infrastructure → Manage Infra to remove them.', type: 'error' })
+      } else {
+        setToast({ message: msg, type: 'error' })
+      }
     } finally {
       setProjectToDelete(null)
     }
@@ -498,7 +503,7 @@ const HomePage = () => {
       <ConfirmDialog
         isOpen={!!projectToDelete}
         title="Delete Project"
-        message={`Are you sure you want to delete "${projectToDelete?.project_name}"? This action cannot be undone and will permanently remove all associated configurations.`}
+        message={`Are you sure you want to delete "${projectToDelete?.project_name}"? This cannot be undone. Note: all infrastructure resources for this project must be deleted first.`}
         confirmText="Delete Project"
         cancelText="Cancel"
         onConfirm={confirmDelete}

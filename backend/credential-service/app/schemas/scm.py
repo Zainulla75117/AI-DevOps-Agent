@@ -1,13 +1,19 @@
-from pydantic import BaseModel, model_validator
+"""
+SCM Credential schemas (credential-service).
+Only credential CRUD schemas. Business logic schemas are in scm-service.
+"""
+
+from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Optional
 
 class SCMCreate(BaseModel):
     """Schema for creating SCM credentials."""
     scm_name: str
     username: str
-    pat: str
-    base_url: Optional[str] = None  # For self-hosted instances (e.g., "https://gitlab.example.com")
+    pat: Optional[str] = None  # Optional for OAuth credentials
+    base_url: Optional[str] = None  # For self-hosted instances
+    auth_type: str = "pat"  # "pat" or "oauth"
 
 class SCMUpdate(BaseModel):
     """Schema for updating SCM credentials."""
@@ -17,49 +23,21 @@ class SCMUpdate(BaseModel):
     base_url: Optional[str] = None
 
 class SCMResponse(BaseModel):
-    """Schema for SCM credentials response."""
+    """
+    Schema for SCM credentials response.
+    Note: oauth_access_token is intentionally NOT included for security.
+    """
     id: str
     scm_name: str
     username: str
-    pat: str
+    pat: Optional[str] = None
     base_url: Optional[str] = None
+    auth_type: str = "pat"
+    oauth_scopes: Optional[str] = None  # Show what was granted (not the token itself)
+    installation_id: Optional[str] = None  # GitHub App Installation ID
+    user_id: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
-
-class FormSubmissionRequest(BaseModel):
-    """Schema for form submission request."""
-    query: str
-    session_id: str
-    is_form_submission: bool
-    form_data: Dict[str, Any]
-
-class FormSubmissionResponse(BaseModel):
-    """Schema for form submission response."""
-    session_id: str
-    scm_details: Optional[List[SCMResponse]] = None
-    message: Optional[str] = None
-
-class SyncRepositoriesRequest(BaseModel):
-    """Schema for sync repositories request."""
-    scm_id: str
-
-class SyncRepositoriesResponse(BaseModel):
-    """Schema for sync repositories response."""
-    message: str
-    repositories_count: int
-    scm_id: str
-
-class RepoNamespaceOption(BaseModel):
-    """Schema for repository namespace dropdown option."""
-    value: str  # Namespace value (e.g., "group", "username", "org/team")
-    label: str  # Display label (e.g., "group", "username", "org/team")
-    count: int  # Number of repositories in this namespace
-
-class RepoNamespaceResponse(BaseModel):
-    """Schema for repository namespaces response."""
-    namespaces: List[RepoNamespaceOption]
-    total_namespaces: int
-    total_repositories: int

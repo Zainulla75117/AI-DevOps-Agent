@@ -206,7 +206,7 @@ export const updateSCMCredentials = async (scmId, credentials) => {
 export const syncSCMRepositories = async (scmId) => {
   try {
     // JWT Bearer token is automatically included via the interceptor
-    const response = await apiClient.post(`/api/scm/credentials/${scmId}/sync-repositories`, {
+    const response = await apiClient.post(`/api/scm/sync/${scmId}`, {
       scm_id: scmId
     })
     return response.data
@@ -214,6 +214,49 @@ export const syncSCMRepositories = async (scmId) => {
     if (error.response) {
       throw new Error(
         error.response.data?.message || error.response.data?.detail || `Failed to sync repositories (Status: ${error.response.status})`
+      )
+    } else if (error.request) {
+      throw new Error('Network error. Please check your connection.')
+    } else {
+      throw new Error(error.message || 'An unexpected error occurred')
+    }
+  }
+}
+
+/**
+ * Get SCM repositories from backend
+ * @returns {Promise<Array>} Array of SCM repositories
+ */
+export const getSCMRepos = async () => {
+  try {
+    const response = await apiClient.get('/api/scm/repos')
+    return response.data
+  } catch (error) {
+    if (error.response) {
+      throw new Error(
+        error.response.data?.message || `Failed to get SCM repositories (Status: ${error.response.status})`
+      )
+    } else if (error.request) {
+      throw new Error('Network error. Please check your connection.')
+    } else {
+      throw new Error(error.message || 'An unexpected error occurred')
+    }
+  }
+}
+
+/**
+ * Get repository file tree from SCM service
+ * @param {string} repoId - Repository MongoDB ID
+ * @returns {Promise<Object>} Object with tree (file paths) and dependency_files
+ */
+export const getRepoTree = async (repoId) => {
+  try {
+    const response = await apiClient.get(`/api/scm/repos/${repoId}/tree`)
+    return response.data
+  } catch (error) {
+    if (error.response) {
+      throw new Error(
+        error.response.data?.message || `Failed to get repo tree (Status: ${error.response.status})`
       )
     } else if (error.request) {
       throw new Error('Network error. Please check your connection.')

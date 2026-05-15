@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     # Application settings
     APP_NAME: str = "InfraX Project Service"
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+    SCM_SERVICE_URL: str = os.getenv("SCM_SERVICE_URL", "http://localhost:8005")
     
     # JWT settings (for token verification)
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")

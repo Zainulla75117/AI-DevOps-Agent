@@ -74,6 +74,7 @@ class ChatState(TypedDict):
     messages: Annotated[list, add_messages]
     session_id: str
     project_info: Dict[str, Any]
+    repo_tree: Optional[Dict[str, Any]]
     user_message: str
     form_data: Optional[Dict[str, Any]]
     requires_form: bool
@@ -240,6 +241,46 @@ You MUST align your CI/CD pipeline decisions with these project settings. For ex
 """
             dynamic_system_prompt += "\n" + project_context
             
+        # Add Repository Context
+        repo_tree = state.get("repo_tree", {})
+        if repo_tree and isinstance(repo_tree, dict):
+            tree_files = repo_tree.get("tree", [])
+            deps_files = repo_tree.get("dependency_files", {})
+            
+            if len(tree_files) > 1000:
+                tree_files = tree_files[:1000] + ["... (truncated) ..."]
+                
+            repo_context = f"""
+REPOSITORY CONTEXT:
+The user has linked a code repository. Here is the file tree of the repository:
+{chr(10).join(tree_files)}
+
+"""
+            if deps_files:
+                repo_context += "Key Dependency Files:\n"
+                for fname, content in deps_files.items():
+                    content_preview = content[:2000] + ("..." if len(content) > 2000 else "")
+                    repo_context += f"--- {fname} ---\n{content_preview}\n\n"
+            
+            dynamic_system_prompt += "\n" + repo_context
+            
+        user_message = state.get("user_message", "")
+        if user_message == "[INIT_REPO_SCAN]":
+            init_scan_instruction = """
+[INIT_REPO_SCAN TRIGGERED]
+You have just received the repository context. This is the FIRST message of the session.
+Your immediate task:
+1. Scan the REPOSITORY CONTEXT to detect the tech stack (e.g., package.json for Node, requirements.txt for Python, pom.xml for Java).
+2. Provide a brief summary of what the repository contains regarding CI/CD.
+3. Suggest a customized Jenkins pipeline based on the tech stack you found (e.g. "I see this is a React app. Would you like me to generate a Jenkinsfile that runs npm test and npm run build?").
+4. Keep it conversational and concise. Do NOT output a pipeline yet, just suggest one.
+"""
+            dynamic_system_prompt += "\n" + init_scan_instruction
+            # Remove the hidden message
+            user_message = ""
+            if messages and messages[-1].get("content") == "[INIT_REPO_SCAN]":
+                messages.pop()
+            
         llm_messages = [SystemMessage(content=dynamic_system_prompt)]
         
         # Add conversation history (last 20 messages)
@@ -254,8 +295,9 @@ You MUST align your CI/CD pipeline decisions with these project settings. For ex
             else:
                 llm_messages.append(msg)
         
-        # Add current user message
-        llm_messages.append(HumanMessage(content=state.get("user_message", "")))
+        # Add current user message only if it's not the hidden trigger
+        if user_message:
+            llm_messages.append(HumanMessage(content=user_message))
         
         # Generate response
         response = await llm.ainvoke(llm_messages)
@@ -494,6 +536,7 @@ async def process_chat_message(
             "messages": messages,
             "session_id": session_id,
             "project_info": session.get("project_info", {}),
+            "repo_tree": session.get("repo_tree", {}),
             "user_message": message,
             "form_data": form_data,
             "requires_form": False,
@@ -585,6 +628,9 @@ async def stream_chat_message(
         for msg in history[-20:]:
             role = msg.get("role", "user")
             content = msg.get("content", "")
+            # Skip hidden initialization messages
+            if content == "[INIT_REPO_SCAN]":
+                continue
             if role == "user":
                 messages.append(HumanMessage(content=content))
             elif role == "assistant":
@@ -598,24 +644,88 @@ async def stream_chat_message(
         if project_info:
             domain = project_info.get("domain", "general")
             env = project_info.get("environment", "development")
-            traffic = project_info.get("expectedTraffic", "unknown")
-            cost_pref = project_info.get("costPreference", "balanced")
+            traffic = project_info.get("expectedTraffic") or project_info.get("expected_traffic", "unknown")
+            cost_pref = project_info.get("costPreference") or project_info.get("cost_preference", "balanced")
             desc = project_info.get("description", "")
+            platform = project_info.get("platform", "unknown")
+            cloud_provider = project_info.get("cloud_provider", "aws")
+            region = project_info.get("region", "us-east-1")
+            iam_name = project_info.get("iam_name", "unknown")
             
             project_context = f"""
 PROJECT METADATA AND CONTEXT:
 - Domain / Type: {domain}
+- Platform: {platform}
+- Cloud Provider: {cloud_provider}
+- Region: {region}
+- IAM Target: {iam_name}
 - Primary Environment: {env}
 - Expected Traffic Load: {traffic}
 - Cost Preference: {cost_pref}
 - Description: {desc}
 
-You MUST align your CI/CD pipeline decisions with these project settings. For example, if environment is 'production', suggest manual approval steps. If traffic is 'high', suggest load testing steps.
+You MUST align your CI/CD pipeline decisions with these project settings. For example, if environment is 'production', suggest manual approval steps. If traffic is 'high', suggest load testing steps. Always suggest deployment steps that target the specified Cloud Provider ({cloud_provider}) in the specified Region ({region}).
 """
             dynamic_system_prompt += "\n" + project_context
             
-        # Prepare messages for streaming
-        llm_messages = [SystemMessage(content=dynamic_system_prompt)] + messages + [HumanMessage(content=message)]
+        # Add Existing Infrastructure Context
+        existing_resources = session.get("existing_resources", [])
+        if existing_resources:
+            lines = []
+            for r in existing_resources:
+                cfg = r.get("config", {})
+                cfg_str = ", ".join(f"{k}={v}" for k, v in cfg.items()) if cfg else ""
+                lines.append(f"- [{r.get('type','?')}] {r.get('name','?')} (env={r.get('env','?')}) {cfg_str}")
+            
+            existing_str = "\n".join(lines)
+            infra_context = f"""
+EXISTING INFRASTRUCTURE:
+The following infrastructure resources have already been provisioned for this project:
+{existing_str}
+
+CRITICAL INSTRUCTION: Use this infrastructure context to accurately plan CI/CD deployment steps. For example, if an EKS cluster exists, suggest a Kubernetes deployment step. If an EC2 instance exists, suggest SSH/SCP steps or CodeDeploy.
+"""
+            dynamic_system_prompt += "\n" + infra_context
+            
+        # Add Repository Context
+        repo_tree = session.get("repo_tree", {})
+        if repo_tree and isinstance(repo_tree, dict):
+            tree_files = repo_tree.get("tree", [])
+            deps_files = repo_tree.get("dependency_files", {})
+            
+            if len(tree_files) > 1000:
+                tree_files = tree_files[:1000] + ["... (truncated) ..."]
+                
+            repo_context = f"""
+REPOSITORY CONTEXT:
+The user has linked a code repository. Here is the file tree of the repository:
+{chr(10).join(tree_files)}
+
+"""
+            if deps_files:
+                repo_context += "Key Dependency Files:\n"
+                for fname, content in deps_files.items():
+                    content_preview = content[:2000] + ("..." if len(content) > 2000 else "")
+                    repo_context += f"--- {fname} ---\n{content_preview}\n\n"
+            
+            dynamic_system_prompt += "\n" + repo_context
+            
+        if message == "[INIT_REPO_SCAN]":
+            init_scan_instruction = """
+[INIT_REPO_SCAN TRIGGERED]
+You have just received the repository context. This is the FIRST message of the session.
+Your immediate task:
+1. Scan the REPOSITORY CONTEXT to detect the tech stack (e.g., package.json for Node, requirements.txt for Python, pom.xml for Java).
+2. Provide a brief summary of what the repository contains regarding CI/CD.
+3. Suggest a customized Jenkins pipeline based on the tech stack you found (e.g. "I see this is a React app. Would you like me to generate a Jenkinsfile that runs npm test and npm run build?").
+4. Keep it conversational and concise. Do NOT output a pipeline yet, just suggest one.
+"""
+            dynamic_system_prompt += "\n" + init_scan_instruction
+            # Don't add the hidden message to llm_messages, but Gemini requires at least one HumanMessage
+            llm_messages = [SystemMessage(content=dynamic_system_prompt)] + messages + [HumanMessage(content="Please scan the repository context provided and give a summary as instructed.")]
+        else:
+            # Prepare messages for streaming
+            llm_messages = [SystemMessage(content=dynamic_system_prompt)] + messages + [HumanMessage(content=message)]
         
         # Stream response
         accumulated = ""

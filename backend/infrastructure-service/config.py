@@ -20,6 +20,10 @@ class Settings(BaseSettings):
 
     # Inter-service communication
     PROJECT_SERVICE_URL: str = os.getenv("PROJECT_SERVICE_URL", "http://localhost:8002")
+    SCM_SERVICE_URL: str = os.getenv("SCM_SERVICE_URL", "http://localhost:8005")
+
+    # PostgreSQL (infrastructure summary persistence)
+    POSTGRES_DSN: str = os.getenv("POSTGRES_DSN", "postgresql://postgres:postgres@localhost:5432/infrax")
 
     # JWT (same secret as all other services — for token validation only)
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")

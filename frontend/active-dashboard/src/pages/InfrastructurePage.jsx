@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { fetchProjects } from '../services/projectService'
+import { fetchProjects, updateProject } from '../services/projectService'
+import { getSCMRepos } from '../services/credentialService'
 import { deleteInfrastructureByProject, getResourcesByProject } from '../services/infrastructureService'
 import { useAuth } from '../hooks/useAuth'
 import PageLayout from '../components/PageLayout'
-import InfrastructureCreate from '../components/InfrastructureCreate'
 import InfraChatInterface from '../components/InfraChatInterface'
 import InfrastructureView from '../components/InfrastructureView'
 import DeleteInfraModal from '../components/DeleteInfraModal'
@@ -45,13 +45,19 @@ const InfrastructurePage = () => {
   )
 
   // New workflow states
-  const [creationMethod, setCreationMethod] = useState(null) // 'ai' | 'manual' | null
-  const [selectedInfraType, setSelectedInfraType] = useState(null)
+  const [selectedRepo, setSelectedRepo] = useState(null)
+  const [isRepoSelectionSkipped, setIsRepoSelectionSkipped] = useState(false)
   const [viewMode, setViewMode] = useState(null) // 'view' | null
   const [deletingProject, setDeletingProject] = useState(null)
 
   const [infrastructureMap, setInfrastructureMap] = useState(loadInfraMap)
   const [isLoadingInfra, setIsLoadingInfra] = useState(false)
+
+  // Repo Linking State
+  const [scmRepos, setScmRepos] = useState([])
+  const [isLoadingRepos, setIsLoadingRepos] = useState(false)
+  const [isUpdatingProject, setIsUpdatingProject] = useState(false)
+
   const [toast, setToast] = useState(null)
   const hasFetchedRef = useRef(false)
 
@@ -144,6 +150,24 @@ const InfrastructurePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Automatically fetch SCM repos when repo selection screen is active
+  useEffect(() => {
+    if (selectedProject && !selectedRepo && !isRepoSelectionSkipped && !viewMode) {
+      const fetchRepos = async () => {
+        setIsLoadingRepos(true)
+        try {
+          const repos = await getSCMRepos()
+          setScmRepos(Array.isArray(repos) ? repos : (repos.data || []))
+        } catch (err) {
+          console.error('Failed to load repositories', err)
+        } finally {
+          setIsLoadingRepos(false)
+        }
+      }
+      fetchRepos()
+    }
+  }, [selectedProject, selectedRepo, isRepoSelectionSkipped, viewMode])
+
   const loadProjects = async () => {
     setIsLoadingProjects(true)
     try {
@@ -177,6 +201,36 @@ const InfrastructurePage = () => {
     return { label: env || 'Unknown', color: 'bg-slate-50 text-slate-700 border-slate-200', leftBorder: 'border-l-slate-300' }
   }
 
+  const getProviderIcon = (provider) => {
+    const p = (provider || '').toLowerCase()
+    if (p === 'github') {
+      return (
+        <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#181717]" fill="currentColor">
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.022A9.606 9.606 0 0112 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.379.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+        </svg>
+      )
+    }
+    if (p === 'gitlab') {
+      return (
+        <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#FC6D26]" fill="currentColor">
+          <path d="M23.955 13.587l-1.342-4.135-2.664-8.189c-.135-.423-.73-.423-.867 0L16.418 9.45H7.582L4.918 1.263c-.137-.423-.73-.423-.867 0L1.387 9.452.045 13.587c-.121.38.016.8.339 1.038L12 23.08l11.616-8.455c.323-.239.46-.658.339-1.038z" />
+        </svg>
+      )
+    }
+    if (p === 'bitbucket') {
+      return (
+        <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#2684FF]" fill="currentColor">
+          <path d="M.768 2.802a.853.853 0 01.839-.705h20.785a.853.853 0 01.84.705l3.298 20.306a.854.854 0 01-.84.99H2.308a.854.854 0 01-.84-.99L.768 2.802zM14.654 15.6l1.246-7.854H8.101l1.247 7.854h5.306z" />
+        </svg>
+      )
+    }
+    return (
+      <svg className="w-6 h-6 text-slate-600" fill="currentColor" viewBox="0 0 24 24">
+        <path fillRule="evenodd" d="M13 2.032a8 8 0 100 15.936V2.032zm-2 15.936a8 8 0 110-15.936v15.936z" clipRule="evenodd" />
+      </svg>
+    )
+  }
+
   const getProjectTypeLabel = (project) => {
     if (project.domain === 'web') return 'Web Application'
     if (project.domain === 'api') return 'Backend API'
@@ -186,65 +240,10 @@ const InfrastructurePage = () => {
     return 'Project'
   }
 
-  const infraTypes = [
-    {
-      value: 'network',
-      label: 'Network',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-        </svg>
-      ),
-      description: 'VPC, subnets, gateways',
-      gradient: 'from-blue-500 to-cyan-500',
-    },
-    {
-      value: 'servers',
-      label: 'Servers',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-        </svg>
-      ),
-      description: 'EC2, compute instances',
-      gradient: 'from-slate-700 to-slate-900',
-    },
-    {
-      value: 'serverless',
-      label: 'Serverless',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-        </svg>
-      ),
-      description: 'Lambda, functions',
-      gradient: 'from-emerald-500 to-teal-500',
-    },
-    {
-      value: 'cloud-managed',
-      label: 'Cloud Managed',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-        </svg>
-      ),
-      description: 'RDS, S3, managed services',
-      gradient: 'from-orange-500 to-amber-500',
-    },
-  ]
-
   const handleCreateInfra = (project) => {
     setSelectedProject(project)
-    setCreationMethod(null) // Start with method selection
-    setSelectedInfraType(null)
-  }
-
-  const handleMethodSelect = (method) => {
-    setCreationMethod(method)
-  }
-
-  const handleInfraTypeSelect = (type) => {
-    setSelectedInfraType(type)
+    setSelectedRepo(null)
+    setIsRepoSelectionSkipped(false)
   }
 
   const handleManageInfra = (project) => {
@@ -259,7 +258,7 @@ const InfrastructurePage = () => {
   const handleInfraUpdated = (freshData) => {
     if (!deletingProject) return;
     const projectId = deletingProject.id || deletingProject.project_name
-    
+
     // Handle both unified array format (new) and legacy categorised format
     let flattened = [];
     if (Array.isArray(freshData)) {
@@ -302,26 +301,20 @@ const InfrastructurePage = () => {
   // Back Navigation Handlers
   const handleBackToCards = () => {
     setSelectedProject(null)
-    setCreationMethod(null)
-    setSelectedInfraType(null)
+    setSelectedRepo(null)
+    setIsRepoSelectionSkipped(false)
     setViewMode(null)
   }
 
-  const handleBackToMethodPicker = () => {
-    setCreationMethod(null)
-    setSelectedInfraType(null)
-  }
-
-  const handleBackToTypePicker = () => {
-    setSelectedInfraType(null)
+  const handleBackToRepoSelector = () => {
+    setSelectedRepo(null)
+    setIsRepoSelectionSkipped(false)
   }
 
   const handleInfrastructureCreated = (infraData, message) => {
     const projectId = selectedProject?.id || selectedProject?.project_name
     setToast({ message: message || 'Infrastructure created successfully!', type: 'success' })
-    setSelectedProject(null)
-    setCreationMethod(null)
-    setSelectedInfraType(null)
+
     // Re-fetch from BE to get the actual saved resource
     if (projectId) {
       refreshInfraForProject(projectId)
@@ -331,9 +324,9 @@ const InfrastructurePage = () => {
   const getProjectInfra = (project) => {
     const projectId = project.id || project.project_name
     const data = infrastructureMap[projectId]
-    
+
     if (Array.isArray(data)) return data
-    
+
     // Auto-recover corrupted dictionary data from earlier buggy localStorage saves
     if (data && typeof data === 'object') {
       const flattened = []
@@ -343,28 +336,34 @@ const InfrastructurePage = () => {
       if (data.cloud_managed) data.cloud_managed.forEach(i => flattened.push({ ...i, infraType: 'cloud-managed' }))
       return flattened
     }
-    
+
     return []
   }
 
   const getInfraTypeSummary = (infraItems) => {
     if (!infraItems || infraItems.length === 0) return null
+    const typeLabels = {
+      'network': 'Network',
+      'servers': 'Servers',
+      'serverless': 'Serverless',
+      'cloud-managed': 'Cloud Managed'
+    }
     const types = infraItems.map((i) => {
-      const found = infraTypes.find((t) => t.value === i.infraType)
-      return found?.label || (i.infraType === 'auto' ? 'AI Provisioned' : i.infraType || i.type || 'Unknown')
+      return typeLabels[i.infraType] || (i.infraType === 'auto' ? 'AI Provisioned' : i.infraType || i.type || 'Unknown')
     })
     return [...new Set(types)]
   }
 
   // --- RENDER: AI Chat Interface ---
-  if (selectedProject && creationMethod === 'ai') {
+  if (selectedProject && (selectedRepo || isRepoSelectionSkipped) && !viewMode) {
     return (
       <PageLayout userInfo={userInfo} onLogout={handleLogout}>
         <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
           <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-6">
             <InfraChatInterface
               project={selectedProject}
-              onCancel={handleBackToMethodPicker}
+              selectedRepo={selectedRepo}
+              onCancel={handleBackToRepoSelector}
               onInfrastructureCreated={handleInfrastructureCreated}
             />
           </div>
@@ -373,13 +372,14 @@ const InfrastructurePage = () => {
     )
   }
 
-  // --- RENDER: Creation Method Picker ---
-  if (selectedProject && !creationMethod) {
+  // --- RENDER: Repository Selector Picker ---
+  if (selectedProject && !selectedRepo && !isRepoSelectionSkipped && !viewMode) {
+    const linkedRepos = selectedProject.linked_repositories || []
+
     return (
       <PageLayout userInfo={userInfo} onLogout={handleLogout}>
         <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-            {/* Back navigation */}
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
             <button
               onClick={handleBackToCards}
               className="relative z-10 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 mb-6 transition-colors duration-200"
@@ -390,179 +390,122 @@ const InfrastructurePage = () => {
               Back to projects
             </button>
 
-            {/* Header */}
             <div className="mb-10 text-center">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl mx-auto flex items-center justify-center mb-6">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
               <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 font-display">
-                How would you like to build?
+                Select Target Repository
               </h1>
-              <p className="text-base text-slate-600 font-medium">
-                Choose your infrastructure provisioning method for <span className="text-blue-600 font-semibold">{selectedProject.project_name}</span>
+              <p className="text-base text-slate-600 font-medium max-w-xl mx-auto">
+                Which repository are you building infrastructure for? The AI will analyze this repository's code to make optimal decisions.
               </p>
             </div>
 
-            {/* Method Picker Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-
-              {/* Option 1: AI Assisted */}
-              <button
-                onClick={() => handleMethodSelect('ai')}
-                className="group relative rounded-lg shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2 text-left min-h-[420px]"
-              >
-                <img src="/Ai_bot.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 via-blue-900/60 to-slate-900/70 group-hover:from-blue-900/70 group-hover:to-slate-900/60 transition-all duration-500"></div>
-                <div className="relative p-8 sm:p-10">
-                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 shadow-md transition-transform duration-500 group-hover:scale-110 overflow-hidden">
-                    <img src="data:image/png;base64,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" alt="bard" className="w-12 h-12 object-contain drop-shadow-md" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-100 transition-colors">
-                    Copilot-Assisted Provisioning
-                  </h3>
-                  <p className="text-sm text-white/70 leading-relaxed font-medium mb-8">
-                    Let our infraXai agent analyze your project requirements and automatically generate the optimal cloud infrastructure architecture for you in seconds.
-                  </p>
-
-                  <div className="flex items-center text-blue-300 font-semibold group-hover:text-white transition-colors">
-                    <span>Start Chatting</span>
-                    <svg className="w-4 h-4 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              {isLoadingRepos ? (
+                <div className="flex flex-col items-center justify-center p-12">
+                  <span className="w-8 h-8 border-4 border-blue-400 border-t-blue-600 rounded-full animate-spin mb-4"></span>
+                  <p className="text-slate-500 font-medium">Loading repositories...</p>
+                </div>
+              ) : scmRepos.length > 0 ? (
+                <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                  {scmRepos.map((repo, idx) => {
+                    const isLinked = linkedRepos.some(lr => lr.repo_full_name === repo.name_with_namespace)
+                    return (
+                      <button
+                        key={idx}
+                        disabled={isUpdatingProject}
+                        onClick={async () => {
+                          if (!isLinked) {
+                            setIsUpdatingProject(true)
+                            try {
+                              const newLinkedRepos = [...linkedRepos, {
+                                repo_full_name: repo.name_with_namespace,
+                                credential_id: repo.scm_id,
+                                provider: repo.scm_provider,
+                                repo_id: repo.id
+                              }]
+                              const updatedProject = await updateProject(selectedProject.id, { linked_repositories: newLinkedRepos })
+                              setSelectedProject(updatedProject)
+                              setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p))
+                              setSelectedRepo({
+                                repo_full_name: repo.name_with_namespace,
+                                credential_id: repo.scm_id,
+                                provider: repo.scm_provider || repo.provider,
+                                repo_id: repo.id
+                              })
+                            } catch (err) {
+                              setToast({ message: err.message || 'Failed to link repository', type: 'error' })
+                            } finally {
+                              setIsUpdatingProject(false)
+                            }
+                          } else {
+                            const linked = linkedRepos.find(lr => lr.repo_full_name === repo.name_with_namespace)
+                            setSelectedRepo({ ...linked, repo_id: linked.repo_id || repo.id })
+                          }
+                        }}
+                        className={`w-full flex items-center justify-between p-6 transition-colors duration-150 text-left group ${isUpdatingProject ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'}`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200">
+                            {getProviderIcon(repo.scm_provider || repo.provider)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                {repo.name_with_namespace}
+                              </h3>
+                              {isLinked && (
+                                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 rounded-full">
+                                  Linked
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-500 capitalize flex items-center gap-2 mt-0.5">
+                              <span className={`w-2 h-2 rounded-full ${isLinked ? 'bg-blue-500' : 'bg-slate-300'}`}></span>
+                              {repo.scm_provider} Provider
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {!isLinked && (
+                            <span className="text-sm font-medium text-slate-400 group-hover:text-blue-500 transition-colors">
+                              Click to link & select
+                            </span>
+                          )}
+                          <svg className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 bg-slate-100 rounded-2xl mx-auto flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                   </div>
-                </div>
-              </button>
-
-              {/* Option 2: Manual */}
-              <button
-                onClick={() => handleMethodSelect('manual')}
-                className="group relative rounded-lg shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2 text-left min-h-[420px]"
-              >
-                <img src="/form_bg.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/70 group-hover:from-slate-900/70 group-hover:to-slate-800/60 transition-all duration-500"></div>
-                <div className="relative p-8 sm:p-10">
-                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6 shadow-md transition-transform duration-500 group-hover:scale-110 overflow-hidden">
-                    <img src="https://img.icons8.com/clouds/100/form.png" alt="Form Icon" className="w-12 h-12 object-contain drop-shadow-md" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-slate-200 transition-colors">
-                    Manual Configuration
-                  </h3>
-                  <p className="text-sm text-white/70 leading-relaxed font-medium mb-8">
-                    Take full control of your stack. Use our visual form builders to meticulously configure your Networks, Servers, and Databases exactly how you want.
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">No Repositories Synced</h3>
+                  <p className="text-slate-500 max-w-sm mx-auto mb-6">
+                    You haven't synced any SCM repositories yet. Go to Settings to connect GitHub, GitLab, or Bitbucket.
                   </p>
-
-                  <div className="flex items-center text-slate-300 font-semibold group-hover:text-white transition-colors">
-                    <span>Open Form Builder</span>
-                    <svg className="w-4 h-4 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </div>
                 </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-col items-center justify-center gap-4">
+              <button
+                onClick={() => setIsRepoSelectionSkipped(true)}
+                className="text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors"
+              >
+                Skip repository selection
               </button>
-            </div>
-          </div>
-        </main>
-      </PageLayout>
-    )
-  }
-
-  // --- RENDER: InfrastructureCreate form ---
-  if (selectedProject && creationMethod === 'manual' && selectedInfraType) {
-    return (
-      <PageLayout userInfo={userInfo} onLogout={handleLogout}>
-        <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-            {/* Back navigation */}
-            <button
-              onClick={handleBackToTypePicker}
-              className="relative z-10 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 mb-6 transition-colors duration-200"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to type selection
-            </button>
-
-            <InfrastructureCreate
-              selectedOption={selectedInfraType}
-              preSelectedProject={selectedProject.project_name}
-              preSelectedProjectId={selectedProject.id}
-              preSelectedProjectData={selectedProject}
-              onInfrastructureCreated={handleInfrastructureCreated}
-              onCancel={handleBackToTypePicker}
-            />
-          </div>
-        </main>
-
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
-      </PageLayout>
-    )
-  }
-
-  // --- RENDER: Infra Type Picker ---
-  if (selectedProject && creationMethod === 'manual' && !selectedInfraType) {
-    return (
-      <PageLayout userInfo={userInfo} onLogout={handleLogout}>
-        <main className="flex-1 overflow-y-auto bg-slate-50/50 backdrop-blur-3xl w-full">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-            {/* Back navigation */}
-            <button
-              onClick={handleBackToMethodPicker}
-              className="relative z-10 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 mb-6 transition-colors duration-200"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to method selection
-            </button>
-
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2 font-display">
-                Create Infrastructure
-              </h1>
-              <p className="text-sm text-slate-600 font-medium">
-                For project: <span className="text-blue-600 font-semibold">{selectedProject.project_name}</span>
-              </p>
-            </div>
-
-            {/* Infra Type Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {infraTypes.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => handleInfraTypeSelect(type.value)}
-                  className="group relative bg-white/60 backdrop-blur-md rounded-2xl border border-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] p-6 transition-all duration-300 hover:border-blue-200/60 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.15)] hover:-translate-y-1 cursor-pointer text-left overflow-hidden"
-                >
-                  {/* Decorative glow */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                  <div className="relative">
-                    {/* Icon with gradient bg */}
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${type.gradient} flex items-center justify-center text-white mb-4 shadow-sm group-hover:shadow-md transition-shadow duration-300`}>
-                      {type.icon}
-                    </div>
-
-                    <h3 className="text-base font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
-                      {type.label}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      {type.description}
-                    </p>
-
-                    {/* Arrow */}
-                    <div className="mt-4 flex items-center text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="text-xs font-semibold">Configure</span>
-                      <svg className="w-3.5 h-3.5 ml-1 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </div>
-                </button>
-              ))}
             </div>
           </div>
         </main>
@@ -774,6 +717,15 @@ const InfrastructurePage = () => {
                           <div className="flex justify-end pt-2">
                             <div className="flex items-center gap-2">
                               <button
+                                onClick={() => handleCreateInfra(project)}
+                                className="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-md hover:from-blue-600 hover:to-blue-700 hover:shadow-[0_8px_20px_-6px_rgba(59,130,246,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 border-none"
+                              >
+                                <svg className="w-4 h-4 transform group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Infra
+                              </button>
+                              <button
                                 onClick={() => handleManageInfra(project)}
                                 className="group inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-md hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 transition-all duration-300"
                               >
@@ -891,7 +843,7 @@ const InfrastructurePage = () => {
 
       {/* Delete Modal */}
       {deletingProject && (
-        <DeleteInfraModal 
+        <DeleteInfraModal
           project={deletingProject}
           onClose={() => setDeletingProject(null)}
           onDeletedAll={handleDeletedAll}

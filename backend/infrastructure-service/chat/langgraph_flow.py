@@ -48,6 +48,11 @@ else:
     logger.warning("GEMINI_API_KEY not set — LLM features disabled.")
 
 
+def get_llm():
+    """Return the shared LLM instance (used by title_generator, main.py summary tasks)."""
+    return llm
+
+
 # ═══════════════════════════════════════════════════════════════════════
 #  STATE DEFINITION
 # ═══════════════════════════════════════════════════════════════════════
@@ -59,6 +64,8 @@ class InfraChatState(TypedDict):
     project_id: str
     project_name: str
     project_info: Dict[str, Any]
+    provisioning_context: Optional[Dict[str, Any]]
+    repo_tree: Optional[Dict[str, Any]]
     user_message: str
     auth_token: str
 
@@ -138,27 +145,30 @@ def compute_missing_fields(resource_type: str, collected: dict) -> list[str]:
     return [f for f in required if f not in collected or collected[f] is None]
 
 
-def build_resource_payload(
-    project_id: str,
-    resource_type: str,
-    collected: dict,
-    depends_on: list[str] | None = None,
-) -> dict:
+def build_resource_payload(project_id: str, resource_type: str, collected: dict, depends_on: list, project_info: dict, iac_context: dict = None) -> dict:
     """
-    Convert collected fields into InfraResourceCreate-compatible dict
+    Constructs the final payload from collected fields
     for the project-service API.
     """
+    # Use project settings for defaults, otherwise fallback to reasonable defaults
+    default_provider = project_info.get("cloud_provider", "aws") if project_info else "aws"
+    default_region = project_info.get("region", "us-east-1") if project_info else "us-east-1"
+    default_env = project_info.get("environment", "dev") if project_info else "dev"
+
     # Separate top-level from config fields
     top_level = {
         "project_id": project_id,
         "type": resource_type,
         "name": collected.get("name", f"{resource_type}-resource"),
-        "provider": collected.get("provider", TOP_LEVEL_DEFAULTS["provider"]),
-        "region": collected.get("region", TOP_LEVEL_DEFAULTS["region"]),
-        "env": collected.get("env", TOP_LEVEL_DEFAULTS["env"]),
+        "provider": collected.get("provider", default_provider),
+        "region": collected.get("region", default_region),
+        "env": collected.get("env", default_env),
         "state": "planned",
         "depends_on": depends_on or [],
     }
+
+    if iac_context:
+        top_level["iac_context"] = iac_context
 
     # Build config dict from schema fields
     schema = RESOURCE_FIELD_SCHEMAS.get(resource_type, {})
@@ -202,11 +212,32 @@ async def process_message(state: InfraChatState) -> InfraChatState:
         history = state.get("messages", [])
         existing_resources = state.get("existing_resources", [])
         project_info = state.get("project_info", {})
+        repo_tree = state.get("repo_tree", {})
+        provisioning_context = state.get("provisioning_context", {})
+        
+        # Intercept [INIT_REPO_SCAN]
+        user_message = state.get("user_message", "")
+        if user_message == "[INIT_REPO_SCAN]":
+            state["messages"].pop()  # Remove the hidden message from history
+            is_init_scan = True
+        else:
+            is_init_scan = False
+
+        # Load PostgreSQL infrastructure summary (cached in state)
+        pg_summary = state.get("pg_summary")
+
         system_prompt = build_system_prompt(
             project_name=state.get("project_name", "Unknown"),
             project_id=state.get("project_id", ""),
             existing_resources=existing_resources or state.get("saved_resources", []),
             project_info=project_info,
+            repo_tree=repo_tree,
+            provisioning_context=provisioning_context,
+            is_init_scan=is_init_scan,
+            pg_summary=pg_summary,
+            conversation_summary=state.get("conversation_summary"),
+            project_memories=state.get("project_memories"),
+            repo_scan_memory=state.get("repo_scan_memory"),
         )
 
         llm_messages = [SystemMessage(content=system_prompt)]
@@ -224,6 +255,24 @@ async def process_message(state: InfraChatState) -> InfraChatState:
                 llm_messages.append(msg)
 
         # Current user message is already appended to history before process_message is called.
+        # However, if this was an INIT_REPO_SCAN, we popped it. Gemini requires at least one HumanMessage.
+        if is_init_scan:
+            llm_messages.append(HumanMessage(content="Please scan the repository context provided and give a summary as instructed."))
+
+        # ── DEBUG: Log full LLM input ────────────────────────────
+        logger.info("=" * 80)
+        logger.info("🔍 FULL LLM INPUT (infrastructure-service)")
+        logger.info(f"   repo_tree present: {bool(repo_tree)}, type: {type(repo_tree).__name__}, keys: {list(repo_tree.keys()) if isinstance(repo_tree, dict) else 'N/A'}")
+        if isinstance(repo_tree, dict):
+            tree_files = repo_tree.get("tree", [])
+            dep_files = repo_tree.get("dependency_files", {})
+            logger.info(f"   repo_tree → {len(tree_files)} files, {len(dep_files)} dependency files")
+        logger.info("=" * 80)
+        for i, m in enumerate(llm_messages):
+            role = type(m).__name__
+            content_preview = m.content[:3000] + ("..." if len(m.content) > 3000 else "")
+            logger.info(f"  [{i}] {role} ({len(m.content)} chars):\n{content_preview}")
+        logger.info("=" * 80)
 
         # Invoke LLM
         response = await llm.ainvoke(llm_messages)
@@ -258,7 +307,10 @@ async def process_message(state: InfraChatState) -> InfraChatState:
             existing_resource_id = extraction.get("existing_resource_id")
 
             extracted_type = extraction.get("resource_type")
-            if extracted_type and extracted_type in RESOURCE_FIELD_SCHEMAS:
+            if isinstance(extracted_type, list) and len(extracted_type) > 0:
+                extracted_type = extracted_type[0]
+
+            if isinstance(extracted_type, str) and extracted_type in RESOURCE_FIELD_SCHEMAS:
                 if current_type and current_type != extracted_type and collected:
                     # Switching resource type — finalize current one into pending
                     pending_item = {
@@ -300,6 +352,9 @@ async def process_message(state: InfraChatState) -> InfraChatState:
                         "type": current_type,
                         "fields": {k: v for k, v in collected.items() if not k.startswith("__")},
                     }
+                    if "iac_context" in extraction:
+                        pending_item["iac_context"] = extraction["iac_context"]
+
                     if existing_resource_id:
                         pending_item["existing_id"] = existing_resource_id
                     elif collected.get("__existing_id"):
@@ -436,6 +491,8 @@ async def save_resources(state: InfraChatState) -> InfraChatState:
             }
             if fields.get("name"):
                 update_data["name"] = fields["name"]
+            if "iac_context" in resource:
+                update_data["iac_context"] = resource["iac_context"]
 
             logger.info(f"Updating resource {existing_id}: {resource_type} / {fields.get('name', '?')}")
             result = await project_client.update_resource(existing_id, update_data, auth_token)
@@ -450,6 +507,8 @@ async def save_resources(state: InfraChatState) -> InfraChatState:
                     "name": fields.get("name", result.get("name", "?")),
                     "state": "planned",
                     "action": "updated",
+                    "config": config,
+                    "iac_context": resource.get("iac_context"),
                 })
                 for i, ex in enumerate(existing):
                     if ex.get("id") == existing_id:
@@ -464,6 +523,8 @@ async def save_resources(state: InfraChatState) -> InfraChatState:
                 resource_type=resource_type,
                 collected=fields,
                 depends_on=[],
+                project_info=state.get("project_info", {}),
+                iac_context=resource.get("iac_context")
             )
 
             logger.info(f"Creating resource: {payload.get('type')} / {payload.get('name')}")
@@ -479,12 +540,89 @@ async def save_resources(state: InfraChatState) -> InfraChatState:
                     "name": fields.get("name", "?"),
                     "state": "planned",
                     "action": "created",
+                    "config": payload.get("config", {}),
+                    "iac_context": payload.get("iac_context"),
                 })
                 results.append(f"✅ {resource_type.capitalize()} **'{fields.get('name', '?')}'** created (ID: `{resource_id}`)")
 
     # Build response
     if results and not errors:
         response = f"{''.join(chr(10) + r for r in results)}\n\n{'All' if len(results) > 1 else 'Your'} {'resources have' if len(results) > 1 else 'resource has'} been saved successfully! Need anything else for this project?"
+        
+        # Snapshot the confirmed infrastructure context
+        try:
+            await project_client.save_provisioning_context(
+                project_id=project_id,
+                session_id=state.get("session_id", ""),
+                resources=saved,
+                auth_token=auth_token
+            )
+        except Exception as e:
+            logger.warning(f"Failed to save provisioning context: {e}")
+
+        # ── Persist infrastructure summary to PostgreSQL ──
+        try:
+            from postgres.summary_store import save_summary
+            from postgres.connection import is_pg_available
+            
+            if is_pg_available():
+                import json as _json
+                # Build a concise summary for the LLM to reference later
+                resource_summary_lines = []
+                decisions = []
+                for r in saved:
+                    action = r.get("action", "created")
+                    resource_summary_lines.append(
+                        f"- {r.get('type', '?').capitalize()} '{r.get('name', '?')}' was {action}"
+                    )
+                    decisions.append(f"{action.capitalize()} {r.get('type', '?')} '{r.get('name', '?')}'")
+
+                llm_summary = (
+                    f"Infrastructure session for project '{state.get('project_name', 'Unknown')}'.\n"
+                    f"Resources provisioned:\n" + "\n".join(resource_summary_lines) + "\n"
+                    f"Total resources in this session: {len(saved)}"
+                )
+
+                await save_summary(
+                    project_id=project_id,
+                    user_id=None,
+                    session_id=state.get("session_id", ""),
+                    plan_text=state.get("last_plan_text", ""),
+                    decisions=decisions,
+                    resources=saved,
+                    architecture={},
+                    llm_summary=llm_summary,
+                )
+                logger.info(f"✅ Infrastructure summary saved to PostgreSQL for project {project_id}")
+
+                # Save the complete IaC blueprint to project memory
+                try:
+                    from postgres.conversation_store import upsert_project_memory
+                    await upsert_project_memory(
+                        project_id=project_id,
+                        memory_type="iac_blueprint",
+                        content="Complete IaC blueprint with LLM reasoning for accurate Terraform/CloudFormation generation.",
+                        structured_data={
+                            "resources": [
+                                {
+                                    "type": r.get("type"),
+                                    "name": r.get("name"),
+                                    "action": r.get("action"),
+                                    "full_config": r.get("config", {}),
+                                    "iac_context": r.get("iac_context", {})
+                                } for r in saved
+                            ],
+                            "session_id": state.get("session_id")
+                        },
+                        source_conversation_id=state.get("session_id")
+                    )
+                    logger.info(f"✅ IaC blueprint saved to project memory for {project_id}")
+                except Exception as blueprint_err:
+                    logger.warning(f"Failed to save IaC blueprint: {blueprint_err}")
+
+        except Exception as e:
+            logger.warning(f"Failed to save infrastructure summary to PostgreSQL: {e}")
+            
     elif results and errors:
         response = "\n".join(results) + "\n\nHowever, some resources failed:\n" + "\n".join(f"❌ {e}" for e in errors)
     else:
@@ -591,6 +729,8 @@ async def run_turn(
         "project_id": session_state.get("project_id", ""),
         "project_name": session_state.get("project_name", "Unknown"),
         "project_info": session_state.get("project_info", {}),
+        "provisioning_context": session_state.get("provisioning_context", {}),
+        "repo_tree": session_state.get("repo_tree", {}),
         "user_message": user_message,
         "auth_token": session_state.get("auth_token", ""),
         "intent": session_state.get("intent", "general"),

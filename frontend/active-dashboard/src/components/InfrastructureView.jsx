@@ -35,13 +35,69 @@ const InfrastructureView = ({ infrastructureList }) => {
 
               {infra.type === 'network' && (
                 <div className="space-y-1.5 sm:space-y-2">
-                  <h3 className="text-sm sm:text-base font-semibold text-slate-800">{infra.data.vpcName}</h3>
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-800">{infra.data?.vpcName || infra.config?.vpc_name || infra.name}</h3>
                   <div className="text-xs sm:text-sm text-slate-600 space-y-1">
-                    <p><span className="font-medium">CIDR:</span> {infra.data.vpcCidr}</p>
-                    <p><span className="font-medium">Public Subnets:</span> {infra.data.publicSubnets}</p>
-                    <p><span className="font-medium">Private Subnets:</span> {infra.data.privateSubnets}</p>
-                    <p><span className="font-medium">NAT Gateways:</span> {infra.data.natGateways}</p>
-                    <p><span className="font-medium">Internet Gateways:</span> {infra.data.internetGateways}</p>
+                    <p><span className="font-medium">CIDR:</span> {infra.data?.vpcCidr || infra.config?.vpc_cidr}</p>
+                    <p><span className="font-medium">Public Subnets:</span> {infra.data?.publicSubnets || infra.config?.public_subnet_count}</p>
+                    <p><span className="font-medium">Private Subnets:</span> {infra.data?.privateSubnets || infra.config?.private_subnet_count}</p>
+                    <p><span className="font-medium">NAT Gateways:</span> {infra.data?.natGateways || infra.config?.nat_gateway}</p>
+                  </div>
+                </div>
+              )}
+
+              {infra.type === 'compute' && (
+                <div className="space-y-1.5 sm:space-y-2">
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-800">{infra.name}</h3>
+                  <div className="text-xs sm:text-sm text-slate-600 space-y-1">
+                    <p><span className="font-medium">Instance:</span> {infra.config?.instance_type}</p>
+                    <p><span className="font-medium">Count:</span> {infra.config?.instance_count}</p>
+                    <p><span className="font-medium">OS:</span> {infra.config?.os_image}</p>
+                    <p><span className="font-medium">Storage:</span> {infra.config?.storage_size} GB</p>
+                  </div>
+                </div>
+              )}
+
+              {infra.type === 'serverless' && (
+                <div className="space-y-1.5 sm:space-y-2">
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-800">{infra.name}</h3>
+                  <div className="text-xs sm:text-sm text-slate-600 space-y-1">
+                    <p><span className="font-medium">Runtime:</span> {infra.config?.runtime}</p>
+                    <p><span className="font-medium">Memory:</span> {infra.config?.memory_size} MB</p>
+                    <p><span className="font-medium">Timeout:</span> {infra.config?.timeout}s</p>
+                    <p><span className="font-medium">Handler:</span> {infra.config?.handler}</p>
+                  </div>
+                </div>
+              )}
+
+              {infra.type === 'database' && (
+                <div className="space-y-1.5 sm:space-y-2">
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-800">{infra.name}</h3>
+                  <div className="text-xs sm:text-sm text-slate-600 space-y-1">
+                    <p><span className="font-medium">Service:</span> {infra.config?.service_type}</p>
+                    <p><span className="font-medium">Class:</span> {infra.config?.instance_class}</p>
+                    <p><span className="font-medium">Storage:</span> {infra.config?.storage_size} GB</p>
+                    {infra.config?.service_name && <p><span className="font-medium">DB Name:</span> {infra.config?.service_name}</p>}
+                  </div>
+                </div>
+              )}
+
+              {infra.type === 'storage' && (
+                <div className="space-y-1.5 sm:space-y-2">
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-800">{infra.config?.bucket_name || infra.name}</h3>
+                  <div className="text-xs sm:text-sm text-slate-600 space-y-1">
+                    <p><span className="font-medium">Access:</span> {infra.config?.access || 'private'}</p>
+                    <p><span className="font-medium">Versioning:</span> {infra.config?.versioning ? 'Enabled' : 'Disabled'}</p>
+                    <p><span className="font-medium">Encryption:</span> {infra.config?.encryption || 'AES256'}</p>
+                    {infra.config?.lifecycle_days && <p><span className="font-medium">Lifecycle:</span> {infra.config?.lifecycle_days} days</p>}
+                  </div>
+                </div>
+              )}
+
+              {!['network', 'compute', 'serverless', 'database', 'storage'].includes(infra.type) && (
+                <div className="space-y-1.5 sm:space-y-2">
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-800">{infra.name}</h3>
+                  <div className="text-xs sm:text-sm text-slate-600">
+                    <p className="capitalize"><span className="font-medium">Type:</span> {infra.type}</p>
                   </div>
                 </div>
               )}

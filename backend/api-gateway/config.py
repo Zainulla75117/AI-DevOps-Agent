@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     CREDENTIAL_SERVICE_URL: str = os.getenv("CREDENTIAL_SERVICE_URL", "http://localhost:8003")
     JENKINS_SERVICE_URL: str = os.getenv("JENKINS_SERVICE_URL", "http://localhost:8081")
     INFRA_SERVICE_URL: str = os.getenv("INFRA_SERVICE_URL", "http://localhost:8004")
+    SCM_SERVICE_URL: str = os.getenv("SCM_SERVICE_URL", "http://localhost:8005")
+    QUICK_TOOLS_SERVICE_URL: str = os.getenv("QUICK_TOOLS_SERVICE_URL", "http://localhost:8007")
     
     class Config:
         env_file = ".env"
@@ -43,8 +45,10 @@ ROUTE_MAP = [
     ("/api/crypto",             settings.AUTH_SERVICE_URL),
     ("/api/projects",           settings.PROJECT_SERVICE_URL),
     ("/api/create",             settings.PROJECT_SERVICE_URL),
-    ("/api/scm",                settings.CREDENTIAL_SERVICE_URL),
+    ("/api/scm/credentials",    settings.CREDENTIAL_SERVICE_URL),  # SCM credential CRUD
+    ("/api/scm",                settings.SCM_SERVICE_URL),          # SCM business logic (sync, repos, namespaces)
     ("/api/credentials",        settings.CREDENTIAL_SERVICE_URL),
+    ("/api/tools",              settings.QUICK_TOOLS_SERVICE_URL),  # Quick Tools generation
 ]
 
 # Routes that do NOT require JWT authentication
@@ -55,6 +59,8 @@ PUBLIC_ROUTES = [
     "/api/users/github/callback",
     "/api/users/google/login",
     "/api/users/google/callback",
+    "/api/scm/oauth/github/login",
+    "/api/scm/oauth/github/callback",
     "/api/crypto/public-key",
     "/api/health",
     "/docs",

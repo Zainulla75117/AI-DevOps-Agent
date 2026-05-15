@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import TopNavbar from './TopNavbar'
 import LeftSidebar from './LeftSidebar'
-import Footer from './Footer'
+import GlobalAgentWidget from './GlobalAgentWidget'
 
 /**
  * Reusable page layout component
- * Wraps common structure: TopNavbar, LeftSidebar, Footer
+ * Wraps common structure: TopNavbar, LeftSidebar, and the Global Agent Widget
  */
 const PageLayout = ({ 
   children, 
@@ -35,15 +35,15 @@ const PageLayout = ({
         />
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto relative">
-          <div className="pt-2">
+        <div className="flex-1 overflow-y-auto relative flex flex-col">
+          <div className="pt-2 flex-1 flex flex-col">
             {children}
           </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <Footer />
+      {/* Global AI Chat Widget */}
+      <GlobalAgentWidget />
     </div>
   )
 }

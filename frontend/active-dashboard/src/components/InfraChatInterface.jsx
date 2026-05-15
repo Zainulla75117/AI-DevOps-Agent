@@ -4,16 +4,22 @@ import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { getToken } from '../services/authService'
+import {
+  getConversations,
+  getConversationMessages,
+  deleteConversation as deleteConversationApi,
+  renameConversation as renameConversationApi,
+} from '../services/conversationService'
 
 // --- Infrastructure service URL (direct, SSE bypasses gateway) ---
 const INFRA_API_URL = import.meta.env.VITE_INFRA_API_BASE_URL || 'http://localhost:8004'
 
-// --- localStorage helpers ---
+// --- localStorage helpers (write-through cache for offline resilience) ---
 const STORAGE_PREFIX = 'infra_chat_sessions_'
 
 const getStorageKey = (projectId) => `${STORAGE_PREFIX}${projectId}`
 
-const loadSessions = (projectId) => {
+const loadSessionsFromCache = (projectId) => {
   try {
     const raw = localStorage.getItem(getStorageKey(projectId))
     return raw ? JSON.parse(raw) : []
@@ -22,11 +28,11 @@ const loadSessions = (projectId) => {
   }
 }
 
-const saveSessions = (projectId, sessions) => {
+const saveSessionsToCache = (projectId, sessions) => {
   try {
     localStorage.setItem(getStorageKey(projectId), JSON.stringify(sessions))
   } catch (e) {
-    console.error('Failed to save chat sessions:', e)
+    console.error('Failed to save chat sessions to cache:', e)
   }
 }
 
@@ -39,10 +45,10 @@ const groupSessionsByDate = (sessions) => {
 
   const groups = { today: [], yesterday: [], week: [], older: [] }
 
-  const sorted = [...sessions].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+  const sorted = [...sessions].sort((a, b) => new Date(b.updatedAt || b.updated_at) - new Date(a.updatedAt || a.updated_at))
 
   sorted.forEach((s) => {
-    const d = new Date(s.updatedAt)
+    const d = new Date(s.updatedAt || s.updated_at)
     if (d >= today) groups.today.push(s)
     else if (d >= yesterday) groups.yesterday.push(s)
     else if (d >= sevenDaysAgo) groups.week.push(s)
@@ -116,59 +122,59 @@ const CodeBlock = ({ language, value }) => {
 };
 
 const markdownComponents = {
-  h1: ({ children }) => <h1 className="text-xl font-bold text-slate-800 mt-5 mb-3 leading-tight">{children}</h1>,
-  h2: ({ children }) => <h2 className="text-lg font-bold text-slate-800 mt-4 mb-2 leading-tight">{children}</h2>,
-  h3: ({ children }) => <h3 className="text-base font-bold text-slate-800 mt-4 mb-2">{children}</h3>,
-  p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed text-slate-700">{children}</p>,
-  ul: ({ children }) => <ul className="list-disc pl-6 mb-3 space-y-1.5 text-slate-700 marker:text-slate-400">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal pl-6 mb-3 space-y-1.5 text-slate-700 marker:text-slate-400">{children}</ol>,
+  h1: ({ children }) => <h1 className="text-xl font-bold mt-5 mb-3 leading-tight">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-lg font-bold mt-4 mb-2 leading-tight">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-base font-bold mt-4 mb-2">{children}</h3>,
+  p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
+  ul: ({ children }) => <ul className="list-disc pl-6 mb-3 space-y-1.5 marker:opacity-60">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal pl-6 mb-3 space-y-1.5 marker:opacity-60">{children}</ol>,
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-  strong: ({ children }) => <strong className="font-semibold text-slate-900">{children}</strong>,
-  blockquote: ({ children }) => <blockquote className="border border-emerald-100/50 px-4 py-2 my-3 bg-emerald-50/50 italic text-emerald-900 rounded">{children}</blockquote>,
-  a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 font-medium">{children}</a>,
+  strong: ({ children }) => <strong className="font-semibold opacity-100">{children}</strong>,
+  blockquote: ({ children }) => <blockquote className="border border-current/20 px-4 py-2 my-3 bg-current/5 italic rounded opacity-90">{children}</blockquote>,
+  a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 font-medium hover:opacity-80">{children}</a>,
   table: ({ children }) => (
-    <div className="overflow-x-auto my-4 rounded border border-slate-200">
+    <div className="overflow-x-auto my-4 rounded border border-current/20">
       <table className="w-full text-sm text-left">{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">{children}</thead>,
+  thead: ({ children }) => <thead className="text-xs uppercase bg-current/5 border-b border-current/20">{children}</thead>,
   tbody: ({ children }) => <tbody>{children}</tbody>,
-  tr: ({ children }) => <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">{children}</tr>,
+  tr: ({ children }) => <tr className="border-b border-current/10 last:border-0 hover:bg-current/5">{children}</tr>,
   th: ({ children }) => <th className="px-4 py-3 font-semibold">{children}</th>,
   td: ({ children }) => <td className="px-4 py-3">{children}</td>,
   code({ node, inline, className, children, ...props }) {
     const match = /language-(\w+)/.exec(className || '');
     const value = String(children).replace(/\n$/, '');
     const language = match ? match[1].toLowerCase().trim() : '';
-    
+
     const isText = language === 'text' || (!match && !inline);
 
     if (isText) {
       if (value.includes('\n')) {
         return (
-          <div className="font-medium text-slate-800 bg-slate-50 border border-slate-200 rounded-md p-3 my-3 whitespace-pre-wrap shadow-sm text-[13.5px] leading-relaxed">
+          <div className="font-medium bg-current/5 border border-current/20 rounded-md p-3 my-3 whitespace-pre-wrap shadow-sm text-[13.5px] leading-relaxed">
             {value}
           </div>
         );
       }
-      return <span className="font-bold text-slate-900 mx-1">{value}</span>;
+      return <span className="font-bold mx-1 opacity-100">{value}</span>;
     }
-    
+
     return !inline && match ? (
       <CodeBlock language={match[1]} value={value} />
     ) : (
-      <code className="bg-slate-100 text-emerald-700 px-1.5 py-0.5 rounded text-[13px] font-mono border border-slate-200/60" {...props}>
+      <code className="bg-current/10 px-1.5 py-0.5 rounded text-[13px] font-mono border border-current/20" {...props}>
         {children}
       </code>
     );
   }
 };
 
-const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
+const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated, selectedRepo }) => {
   const projectId = project.id || project.project_name
 
   // --- Session & sidebar state ---
-  const [chatSessions, setChatSessions] = useState(() => loadSessions(projectId))
+  const [chatSessions, setChatSessions] = useState([])
   const [activeSessionId, setActiveSessionId] = useState(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
@@ -183,21 +189,77 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
 
   const initializedRef = useRef(false)
 
-  // On mount: if sessions exist, load the most recent one; otherwise create a new session
+  // On mount: load conversations from API (fallback to localStorage cache)
   useEffect(() => {
     if (initializedRef.current) return
     initializedRef.current = true
 
-    const sessions = loadSessions(projectId)
-    if (sessions.length > 0) {
-      const sorted = [...sessions].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-      const latest = sorted[0]
-      setActiveSessionId(latest.id)
-      setMessages(latest.messages)
-      setChatSessions(sessions)
-    } else {
-      handleNewChat(false)
+    const loadConversations = async () => {
+      try {
+        // Try API first
+        const apiConversations = await getConversations(projectId)
+
+        if (apiConversations.length > 0) {
+          // Map API format to local format
+          const mapped = apiConversations.map((c) => ({
+            id: c.session_id,
+            title: c.title,
+            message_count: c.message_count,
+            createdAt: c.created_at,
+            updatedAt: c.updated_at,
+          }))
+          setChatSessions(mapped)
+
+          // Load the most recent conversation's messages
+          const latest = mapped[0]
+          setActiveSessionId(latest.id)
+
+          try {
+            const data = await getConversationMessages(latest.id)
+            if (data && data.messages && data.messages.length > 0) {
+              const loadedMessages = data.messages.map((m, i) => ({
+                id: m.id || i + 1,
+                sender: m.role === 'user' ? 'user' : 'ai',
+                text: m.content,
+              }))
+              setMessages(loadedMessages)
+            }
+          } catch {
+            // Could not load messages, keep default
+          }
+
+          // Trigger repo scan if repo selected
+          if (selectedRepo) {
+            setTimeout(() => {
+              triggerMessage('[INIT_REPO_SCAN]', latest.id)
+            }, 500)
+          }
+          return
+        }
+      } catch (err) {
+        console.warn('Could not load conversations from API, using local cache:', err)
+      }
+
+      // Fallback: try localStorage cache
+      const cached = loadSessionsFromCache(projectId)
+      if (cached.length > 0) {
+        const sorted = [...cached].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        const latest = sorted[0]
+        setActiveSessionId(latest.id)
+        setMessages(latest.messages || [createDefaultMessage(project.project_name)])
+        setChatSessions(cached)
+
+        if (selectedRepo) {
+          setTimeout(() => {
+            triggerMessage('[INIT_REPO_SCAN]', latest.id, latest.messages)
+          }, 500)
+        }
+      } else {
+        handleNewChat(false, true)
+      }
     }
+
+    loadConversations()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -219,34 +281,41 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
     scrollToBottom()
   }, [messages, isTyping, streamingMessage])
 
-  // --- Persist current session whenever messages change ---
+  // --- Persist current session to localStorage cache ---
   const persistSession = useCallback(
     (sessionId, msgs) => {
       setChatSessions((prev) => {
         const updated = prev.map((s) =>
           s.id === sessionId ? { ...s, messages: msgs, updatedAt: new Date().toISOString() } : s
         )
-        saveSessions(projectId, updated)
+        saveSessionsToCache(projectId, updated)
         return updated
       })
     },
     [projectId]
   )
 
-  // --- Auto-title from first user message ---
-  const updateSessionTitle = useCallback(
-    (sessionId, title) => {
-      setChatSessions((prev) => {
-        const updated = prev.map((s) => (s.id === sessionId ? { ...s, title } : s))
-        saveSessions(projectId, updated)
-        return updated
-      })
-    },
-    [projectId]
-  )
+  // --- Refresh conversations from API (called after title changes, etc.) ---
+  const refreshConversations = useCallback(async () => {
+    try {
+      const apiConversations = await getConversations(projectId)
+      if (apiConversations.length > 0) {
+        const mapped = apiConversations.map((c) => ({
+          id: c.session_id,
+          title: c.title,
+          message_count: c.message_count,
+          createdAt: c.created_at,
+          updatedAt: c.updated_at,
+        }))
+        setChatSessions(mapped)
+      }
+    } catch {
+      // Silently fail — localStorage cache will still work
+    }
+  }, [projectId])
 
   // --- New Chat ---
-  const handleNewChat = (shouldSave = true) => {
+  const handleNewChat = (shouldSave = true, isInitial = true) => {
     const newId = `session_${Date.now()}`
     const defaultMsg = createDefaultMessage(project.project_name)
     const newSession = {
@@ -259,7 +328,7 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
 
     setChatSessions((prev) => {
       const updated = [newSession, ...prev]
-      if (shouldSave) saveSessions(projectId, updated)
+      if (shouldSave) saveSessionsToCache(projectId, updated)
       return updated
     })
 
@@ -268,29 +337,65 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
     setInputValue('')
     setIsTyping(false)
     setStreamingMessage('')
+
+    // Automatically trigger initial repo scan if a repo is selected
+    if (selectedRepo && isInitial) {
+      setTimeout(() => {
+        triggerMessage('[INIT_REPO_SCAN]', newId, [defaultMsg])
+      }, 500)
+    }
   }
 
   // --- Load session ---
-  const handleLoadSession = (session) => {
+  const handleLoadSession = async (session) => {
     setActiveSessionId(session.id)
-    setMessages(session.messages)
     setInputValue('')
     setIsTyping(false)
     setStreamingMessage('')
     setDeleteConfirmId(null)
+
+    // Load messages from API
+    try {
+      const data = await getConversationMessages(session.id)
+      if (data && data.messages && data.messages.length > 0) {
+        const loadedMessages = data.messages.map((m, i) => ({
+          id: m.id || i + 1,
+          sender: m.role === 'user' ? 'user' : 'ai',
+          text: m.content,
+        }))
+        setMessages(loadedMessages)
+        return
+      }
+    } catch {
+      // Fall through to local cache
+    }
+
+    // Fallback: if we have messages in the local session object
+    if (session.messages) {
+      setMessages(session.messages)
+    } else {
+      setMessages([createDefaultMessage(project.project_name)])
+    }
   }
 
   // --- Delete session ---
-  const handleDeleteSession = (sessionId) => {
+  const handleDeleteSession = async (sessionId) => {
+    // Delete from API
+    try {
+      await deleteConversationApi(sessionId)
+    } catch {
+      console.warn('Failed to delete conversation from API')
+    }
+
     setChatSessions((prev) => {
       const updated = prev.filter((s) => s.id !== sessionId)
-      saveSessions(projectId, updated)
+      saveSessionsToCache(projectId, updated)
 
       if (sessionId === activeSessionId) {
         if (updated.length > 0) {
-          const sorted = [...updated].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+          const sorted = [...updated].sort((a, b) => new Date(b.updatedAt || b.updated_at) - new Date(a.updatedAt || a.updated_at))
           setActiveSessionId(sorted[0].id)
-          setMessages(sorted[0].messages)
+          handleLoadSession(sorted[0])
         } else {
           const newId = `session_${Date.now()}`
           const defaultMsg = createDefaultMessage(project.project_name)
@@ -303,7 +408,7 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
           }
           setActiveSessionId(newId)
           setMessages([defaultMsg])
-          saveSessions(projectId, [fresh])
+          saveSessionsToCache(projectId, [fresh])
           return [fresh]
         }
       }
@@ -313,63 +418,63 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
     setDeleteConfirmId(null)
   }
 
-  // --- Send message (real SSE to infrastructure-service) ---
-  const handleSendMessage = (e) => {
-    e.preventDefault()
-    if (!inputValue.trim() || isTyping) return
+  const triggerMessage = (text, sessionIdOverride = null, currentMessagesOverride = null) => {
+    const targetSessionId = sessionIdOverride || activeSessionId
+    const currentMessages = currentMessagesOverride || messages
 
-    const userMsg = {
-      id: Date.now(),
-      sender: 'user',
-      text: inputValue.trim(),
+    const isHidden = text === '[INIT_REPO_SCAN]'
+    let newMessages = currentMessages
+
+    if (!isHidden) {
+      const userMsg = {
+        id: Date.now(),
+        sender: 'user',
+        text: text,
+      }
+      newMessages = [...currentMessages, userMsg]
+      setMessages(newMessages)
+    } else {
+      setIsTyping(true)
     }
 
-    const newMessages = [...messages, userMsg]
-    setMessages(newMessages)
-    setInputValue('')
-    setIsTyping(true)
-    setStreamingMessage('')
+    if (targetSessionId && !isHidden) persistSession(targetSessionId, newMessages)
 
-    // Auto-title: if this is the first user message in the session
-    const userMsgsCount = newMessages.filter((m) => m.sender === 'user').length
-    if (userMsgsCount === 1 && activeSessionId) {
-      const title = userMsg.text.length > 40 ? userMsg.text.substring(0, 40) + '…' : userMsg.text
-      updateSessionTitle(activeSessionId, title)
-    }
-
-    // Persist user message immediately
-    if (activeSessionId) persistSession(activeSessionId, newMessages)
-
-    // Get auth token
     const token = getToken()
     if (!token) {
-      const errorMsg = {
-        id: Date.now() + 1,
-        sender: 'ai',
-        text: '⚠️ Authentication required. Please log in again.',
+      if (!isHidden) {
+        const errorMsg = {
+          id: Date.now() + 1,
+          sender: 'ai',
+          text: '⚠️ Authentication required. Please log in again.',
+        }
+        const withError = [...newMessages, errorMsg]
+        setMessages(withError)
+        setIsTyping(false)
+        if (targetSessionId) persistSession(targetSessionId, withError)
       }
-      const withError = [...newMessages, errorMsg]
-      setMessages(withError)
-      setIsTyping(false)
-      if (activeSessionId) persistSession(activeSessionId, withError)
       return
     }
 
-    // Close any existing EventSource
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
       eventSourceRef.current = null
     }
 
-    // Build SSE URL with query params
-    const params = new URLSearchParams({
-      message: userMsg.text,
+    const paramsObj = {
+      message: text,
       project_id: projectId,
       project_name: project.project_name,
-      session_id: activeSessionId || `infra-chat-${Date.now()}`,
+      session_id: targetSessionId || `infra-chat-${Date.now()}`,
       token: token,
-    })
+    }
 
+    if (selectedRepo) {
+      if (selectedRepo.repo_id) paramsObj.repo_id = selectedRepo.repo_id
+      if (selectedRepo.credential_id) paramsObj.credential_id = selectedRepo.credential_id
+      if (selectedRepo.provider) paramsObj.provider = selectedRepo.provider
+    }
+
+    const params = new URLSearchParams(paramsObj)
     const sseUrl = `${INFRA_API_URL}/api/infra/chat/stream?${params.toString()}`
 
     try {
@@ -392,14 +497,17 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
               sender: 'ai',
               text: finalContent,
             }
-            const updatedMessages = [...newMessages, aiMsg]
-            setMessages(updatedMessages)
+
+            // Only use the callback pattern for setMessages to ensure we have latest state
+            setMessages(prev => {
+              const updatedMessages = [...prev, aiMsg]
+              if (targetSessionId) persistSession(targetSessionId, updatedMessages)
+              return updatedMessages
+            })
+
             setStreamingMessage('')
             setIsTyping(false)
 
-            if (activeSessionId) persistSession(activeSessionId, updatedMessages)
-
-            // If resources were saved, notify parent
             if (data.response_type === 'saved' && data.saved_resources?.length > 0) {
               const savedRes = data.saved_resources
               onInfrastructureCreated(
@@ -412,20 +520,24 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
               )
             }
 
+            // Refresh sidebar to pick up LLM-generated titles
+            setTimeout(() => refreshConversations(), 1500)
+
             eventSource.close()
             eventSourceRef.current = null
           } else if (data.type === 'error') {
-            const errorMsg = {
-              id: Date.now() + 1,
-              sender: 'ai',
-              text: `⚠️ ${data.message || 'An error occurred. Please try again.'}`,
-            }
-            const withError = [...newMessages, errorMsg]
-            setMessages(withError)
+            setMessages(prev => {
+              const errorMsg = {
+                id: Date.now() + 1,
+                sender: 'ai',
+                text: `⚠️ ${data.message || 'An error occurred. Please try again.'}`,
+              }
+              const withError = [...prev, errorMsg]
+              if (targetSessionId) persistSession(targetSessionId, withError)
+              return withError
+            })
             setStreamingMessage('')
             setIsTyping(false)
-            if (activeSessionId) persistSession(activeSessionId, withError)
-
             eventSource.close()
             eventSourceRef.current = null
           }
@@ -441,42 +553,52 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
 
         if (isTyping) {
           if (accumulatedContent) {
-            const aiMsg = {
-              id: Date.now() + 1,
-              sender: 'ai',
-              text: accumulatedContent,
-            }
-            const updatedMessages = [...newMessages, aiMsg]
-            setMessages(updatedMessages)
-            if (activeSessionId) persistSession(activeSessionId, updatedMessages)
-          } else {
-            const errorMsg = {
-              id: Date.now() + 1,
-              sender: 'ai',
-              text: '⚠️ Connection lost. Please check that the infrastructure service is running and try again.',
-            }
-            const withError = [...newMessages, errorMsg]
-            setMessages(withError)
-            if (activeSessionId) persistSession(activeSessionId, withError)
+            setMessages(prev => {
+              const aiMsg = {
+                id: Date.now() + 1,
+                sender: 'ai',
+                text: accumulatedContent,
+              }
+              const updatedMessages = [...prev, aiMsg]
+              if (targetSessionId) persistSession(targetSessionId, updatedMessages)
+              return updatedMessages
+            })
+          } else if (!isHidden) {
+            setMessages(prev => {
+              const errorMsg = {
+                id: Date.now() + 1,
+                sender: 'ai',
+                text: '⚠️ Network error. Connection lost.',
+              }
+              const withError = [...prev, errorMsg]
+              if (targetSessionId) persistSession(targetSessionId, withError)
+              return withError
+            })
           }
           setStreamingMessage('')
           setIsTyping(false)
         }
       }
     } catch (error) {
-      console.error('Failed to create EventSource:', error)
-      const errorMsg = {
-        id: Date.now() + 1,
-        sender: 'ai',
-        text: '⚠️ Failed to connect to the infrastructure service. Please try again.',
-      }
-      const withError = [...newMessages, errorMsg]
-      setMessages(withError)
+      console.error('Failed to establish SSE connection:', error)
       setIsTyping(false)
-      setStreamingMessage('')
-      if (activeSessionId) persistSession(activeSessionId, withError)
     }
   }
+
+  // --- Send message (real SSE to infrastructure-service) ---
+  const handleSendMessage = (e) => {
+    e.preventDefault()
+    if (!inputValue.trim() || isTyping) return
+
+    const text = inputValue.trim()
+    setInputValue('')
+    setIsTyping(true)
+    setStreamingMessage('')
+
+    triggerMessage(text)
+  }
+
+
 
   // --- Grouped sessions ---
   const grouped = groupSessionsByDate(chatSessions)
@@ -493,8 +615,8 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
             <div
               key={s.id}
               className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${s.id === activeSessionId
-                  ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 text-emerald-700 font-bold shadow-sm shadow-emerald-900/5'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-white border border-transparent hover:border-slate-200 hover:shadow-sm'
+                ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 text-emerald-700 font-bold shadow-sm shadow-emerald-900/5'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-white border border-transparent hover:border-slate-200 hover:shadow-sm'
                 }`}
               onClick={() => handleLoadSession(s)}
             >
@@ -645,8 +767,8 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
             <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[80%] rounded-2xl px-5 py-3.5 shadow-sm text-sm leading-relaxed ${msg.sender === 'user'
-                    ? 'bg-emerald-600 text-white rounded-tr-sm'
-                    : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm'
+                  ? 'bg-emerald-600 text-white rounded-tr-sm'
+                  : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm'
                   }`}
               >
                 <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
@@ -677,42 +799,46 @@ const InfraChatInterface = ({ project, onCancel, onInfrastructureCreated }) => {
               </div>
             </div>
           )}
+          {/* Spacer to push content above floating input */}
+          <div className="h-32 flex-shrink-0" />
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="p-5 bg-white border-t border-slate-100 flex-shrink-0 relative z-10 shadow-[0_-4px_24px_rgba(0,0,0,0.02)]">
-          <form onSubmit={handleSendMessage} className="relative max-w-4xl mx-auto">
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-2xl blur opacity-0 group-focus-within:opacity-25 transition duration-500"></div>
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type your infrastructure requirements..."
-                className="relative w-full pl-6 pr-16 py-4 bg-slate-50 border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl text-sm focus:outline-none focus:border-emerald-400/50 focus:bg-white transition-all duration-300 text-slate-800 placeholder-slate-400 block"
-                autoFocus
-              />
-              <button
-                type="submit"
-                disabled={!inputValue.trim() || isTyping}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-xl shadow-md disabled:shadow-none hover:shadow-lg disabled:opacity-40 disabled:from-slate-400 disabled:to-slate-400 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
-              >
-                <img
-                  src="/icons8-send-puffy-filled-32.png"
-                  alt="Send"
-                  className="w-5 h-5 object-contain block m-auto filter brightness-0 invert"
-                  onError={(e) => {
-                    e.target.onerror = null
-                    e.target.src = 'https://img.icons8.com/puffy-filled/32/ffffff/sent.png'
-                  }}
+        {/* Input Area (Floating) */}
+        <div className="absolute bottom-0 left-0 right-0 p-5 pt-16 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent z-10 pointer-events-none">
+          <div className="pointer-events-auto">
+            <form onSubmit={handleSendMessage} className="relative max-w-4xl mx-auto">
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-2xl blur opacity-0 group-focus-within:opacity-25 transition duration-500"></div>
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Type your infrastructure requirements..."
+                  className="relative w-full pl-6 pr-16 py-4 bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.06)] rounded-2xl text-sm focus:outline-none focus:border-emerald-400/50 focus:bg-white transition-all duration-300 text-slate-800 placeholder-slate-400 block"
+                  autoFocus
                 />
-              </button>
-            </div>
-          </form>
-          <p className="text-center text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-3">
-            AI may hallucinate infrastructure endpoints. Verify before production.
-          </p>
+                <button
+                  type="submit"
+                  disabled={!inputValue.trim() || isTyping}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-xl shadow-md disabled:shadow-none hover:shadow-lg disabled:opacity-40 disabled:from-slate-400 disabled:to-slate-400 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <img
+                    src="/icons8-send-puffy-filled-32.png"
+                    alt="Send"
+                    className="w-5 h-5 object-contain block m-auto filter brightness-0 invert"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = 'https://img.icons8.com/puffy-filled/32/ffffff/sent.png'
+                    }}
+                  />
+                </button>
+              </div>
+            </form>
+            <p className="text-center text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-3 drop-shadow-sm">
+              AI may hallucinate infrastructure endpoints. Verify before production.
+            </p>
+          </div>
         </div>
       </div>
     </div>

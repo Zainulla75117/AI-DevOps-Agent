@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
+import httpx
+import asyncio
+from app.config import settings
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
 from app.database.connection import get_db
@@ -13,12 +16,33 @@ router = APIRouter(prefix="/api", tags=["projects"])
 @router.post("/create/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(
     project: ProjectCreate,
+    request: Request,
+    background_tasks: BackgroundTasks,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     try:
         created_project = await crud_project.create_project(db, project, current_user.username)
         print(f"✅ Project creation successful: {created_project.project_name}")
+        
+        # Trigger SCM sync for linked repositories
+        if created_project.linked_repositories:
+            auth_header = request.headers.get("Authorization")
+            if auth_header:
+                async def trigger_sync(repos, auth):
+                    async with httpx.AsyncClient(timeout=10.0) as client:
+                        for repo in repos:
+                            if repo.repo_id:
+                                try:
+                                    await client.post(
+                                        f"{settings.SCM_SERVICE_URL}/api/scm/repos/{repo.repo_id}/sync",
+                                        headers={"Authorization": auth}
+                                    )
+                                    print(f"✅ Triggered sync for repo {repo.repo_id}")
+                                except Exception as e:
+                                    print(f"❌ Failed to trigger sync for repo {repo.repo_id}: {e}")
+                
+                background_tasks.add_task(trigger_sync, created_project.linked_repositories, auth_header)
         return ProjectResponse(
             id=str(created_project.id),
             project_name=created_project.project_name,
@@ -30,6 +54,9 @@ async def create_project(
             region=created_project.region,
             iam_name=created_project.iam_name,
             environment=created_project.environment,
+            expected_traffic=created_project.expected_traffic,
+            cost_preference=created_project.cost_preference,
+            linked_repositories=[repo.model_dump() for repo in created_project.linked_repositories] if created_project.linked_repositories else [],
             created_at=created_project.created_at,
             updated_at=created_project.updated_at
         )
@@ -60,6 +87,9 @@ async def get_projects(
             region=project.region,
             iam_name=project.iam_name,
             environment=project.environment,
+            expected_traffic=project.expected_traffic,
+            cost_preference=project.cost_preference,
+            linked_repositories=[repo.model_dump() for repo in project.linked_repositories] if project.linked_repositories else [],
             created_at=project.created_at,
             updated_at=project.updated_at
         )
@@ -79,6 +109,8 @@ async def get_project(
         id=str(project.id), project_name=project.project_name, owner_username=project.owner_username, description=project.description,
         domain=project.domain, platform=project.platform, cloud_provider=project.cloud_provider,
         region=project.region, iam_name=project.iam_name, environment=project.environment,
+        expected_traffic=project.expected_traffic, cost_preference=project.cost_preference,
+        linked_repositories=[repo.model_dump() for repo in project.linked_repositories] if project.linked_repositories else [],
         created_at=project.created_at, updated_at=project.updated_at
     )
 
@@ -100,6 +132,8 @@ async def update_project(
         id=str(updated_project.id), project_name=updated_project.project_name, owner_username=updated_project.owner_username, description=updated_project.description,
         domain=updated_project.domain, platform=updated_project.platform, cloud_provider=updated_project.cloud_provider,
         region=updated_project.region, iam_name=updated_project.iam_name, environment=updated_project.environment,
+        expected_traffic=updated_project.expected_traffic, cost_preference=updated_project.cost_preference,
+        linked_repositories=[repo.model_dump() for repo in updated_project.linked_repositories] if updated_project.linked_repositories else [],
         created_at=updated_project.created_at, updated_at=updated_project.updated_at
     )
 
@@ -109,6 +143,16 @@ async def delete_project(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # Guard: block deletion if infrastructure resources still exist
+    from bson import ObjectId as _OID
+    if _OID.is_valid(project_id):
+        resource_count = await db.infra_resources.count_documents({"project_id": _OID(project_id)})
+        if resource_count > 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot delete project: {resource_count} infrastructure resource(s) still exist. Delete all resources first."
+            )
+
     deleted = await crud_project.delete_project(db, project_id, current_user.username)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")

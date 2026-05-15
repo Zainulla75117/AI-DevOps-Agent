@@ -1525,7 +1525,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
           }
         }
       ],
-      submit_button_text: 'Generate Pipeline'
+      submit_button_text: 'Analyze Repository'
     }
     
     setMessages((prev) => [
@@ -1550,7 +1550,8 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
     setPreInputFormConfig(null)
     
     // Send form data along with message
-    const userMessage = 'Build pipeline' // This would come from user input
+    // Instead of explicitly saying "Build pipeline", we trigger the repo scan which prompts the AI to summarize first
+    const userMessage = '[INIT_REPO_SCAN]' 
     await sendMessageToLLM(userMessage, formData)
   }
 
@@ -1688,6 +1689,25 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
     
     if (chatToken) {
       params.append('token', chatToken)
+    }
+    
+    // Add form data to params if available (especially repo info for scanning)
+    if (formData) {
+      // Serialize form data
+      params.append('has_form_data', 'true')
+      
+      // Specifically extract repo details for the backend Just-In-Time scanning
+      if (formData.selected_repo) {
+        if (formData.selected_repo.id) params.append('repo_id', formData.selected_repo.id)
+        if (formData.scm_cred_id) params.append('credential_id', formData.scm_cred_id)
+        
+        // Try to determine provider if available
+        const provider = formData.selected_repo.scm_provider || formData.provider
+        if (provider) params.append('provider', provider)
+      }
+      
+      // Also pass the entire form data as JSON (might need encoding)
+      params.append('form_data', JSON.stringify(formData))
     }
     
     // Build SSE URL

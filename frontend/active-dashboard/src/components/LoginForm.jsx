@@ -64,10 +64,22 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
       }
     } catch (err) {
       if (onToast) {
+        let errorMsg = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.'
+        
+        // Prevent exposing backend URLs/ports in toast messages
+        if (
+          errorMsg.includes('http://') || 
+          errorMsg.includes('https://') || 
+          errorMsg.includes('localhost:') || 
+          errorMsg.includes('127.0.0.1:') ||
+          errorMsg.includes('Network Error') ||
+          errorMsg.includes('ECONNREFUSED')
+        ) {
+          errorMsg = 'A network error occurred. Please try again later.'
+        }
+
         onToast({
-          message: err.response?.data?.message || 
-                  err.message || 
-                  'Login failed. Please check your credentials.',
+          message: errorMsg,
           type: 'error',
         })
       }

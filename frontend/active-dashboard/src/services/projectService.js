@@ -107,6 +107,7 @@ export const createProject = async (project) => {
       environment: project.environment || '',
       expected_traffic: project.expectedTraffic || project.expected_traffic || '',
       cost_preference: project.costPreference || project.cost_preference || '',
+      linked_repositories: project.linkedRepositories || project.linked_repositories || [],
     }
 
     // Send to backend API (JWT Bearer token is automatically included via interceptor)
@@ -153,22 +154,31 @@ export const getProjectById = (projectId) => {
  * @param {Object} updates - Fields to update
  * @returns {Object|null} Updated project or null if not found
  */
-export const updateProject = (projectId, updates) => {
+export const updateProject = async (projectId, updates) => {
   try {
-    const projects = getProjects()
-    const index = projects.findIndex((p) => p.id === projectId)
-    if (index === -1) return null
+    const payload = { ...updates };
+    
+    // Convert camelCase to snake_case if necessary for backend
+    if (payload.projectName) { payload.project_name = payload.projectName; delete payload.projectName; }
+    if (payload.cloudProvider) { payload.cloud_provider = payload.cloudProvider; delete payload.cloudProvider; }
+    if (payload.iamName) { payload.iam_name = payload.iamName; delete payload.iamName; }
+    if (payload.expectedTraffic) { payload.expected_traffic = payload.expectedTraffic; delete payload.expectedTraffic; }
+    if (payload.costPreference) { payload.cost_preference = payload.costPreference; delete payload.costPreference; }
+    if (payload.linkedRepositories) { payload.linked_repositories = payload.linkedRepositories; delete payload.linkedRepositories; }
 
-    projects[index] = {
-      ...projects[index],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    }
-    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects))
-    return projects[index]
+    const response = await apiClient.put(`/api/projects/${projectId}`, payload)
+    return response.data
   } catch (error) {
     console.error('Error updating project:', error)
-    throw error
+    if (error.response) {
+      throw new Error(
+        error.response.data?.message || `Failed to update project (Status: ${error.response.status})`
+      )
+    } else if (error.request) {
+      throw new Error('Network error. Please check your connection.')
+    } else {
+      throw new Error(error.message || 'An unexpected error occurred')
+    }
   }
 }
 
@@ -185,7 +195,7 @@ export const deleteProject = async (projectId) => {
     console.error('Error deleting project:', error)
     if (error.response) {
       throw new Error(
-        error.response.data?.message || `Failed to delete project (Status: ${error.response.status})`
+        error.response.data?.detail || error.response.data?.message || `Failed to delete project (Status: ${error.response.status})`
       )
     } else if (error.request) {
       throw new Error('Network error. Please check your connection.')

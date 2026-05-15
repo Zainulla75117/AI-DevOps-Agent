@@ -25,6 +25,7 @@ class InfraResourceCreate(BaseModel):
     region: str = "us-east-1"
     env: str = "dev"                   # "dev" | "staging" | "prod"
     config: Dict[str, Any] = Field(default_factory=dict)
+    iac_context: Optional[Dict[str, Any]] = None  # LLM's IaC reasoning for Terraform generation
     depends_on: List[str] = Field(default_factory=list)  # Resource ID strings
     state: str = "planned"
 
@@ -32,6 +33,7 @@ class InfraResourceCreate(BaseModel):
 class InfraResourceUpdate(BaseModel):
     """Request body for updating an existing resource's config."""
     config: Optional[Dict[str, Any]] = None
+    iac_context: Optional[Dict[str, Any]] = None
     name: Optional[str] = None
     state: Optional[str] = None
     actual_state: Optional[Dict[str, Any]] = None
@@ -51,6 +53,7 @@ class InfraResourceResponse(BaseModel):
     env: str
     config: Dict[str, Any]
     actual_state: Optional[Dict[str, Any]] = None
+    iac_context: Optional[Dict[str, Any]] = None
     state: str
     version: int
     depends_on: List[str] = Field(default_factory=list)

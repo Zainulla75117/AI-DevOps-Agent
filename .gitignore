@@ -49,3 +49,9 @@ logs/
 .gemini/
 .agents/*
 skills-lock.json
+
+# Local scripts
+start_services.ps1
+
+# Local data
+backend/data/

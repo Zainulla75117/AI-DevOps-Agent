@@ -83,6 +83,11 @@ const LeftSidebar = ({
       const item = menuItems.find(item => item.path === path)
       return item?.name || ''
     }
+    if (tooltipId?.startsWith('tool-')) {
+      const path = tooltipId.replace('tool-', '')
+      const item = quickTools.find(item => item.path === path)
+      return item?.name || ''
+    }
     return ''
   }
 
@@ -102,6 +107,13 @@ const LeftSidebar = ({
     { value: 'cicd', label: 'CI/CD Automation', icon: CICDIcon },
   ]
 
+  const quickTools = [
+    { name: 'Dockerfile', path: '/tools/dockerfile', iconUrl: '/tool_icons/icons8-docker-96.png' },
+    { name: 'Jenkins Pipeline', path: '/tools/jenkins', iconUrl: '/tool_icons/icons8-jenkins-480.png' },
+    { name: 'K8s Manifest', path: '/tools/k8s-manifest', iconUrl: '/tool_icons/icons8-kubernetes-480.png' },
+    { name: 'Helm Charts', path: '/tools/helm', iconUrl: '/tool_icons/Helm.png' },
+  ]
+
 
 
   const handleAutomationOptionClick = (option) => {
@@ -118,20 +130,6 @@ const LeftSidebar = ({
   useEffect(() => {
     isFirstRender.current = false
   }, [])
-
-  // Track route changes for animations
-  useEffect(() => {
-    // Animate if pathname changed (route navigation)
-    if (prevPathnameRef.current !== location.pathname) {
-      setShouldAnimate(true)
-      prevPathnameRef.current = location.pathname
-      // Reset animation flag after animation completes
-      const timer = setTimeout(() => {
-        setShouldAnimate(false)
-      }, 300)
-      return () => clearTimeout(timer)
-    }
-  }, [location.pathname])
 
   // Track menu state changes (main menu <-> automation submenu)
   useEffect(() => {
@@ -161,44 +159,46 @@ const LeftSidebar = ({
       
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
+        fixed lg:relative inset-y-0 left-0 z-50
         ${isExpanded ? 'w-64' : 'w-16'} bg-white/60 backdrop-blur-2xl border-r border-white/60 shadow-[4px_0_24px_rgba(0,0,0,0.02)]
         transform transition-all duration-300 ease-in-out
         ${isMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         group
       `}>
-      <div className="flex flex-col h-full overflow-y-auto overflow-x-visible">
-        <div className="p-2 flex-1 flex flex-col overflow-visible">
-          <div className={`flex items-center ${isExpanded ? 'justify-between px-2' : 'justify-center'} mb-4 mt-2 h-10`}>
-            {/* Branding container */}
-            {isExpanded && (
-              <div className="flex items-center gap-4 overflow-hidden">
-                <div className="w-11 h-11 flex-shrink-0 flex items-center justify-center lg:mx-auto">
-                  <img src="/infraxai_logo.png" alt="infraXai Logo" className="w-full h-full object-contain" />
-                </div>
-                <span className="font-bold text-[20px] text-slate-800 whitespace-nowrap hidden lg:block tracking-[0.05em] font-brand">infraXai</span>
-              </div>
-            )}
+        {/* Expand/Collapse button - Desktop only */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`hidden lg:flex absolute top-[24px] ${isExpanded ? 'right-3' : '-right-[12px]'} w-6 h-6 items-center justify-center rounded-full bg-white text-slate-500 hover:bg-[#F0F7FF] hover:text-[#2196F3] transition-all duration-300 border border-slate-200 shadow-sm z-50`}
+          aria-label={isExpanded ? "Collapse menu" : "Expand menu"}
+        >
+          <svg
+            className={`w-3.5 h-3.5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden">
 
-            {/* Expand/Collapse button - Desktop only */}
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="hidden lg:flex items-center justify-center p-2 rounded-md text-slate-500 hover:bg-[#F0F7FF] hover:text-[#2196F3] transition-all duration-300"
-              aria-label={isExpanded ? "Collapse menu" : "Expand menu"}
-            >
-              <svg
-                className={`w-6 h-6 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+        <div className="p-2 flex-1 flex flex-col overflow-visible">
+          <div className="relative flex items-center justify-center mb-4 mt-2 h-10 w-full">
+            {/* Branding container */}
+            <div className={`flex items-center overflow-hidden w-full transition-all duration-300 ${isExpanded ? 'justify-start px-2 gap-4' : 'justify-center px-0 gap-0'}`}>
+              <div className="flex-shrink-0 flex items-center justify-center w-11 h-11">
+                <img src="/infraxai_logo.png" alt="infraXai Logo" className="w-full h-full object-contain" />
+              </div>
+              <span className={`font-bold text-[20px] text-slate-800 whitespace-nowrap hidden lg:block tracking-[0.05em] font-brand transition-all duration-300 overflow-hidden ${isExpanded ? 'max-w-[150px] opacity-100' : 'max-w-0 opacity-0'}`}>
+                infraXai
+              </span>
+            </div>
+
+
             {/* Close button for mobile */}
             <button
               onClick={onMenuToggle}
-              className="lg:hidden p-2 rounded-md text-slate-500 hover:bg-[#F0F7FF] hover:text-[#2196F3] transition-all duration-300"
+              className="lg:hidden absolute right-2 p-1.5 rounded-md text-slate-500 hover:bg-[#F0F7FF] hover:text-[#2196F3] transition-all duration-300"
               aria-label="Close menu"
             >
               <svg
@@ -213,13 +213,13 @@ const LeftSidebar = ({
           </div>
         <nav className="space-y-1 relative flex-1 overflow-visible mt-2">
           {/* Main Navigation Section Title */}
-          {isExpanded && !showAutomationMenu && (
-            <div className="px-4 pb-2 pt-1 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block">
+          {!showAutomationMenu && (
+            <div className={`px-4 pb-2 pt-1 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block transition-all duration-300 overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-[200px] opacity-100' : 'max-w-0 opacity-0 px-0'}`}>
               Navigations
             </div>
           )}
-          {isExpanded && showAutomationMenu && (
-            <div className="px-4 pb-2 pt-1 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block">
+          {showAutomationMenu && (
+            <div className={`px-4 pb-2 pt-1 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block transition-all duration-300 overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-[200px] opacity-100' : 'max-w-0 opacity-0 px-0'}`}>
               Automation Hub
             </div>
           )}
@@ -241,7 +241,7 @@ const LeftSidebar = ({
                 }}
                 onMouseEnter={(e) => handleMouseEnter(e, 'back')}
                 onMouseLeave={handleMouseLeave}
-                className={`relative w-full flex items-center ${isExpanded ? 'justify-start gap-3 px-4' : 'justify-center'} p-3 rounded-md font-medium transition-colors duration-200 text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3] mb-4`}
+                className={`relative w-full flex items-center p-3 rounded-md font-medium transition-all duration-300 overflow-hidden ${isExpanded ? 'justify-start px-4' : 'justify-start px-[14px]'} text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3] mb-4`}
                 style={{
                   animation: shouldAnimate ? 'menu-item-fade 0.3s ease-out 0.1s both' : 'none'
                 }}
@@ -260,7 +260,9 @@ const LeftSidebar = ({
                     d="M10 19l-7-7m0 0l7-7m-7 7h18"
                   />
                 </svg>
-                {isExpanded && <span className="text-sm">Back to Menu</span>}
+                <span className={`text-sm whitespace-nowrap transition-all duration-300 overflow-hidden ${isExpanded ? 'max-w-[200px] opacity-100' : 'max-w-0 opacity-0'}`}>
+                  Back to Menu
+                </span>
               </button>
               {/* Automation Options */}
               {automationOptions.map((option, index) => {
@@ -277,7 +279,7 @@ const LeftSidebar = ({
                     }}
                     onMouseEnter={(e) => handleMouseEnter(e, `automation-${option.value}`)}
                     onMouseLeave={handleMouseLeave}
-                    className={`relative w-full flex items-center ${isExpanded ? 'justify-start gap-3 px-4' : 'justify-center'} p-3 rounded-md font-medium transition-colors duration-200 ${
+                    className={`relative w-full flex items-center p-3 rounded-md font-medium transition-all duration-300 overflow-hidden ${isExpanded ? 'justify-start px-4' : 'justify-start px-[14px]'} ${
                       isSelected
                         ? 'bg-[#E3F2FD] text-slate-900 font-semibold'
                         : 'text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3]'
@@ -292,7 +294,9 @@ const LeftSidebar = ({
                     ) : (
                       <span className="text-xl flex-shrink-0">{option.icon}</span>
                     )}
-                    {isExpanded && <span className="text-sm">{option.label}</span>}
+                    <span className={`text-sm whitespace-nowrap transition-all duration-300 overflow-hidden ${isExpanded ? 'max-w-[200px] opacity-100 ml-3' : 'max-w-0 opacity-0 ml-0'}`}>
+                      {option.label}
+                    </span>
                   </button>
                 )
               })}
@@ -323,7 +327,7 @@ const LeftSidebar = ({
                     }}
                     onMouseEnter={(e) => handleMouseEnter(e, `menu-${item.path}`)}
                     onMouseLeave={handleMouseLeave}
-                    className={`relative w-full flex items-center ${isExpanded ? 'justify-start gap-3 px-4' : 'justify-center'} p-3 rounded-md font-medium transition-colors duration-200 ${
+                    className={`relative w-full flex items-center p-3 rounded-md font-medium transition-all duration-300 overflow-hidden ${isExpanded ? 'justify-start px-4' : 'justify-start px-[14px]'} ${
                       location.pathname === item.path
                         ? 'bg-[#E3F2FD] text-slate-900 font-semibold'
                         : 'text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3]'
@@ -335,7 +339,44 @@ const LeftSidebar = ({
                     ) : (
                       <span className="text-xl flex-shrink-0">{item.icon}</span>
                     )}
-                    {isExpanded && <span className="text-sm">{item.name}</span>}
+                    <span className={`text-sm whitespace-nowrap transition-all duration-300 overflow-hidden ${isExpanded ? 'max-w-[200px] opacity-100 ml-3' : 'max-w-0 opacity-0 ml-0'}`}>
+                      {item.name}
+                    </span>
+                  </Link>
+                </div>
+              ))}
+
+              {/* Quick Tools Section Title */}
+              <div className="mt-2 mb-2 border-t border-slate-200/60 mx-1" />
+              <div className={`px-4 pb-2 pt-1 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block transition-all duration-300 overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-[200px] opacity-100' : 'max-w-0 opacity-0 px-0'}`}>
+                Quick Tools
+              </div>
+              {/* Quick Tools Items */}
+              {quickTools.map((item, index) => (
+                <div 
+                  key={item.path} 
+                  className="relative overflow-visible"
+                >
+                  <Link
+                    to={item.path}
+                    onClick={() => {
+                      if (isMenuOpen) {
+                        onMenuToggle()
+                      }
+                    }}
+                    onMouseEnter={(e) => handleMouseEnter(e, `tool-${item.path}`)}
+                    onMouseLeave={handleMouseLeave}
+                    className={`relative w-full flex items-center p-3 rounded-md font-medium transition-all duration-300 overflow-hidden ${isExpanded ? 'justify-start px-4' : 'justify-start px-[14px]'} ${
+                      location.pathname === item.path
+                        ? 'bg-[#E3F2FD] text-slate-900 font-semibold'
+                        : 'text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3]'
+                    }`}
+                    title={!isExpanded ? item.name : ""}
+                  >
+                    <img src={item.iconUrl} alt={item.name} className={`w-5 h-5 flex-shrink-0 object-contain transition-all duration-200 ${location.pathname === item.path ? 'opacity-100' : 'opacity-75 group-hover:opacity-100'}`} />
+                    <span className={`text-sm whitespace-nowrap transition-all duration-300 overflow-hidden ${isExpanded ? 'max-w-[200px] opacity-100 ml-3' : 'max-w-0 opacity-0 ml-0'}`}>
+                      {item.name}
+                    </span>
                   </Link>
                 </div>
               ))}
@@ -348,11 +389,9 @@ const LeftSidebar = ({
         {!showAutomationMenu && (
           <div className="p-2 border-t border-slate-200 mt-auto">
             {/* System Section Title */}
-            {isExpanded && (
-              <div className="px-2 pb-2 pt-2 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block mt-1">
-                System
-              </div>
-            )}
+            <div className={`px-2 pb-2 pt-2 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block mt-1 transition-all duration-300 overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-[200px] opacity-100' : 'max-w-0 opacity-0 px-0'}`}>
+              System
+            </div>
             <Link
               to={settingsMenuItem.path}
               onClick={() => {
@@ -363,7 +402,7 @@ const LeftSidebar = ({
               }}
               onMouseEnter={(e) => handleMouseEnter(e, 'settings')}
               onMouseLeave={handleMouseLeave}
-              className={`relative w-full flex items-center ${isExpanded ? 'justify-start gap-3 px-4' : 'justify-center'} p-3 rounded-md font-medium transition-colors duration-200 ${
+              className={`relative w-full flex items-center p-3 rounded-md font-medium transition-all duration-300 overflow-hidden ${isExpanded ? 'justify-start px-4' : 'justify-start px-[14px]'} ${
                 location.pathname === settingsMenuItem.path
                   ? 'bg-[#E3F2FD] text-slate-900 font-semibold'
                   : 'text-slate-700 hover:bg-[#F0F7FF] hover:text-[#2196F3]'
@@ -375,7 +414,9 @@ const LeftSidebar = ({
               ) : (
                 <span className="text-xl flex-shrink-0">{settingsMenuItem.icon}</span>
               )}
-              {isExpanded && <span className="text-sm">{settingsMenuItem.name}</span>}
+              <span className={`text-sm whitespace-nowrap transition-all duration-300 overflow-hidden ${isExpanded ? 'max-w-[200px] opacity-100 ml-3' : 'max-w-0 opacity-0 ml-0'}`}>
+                {settingsMenuItem.name}
+              </span>
             </Link>
           </div>
         )}

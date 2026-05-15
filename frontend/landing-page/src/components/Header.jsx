@@ -41,8 +41,8 @@ const Header = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-          ? 'bg-agentic-surface/95 backdrop-blur-md border-b border-agentic-text/10 shadow-sm'
-          : 'bg-transparent'
+        ? 'bg-agentic-surface/95 backdrop-blur-md border-b border-agentic-text/10 shadow-sm'
+        : 'bg-transparent'
         }`}
     >
       <nav className="container mx-auto px-6 py-4">
@@ -71,7 +71,7 @@ const Header = () => {
                 {item}
               </a>
             ))}
-            
+
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
               className="p-2 text-agentic-text/80 hover:text-agentic-primary bg-agentic-text/5 hover:bg-agentic-text/10 rounded-full transition-colors focus:outline-none flex items-center justify-center"
@@ -136,7 +136,7 @@ const Header = () => {
                   {item}
                 </a>
               ))}
-              
+
               <button
                 onClick={() => {
                   setIsDarkMode(!isDarkMode);

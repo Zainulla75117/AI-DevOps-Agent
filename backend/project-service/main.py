@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from app.config import settings
 from app.routers import project_router
 from app.routers.infra_resource import router as infrastructure_router
+from app.routers.provisioning_context import router as provisioning_context_router
 from app.database.connection import close_db, check_db_connection, get_database
 
 app = FastAPI(
@@ -17,6 +18,7 @@ app = FastAPI(
 # Include routers
 app.include_router(project_router)
 app.include_router(infrastructure_router)
+app.include_router(provisioning_context_router)
 
 
 async def create_indexes():

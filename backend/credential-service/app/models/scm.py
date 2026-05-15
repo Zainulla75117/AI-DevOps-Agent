@@ -33,8 +33,13 @@ class SCM(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=ObjectId, alias="_id")
     scm_name: str
     username: str
-    pat: str
+    pat: Optional[str] = None  # None for OAuth credentials
     base_url: Optional[str] = None  # For self-hosted GitLab/GitHub/Bitbucket instances
+    auth_type: str = "pat"  # "pat", "oauth", or "github_app"
+    oauth_access_token: Optional[str] = None  # OAuth access token
+    oauth_scopes: Optional[str] = None  # Granted scopes
+    installation_id: Optional[str] = None  # GitHub App Installation ID
+    user_id: Optional[str] = None  # InfraX user who owns this credential
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 

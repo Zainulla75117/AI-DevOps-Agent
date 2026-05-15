@@ -196,6 +196,46 @@ class ProjectServiceClient:
             logger.error(f"  ❌ Unexpected error calling project-service: {e}")
             return {"error": True, "detail": str(e)}
 
+    async def save_provisioning_context(self, project_id: str, session_id: str, resources: list, auth_token: str) -> dict:
+        """
+        POST /api/projects/{project_id}/provision-context
+        Save a snapshot of the confirmed infrastructure.
+        """
+        url = f"{self.base_url}/api/projects/{project_id}/provision-context"
+        logger.info(f"Saving provisioning context: {url}")
+        
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    url,
+                    json={
+                        "project_id": project_id,
+                        "session_id": session_id,
+                        "resources": resources,
+                        "status": "confirmed"
+                    },
+                    headers={"Authorization": f"Bearer {auth_token}", "Content-Type": "application/json"}
+                )
+            if response.status_code == 201:
+                return response.json()
+            return {"error": True, "detail": response.text}
+        except Exception as e:
+            return {"error": True, "detail": str(e)}
+
+    async def get_latest_provisioning_context(self, project_id: str, auth_token: str) -> dict | None:
+        """
+        GET /api/projects/{project_id}/provision-context
+        """
+        url = f"{self.base_url}/api/projects/{project_id}/provision-context"
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, headers={"Authorization": f"Bearer {auth_token}"})
+            if response.status_code == 200:
+                return response.json()
+            return None
+        except Exception:
+            return None
+
     async def check_health(self) -> bool:
         """Ping project-service health endpoint."""
         try:
