@@ -86,10 +86,11 @@ async def generate_conversation_title(
             from langchain_core.messages import HumanMessage
             
             prompt = (
-                f"Generate a concise 3-6 word title for this infrastructure chat message. "
-                f"The project is called '{project_name}'. "
+                f"Generate a highly descriptive, meaningful, and action-oriented title (3-6 words) for this infrastructure DevOps chat. "
+                f"The title should clearly indicate the specific goal, architecture, or issue being discussed for the project '{project_name}'. "
+                f"Examples: 'API Gateway CI/CD Setup', 'Debugging PostgreSQL Connection', 'AWS ECS Cluster Architecture'. "
                 f"Return ONLY the title, nothing else. No quotes, no punctuation at the end.\n\n"
-                f"User message: {first_message[:200]}"
+                f"User message: {first_message[:300]}"
             )
             
             response = await llm.ainvoke([HumanMessage(content=prompt)])

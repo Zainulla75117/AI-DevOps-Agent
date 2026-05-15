@@ -68,6 +68,7 @@ class InfraChatState(TypedDict):
     repo_tree: Optional[Dict[str, Any]]
     user_message: str
     auth_token: str
+    infra_exists: bool
 
     # Current extraction progress
     intent: str                              # "create_infra" | "update_infra" | "general" | "confirm" | "edit" | "cancel"
@@ -257,7 +258,16 @@ async def process_message(state: InfraChatState) -> InfraChatState:
         # Current user message is already appended to history before process_message is called.
         # However, if this was an INIT_REPO_SCAN, we popped it. Gemini requires at least one HumanMessage.
         if is_init_scan:
-            llm_messages.append(HumanMessage(content="Please scan the repository context provided and give a summary as instructed."))
+            infra_exists = state.get("infra_exists", False)
+            if infra_exists:
+                llm_messages.append(HumanMessage(content=(
+                    "Infrastructure is already provisioned for this project. "
+                    "Do NOT scan or mention the repository tree. "
+                    "Instead, briefly greet the user, list the existing resources clearly, and ask exactly: "
+                    "'This is the infra created. Need any modifications or improvements (if any)?'"
+                )))
+            else:
+                llm_messages.append(HumanMessage(content="Please scan the repository context provided and give a summary as instructed."))
 
         # ── DEBUG: Log full LLM input ────────────────────────────
         logger.info("=" * 80)
@@ -733,6 +743,7 @@ async def run_turn(
         "repo_tree": session_state.get("repo_tree", {}),
         "user_message": user_message,
         "auth_token": session_state.get("auth_token", ""),
+        "infra_exists": session_state.get("infra_exists", False),
         "intent": session_state.get("intent", "general"),
         "current_resource_type": session_state.get("current_resource_type"),
         "collected_fields": session_state.get("collected_fields", {}),

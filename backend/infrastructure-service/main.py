@@ -188,6 +188,9 @@ async def get_or_create_session(
         if conv_record:
             conv_summary = await conversation_store.get_latest_conversation_summary(str(conv_record["id"]))
 
+        # CHECK INFRASTRUCTURE EXISTENCE (MongoDB or PostgreSQL)
+        infra_exists = bool(existing_resources or pg_summary or provisioning_context)
+
         sessions[session_id] = {
             "session_id": session_id,
             "project_id": project_id,
@@ -201,6 +204,7 @@ async def get_or_create_session(
             "conversation_summary": conv_summary,
             "project_memories": project_memories,
             "repo_scan_memory": repo_scan_memory,
+            "infra_exists": infra_exists,
             "messages": [],
             # LangGraph state fields
             "intent": "general",
@@ -215,9 +219,9 @@ async def get_or_create_session(
             "_is_first_message": True,  # Track if first message for title generation
         }
         
-        # Only fetch repo tree if no persisted repo_scan exists in project_memory
+        # Only fetch repo tree if no persisted repo_scan exists AND infra doesn't exist
         repo_id = kwargs.get("repo_id")
-        if repo_id and not repo_scan_memory:
+        if repo_id and not repo_scan_memory and not infra_exists:
             try:
                 import httpx
                 scm_url = f"{settings.SCM_SERVICE_URL}/api/scm/repos/{repo_id}/tree"
@@ -232,6 +236,8 @@ async def get_or_create_session(
                 logger.warning(f"Could not fetch repo tree: {e}")
         elif repo_scan_memory:
             logger.info(f"Reusing persisted repo scan from project_memory for project {project_id}")
+        elif infra_exists:
+            logger.info(f"Skipping repo tree fetch for project {project_id} because infrastructure already exists.")
 
     else:
         # Update auth token in case it was refreshed

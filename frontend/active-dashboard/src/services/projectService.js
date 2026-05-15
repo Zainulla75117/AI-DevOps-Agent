@@ -205,3 +205,23 @@ export const deleteProject = async (projectId) => {
   }
 }
 
+/**
+ * Get resources for a project
+ * @param {string} projectId - Project ID
+ * @returns {Promise<Array>} Array of resources
+ */
+export const getProjectResources = async (projectId) => {
+  try {
+    const response = await apiClient.get(`/api/infrastructure/resources/project/${projectId}`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching project resources:', error)
+    if (error.response?.status === 404) return []
+    if (error.response) {
+      throw new Error(
+        error.response.data?.detail || `Failed to fetch resources (Status: ${error.response.status})`
+      )
+    }
+    throw new Error(error.message || 'An unexpected error occurred')
+  }
+}
