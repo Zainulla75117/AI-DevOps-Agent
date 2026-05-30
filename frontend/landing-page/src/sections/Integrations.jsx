@@ -17,7 +17,7 @@ const integrations = [
 
 const Integrations = () => {
   return (
-    <section className="py-24 relative overflow-hidden bg-agentic-secondary">
+    <section id="integrations" className="py-24 relative overflow-hidden bg-agentic-secondary">
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 z-0 pointer-events-none bg-dashed-grid mask-radial-fade"></div>
 

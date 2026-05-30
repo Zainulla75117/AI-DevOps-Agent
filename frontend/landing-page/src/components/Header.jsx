@@ -34,7 +34,7 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = ['Features', 'Solutions'];
+  const navItems = ['Features', 'Solutions', 'Showcase', 'Integrations', 'FAQ'];
 
   return (
     <motion.header
