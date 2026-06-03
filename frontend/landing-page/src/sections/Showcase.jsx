@@ -99,10 +99,10 @@ const Showcase = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-display text-agentic-text">
+          <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4 font-display text-agentic-text">
             See <span className="text-agentic-primary">InfraX</span> in Action
           </h2>
-          <p className="text-xl text-agentic-text/80 max-w-2xl mx-auto font-sans">
+          <p className="text-lg md:text-xl text-agentic-text/70 leading-relaxed max-w-2xl mx-auto font-sans">
             Watch AI generate infrastructure code, pipelines, and configurations in real-time
           </p>
         </motion.div>
@@ -122,7 +122,7 @@ const Showcase = () => {
                 <div className="flex items-center justify-between mb-4 relative z-10 border-b border-agentic-text/5 pb-4">
                   <div className="flex items-center space-x-2">
                     <Terminal className="w-5 h-5 text-agentic-primary" />
-                    <span className="text-sm text-agentic-text/50 font-medium font-sans">InfraX AI</span>
+                    <span className="text-xs font-mono font-semibold tracking-wide text-agentic-text/50">InfraX AI</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 rounded-full bg-agentic-danger" />
@@ -137,7 +137,7 @@ const Showcase = () => {
                     <button
                       key={index}
                       onClick={() => setActiveTab(index)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === index
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold tracking-wide font-sans transition-all duration-200 ${activeTab === index
                           ? 'bg-agentic-primary/10 text-agentic-primary border border-agentic-primary/20 shadow-sm'
                           : 'text-agentic-text/50 hover:text-agentic-text hover:bg-agentic-text/5 border border-transparent'
                         }`}
@@ -179,8 +179,8 @@ const Showcase = () => {
                     <Code2 className="w-6 h-6 text-agentic-primary" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-normal mb-2 text-agentic-text font-display">Auto-Generated Code</h3>
-                    <p className="text-sm leading-loose text-agentic-text/70 font-sans">
+                    <h3 className="text-xl font-semibold tracking-tight mb-2 text-agentic-text font-display">Auto-Generated Code</h3>
+                    <p className="text-sm leading-relaxed text-agentic-text/70 font-sans">
                       <span className="font-semibold italic">InfraX</span> generates production-ready infrastructure code following best practices and security standards.
                     </p>
                   </div>
@@ -193,8 +193,8 @@ const Showcase = () => {
                     <CheckCircle className="w-6 h-6 text-agentic-primary" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-normal mb-2 text-agentic-text font-display">Validated & Tested</h3>
-                    <p className="text-sm leading-loose text-agentic-text/70 font-sans">
+                    <h3 className="text-xl font-semibold tracking-tight mb-2 text-agentic-text font-display">Validated & Tested</h3>
+                    <p className="text-sm leading-relaxed text-agentic-text/70 font-sans">
                       All generated configurations are validated against cloud provider requirements and tested before deployment.
                     </p>
                   </div>
@@ -207,8 +207,8 @@ const Showcase = () => {
                     <Terminal className="w-6 h-6 text-agentic-primary" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-normal mb-2 text-agentic-text font-display">One-Click Deploy</h3>
-                    <p className="text-sm leading-loose text-agentic-text/70 font-sans">
+                    <h3 className="text-xl font-semibold tracking-tight mb-2 text-agentic-text font-display">One-Click Deploy</h3>
+                    <p className="text-sm leading-relaxed text-agentic-text/70 font-sans">
                       Review, approve, and deploy with a single click. <span className="font-semibold italic">InfraX</span> handles the entire deployment process.
                     </p>
                   </div>

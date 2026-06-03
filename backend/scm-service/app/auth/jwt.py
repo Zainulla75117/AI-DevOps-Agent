@@ -7,7 +7,7 @@ from app.config import settings
 from app.database.connection import get_db
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:8000/api/users/token")
 
 async def verify_token(token: str) -> dict:
     try:

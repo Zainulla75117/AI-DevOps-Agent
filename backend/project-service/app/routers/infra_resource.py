@@ -7,11 +7,14 @@ with a single resource-oriented CRUD interface.
 All endpoints require JWT authentication.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+import logging
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List, Optional
 
 from app.database.connection import get_db
+from app.config import settings
 from app.crud import infra_resource as crud_infra
 from app.schemas.infra_resource import (
     InfraResourceCreate,
@@ -26,7 +29,53 @@ from app.schemas.infra_resource import (
 from app.auth.jwt import get_current_user
 from app.models.user import User
 
+logger = logging.getLogger("project-service.infra")
+
 router = APIRouter(prefix="/api/infrastructure", tags=["infrastructure"])
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  INFRA-SERVICE CLEANUP HELPER
+# ═══════════════════════════════════════════════════════════════════════
+
+async def _notify_infra_cleanup(
+    scope: str,
+    target_id: str,
+    request: Request,
+    project_id: Optional[str] = None,
+):
+    """
+    Best-effort call to infrastructure-service to clean up PostgreSQL
+    after a MongoDB deletion. Non-blocking — if infra-service is down,
+    MongoDB deletion still succeeds.
+
+    Args:
+        scope: "project" or "resource"
+        target_id: The project_id or resource_id being deleted
+        request: FastAPI Request (to forward the Authorization header)
+        project_id: For resource scope, the parent project_id (for cache invalidation)
+    """
+    try:
+        auth_header = request.headers.get("authorization", "")
+        url = f"{settings.INFRA_SERVICE_URL}/api/infra/cleanup/{scope}/{target_id}"
+        params = {}
+        if scope == "resource" and project_id:
+            params["project_id"] = project_id
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.delete(
+                url,
+                headers={"Authorization": auth_header},
+                params=params,
+            )
+            if resp.status_code == 200:
+                logger.info(f"✅ Infra cleanup [{scope}/{target_id}] succeeded: {resp.json()}")
+            else:
+                logger.warning(f"Infra cleanup [{scope}/{target_id}] returned {resp.status_code}: {resp.text[:200]}")
+    except httpx.ConnectError:
+        logger.warning(f"Infra cleanup [{scope}/{target_id}] skipped — infrastructure-service unreachable")
+    except Exception as e:
+        logger.warning(f"Infra cleanup [{scope}/{target_id}] failed (non-blocking): {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -176,19 +225,33 @@ async def update_resource(
 )
 async def delete_resource(
     resource_id: str,
+    request: Request,
+    project_id: Optional[str] = Query(None, description="Parent project ID for cache invalidation"),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
     Delete a single resource.
     Returns 200 with result — will refuse if other resources depend on it.
+    Also notifies infrastructure-service to invalidate PostgreSQL caches.
     """
+    # If project_id not in query, try to look it up from the resource
+    lookup_project_id = project_id
+    if not lookup_project_id:
+        resource = await crud_infra.get_resource(db, resource_id)
+        if resource and resource.project_id:
+            lookup_project_id = str(resource.project_id)
+
     result = await crud_infra.delete_resource(db, resource_id)
     if not result.get("deleted"):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=result.get("reason", "Cannot delete resource"),
         )
+
+    # Notify infrastructure-service to clean up PostgreSQL (best-effort)
+    await _notify_infra_cleanup("resource", resource_id, request, project_id=lookup_project_id)
+
     return {"message": "Resource deleted successfully"}
 
 
@@ -198,11 +261,16 @@ async def delete_resource(
 )
 async def delete_resources_by_project(
     project_id: str,
+    request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Delete ALL resources (and their versions) for a project."""
+    """Delete ALL resources (and their versions) for a project. Also cleans up PostgreSQL."""
     count = await crud_infra.delete_resources_by_project(db, project_id)
+
+    # Notify infrastructure-service to archive + clean up PostgreSQL (best-effort)
+    await _notify_infra_cleanup("project", project_id, request)
+
     return {"message": f"Deleted {count} resources", "deleted_count": count}
 
 

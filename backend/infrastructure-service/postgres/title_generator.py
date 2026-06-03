@@ -71,7 +71,7 @@ async def generate_conversation_title(
     Args:
         first_message: The user's first message in the conversation.
         project_name: The project name (for context).
-        llm: Optional ChatGoogleGenerativeAI instance. If None, uses heuristic.
+        llm: Uses heuristic.
     
     Returns:
         A concise title string (max ~50 chars).

@@ -28,7 +28,7 @@ const Header = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 40);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -38,43 +38,47 @@ const Header = () => {
 
   return (
     <motion.header
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-        ? 'bg-agentic-surface/95 backdrop-blur-md border-b border-agentic-text/10 shadow-sm'
-        : 'bg-transparent'
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out pb-12 [-webkit-mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] pointer-events-none ${isScrolled
+        ? 'bg-agentic-surface/70 backdrop-blur-md'
+        : 'bg-transparent backdrop-blur-none'
         }`}
     >
-      <nav className="container mx-auto px-6 py-4">
+      <div className="pointer-events-auto">
+        <nav className={`container mx-auto transition-all duration-500 ${isScrolled ? 'px-6 md:px-8 py-4 md:py-5' : 'px-6 md:px-12 py-8 md:py-10'}`}>
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <motion.a
-            href="#"
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center"
-          >
-            <img
-              src="/My_Brand-Logo_1.png"
-              alt="InfraX Logo"
-              className="h-5 md:h-6 w-auto object-contain"
-            />
-          </motion.a>
+          <div className="flex items-center flex-shrink-0 md:w-1/4 ml-10 md:ml-20">
+            <motion.a
+              href="#"
+              whileHover={{ scale: 1.02 }}
+              className="flex items-center"
+            >
+              <img
+                src="/My_Brand-Logo_1.png"
+                alt="InfraX Logo"
+                className="h-6 md:h-8 w-auto object-contain"
+              />
+            </motion.a>
+          </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center justify-center flex-1 space-x-10">
             {navItems.map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase()}`}
-                className="text-agentic-text/80 hover:text-agentic-primary transition-colors duration-200 font-medium"
+                className="text-base font-sans font-normal text-agentic-text/70 hover:text-agentic-text transition-colors duration-300 antialiased"
               >
                 {item}
               </a>
             ))}
+          </div>
 
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center justify-end md:w-1/4 mr-10 md:mr-20 space-x-6">
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 text-agentic-text/80 hover:text-agentic-primary bg-agentic-text/5 hover:bg-agentic-text/10 rounded-full transition-colors focus:outline-none flex items-center justify-center"
+              className="p-2 text-agentic-text/70 hover:text-agentic-text transition-colors focus:outline-none flex items-center justify-center"
               aria-label="Toggle dark mode"
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -92,18 +96,21 @@ const Header = () => {
 
             <a
               href="https://infraxai.vercel.app"
-              className="text-agentic-text/80 transition-all duration-300 font-medium hover:bg-clip-text hover:text-transparent hover:bg-gradient-to-r hover:from-agentic-primary hover:to-teal-500"
+              className="text-base font-sans font-normal text-agentic-text/80 transition-colors duration-300 antialiased hover:text-agentic-text"
             >
               Login
             </a>
 
             <motion.a
               href="https://infraxai.vercel.app/register"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-2 bg-agentic-primary text-white rounded-md font-medium hover:bg-[#265A4B] transition-colors duration-300 shadow-sm"
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              className="relative inline-flex items-center justify-center overflow-hidden rounded-full p-[2px] hover:shadow-lg transition-all duration-300 group bg-agentic-text/5"
             >
-              Sign Up
+              <span className="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] [will-change:transform] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_30%,#8B5CF6_47%,#ffffff_50%,transparent_50%,transparent_80%,#8B5CF6_97%,#ffffff_100%)]" />
+              <span className="relative inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-agentic-text text-agentic-surface text-[13px] font-sans font-semibold tracking-wide antialiased w-full h-full transition-colors group-hover:bg-agentic-text/95">
+                Sign Up
+              </span>
             </motion.a>
           </div>
 
@@ -169,6 +176,7 @@ const Header = () => {
           )}
         </AnimatePresence>
       </nav>
+      </div>
     </motion.header>
   );
 };

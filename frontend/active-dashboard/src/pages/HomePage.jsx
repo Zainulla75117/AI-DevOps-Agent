@@ -5,7 +5,56 @@ import PageLayout from '../components/PageLayout'
 import ProjectCreate from '../components/ProjectCreate'
 import Toast from '../components/Toast'
 import ConfirmDialog from '../components/ConfirmDialog'
+import InsightsCard from '../components/InsightsCard'
 import { motion } from 'framer-motion'
+import rough from 'roughjs'
+
+const RoughPlusLogo = ({ className = "w-14 h-14" }) => {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.innerHTML = '';
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 100 100');
+      svg.setAttribute('class', 'w-full h-full overflow-visible');
+      
+      const rc = rough.svg(svg);
+      
+      const circle = rc.arc(50, 50, 80, 80, 0.2, Math.PI * 2 - 0.2, false, {
+        stroke: 'currentColor',
+        strokeWidth: 6,
+        roughness: 1.5,
+        bowing: 1,
+        seed: 42
+      });
+      
+      const hLine = rc.line(28, 50, 72, 50, {
+        stroke: 'currentColor',
+        strokeWidth: 8,
+        roughness: 2.5,
+        bowing: 1,
+        seed: 42
+      });
+      
+      const vLine = rc.line(50, 28, 50, 72, {
+        stroke: 'currentColor',
+        strokeWidth: 8,
+        roughness: 2.5,
+        bowing: 1,
+        seed: 43
+      });
+      
+      svg.appendChild(circle);
+      svg.appendChild(hLine);
+      svg.appendChild(vLine);
+      
+      containerRef.current.appendChild(svg);
+    }
+  }, []);
+
+  return <div ref={containerRef} className={`relative ${className} drop-shadow-sm`} />;
+};
 
 const HomePage = () => {
   const { userInfo, handleLogout } = useAuth()
@@ -336,7 +385,7 @@ const HomePage = () => {
                         onClick={() => setShowCreateForm(true)}
                         className="inline-flex items-center gap-2 py-3 text-slate-800 text-sm font-semibold hover:text-blue-600 hover:-translate-y-0.5 focus:outline-none transition-all duration-300"
                       >
-                        <img src="/add_project_icon.png" alt="Create Project" className="w-8 h-8 object-contain" />
+                        <RoughPlusLogo className="w-8 h-8" />
                         Create Project
                       </button>
                     )}
@@ -353,10 +402,10 @@ const HomePage = () => {
                   onCancel={() => setShowCreateForm(false)}
                 />
               ) : (
-                <div className="glass-panel rounded-2xl border border-white p-8 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.1)] hover:border-blue-200/50">
+                <div className="glass-panel group rounded-2xl border border-white p-8 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(33,150,243,0.1)] hover:border-blue-200/50">
                   <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-5 flex items-center justify-center">
-                      <img src="/add_project_icon.png" alt="Create Project" className="w-14 h-14 object-contain drop-shadow-md" />
+                    <div className="w-16 h-16 mx-auto mb-5 flex items-center justify-center text-blue-600 group-hover:text-blue-500 transition-colors duration-300">
+                      <RoughPlusLogo className="w-14 h-14" />
                     </div>
                     <h3 className="text-base font-semibold text-slate-900 mb-1">Create New Project</h3>
                     <p className="text-sm text-slate-500 mb-6">
@@ -371,6 +420,9 @@ const HomePage = () => {
                   </div>
                 </div>
               )}
+
+              {/* DevOps Insights Section */}
+              <InsightsCard />
             </div>
           </div>
         </div>

@@ -52,12 +52,12 @@ const Features = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="text-xs uppercase font-medium tracking-[0.2em] text-agentic-primary/80 mb-3">Core Platform</div>
-          <h2 className="text-4xl md:text-5xl font-light mb-4 font-display text-agentic-text">
+          <div className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-agentic-primary/80 mb-3">Core Platform</div>
+          <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4 font-display text-agentic-text">
             Powerful Features for{' '}
             <span className="text-agentic-primary">Modern DevOps</span>
           </h2>
-          <p className="text-xl text-agentic-text/80 max-w-2xl mx-auto font-sans">
+          <p className="text-lg md:text-xl text-agentic-text/70 leading-relaxed max-w-2xl mx-auto font-sans">
             Everything you need to automate and optimize your infrastructure operations
           </p>
         </motion.div>
@@ -77,10 +77,10 @@ const Features = () => {
                 <div className="w-14 h-14 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center mb-6 group-hover:border-agentic-primary/30 transition-colors">
                   <Icon className="w-6 h-6 text-agentic-primary" />
                 </div>
-                <h3 className="text-2xl font-normal mb-4 text-agentic-text font-display">
+                <h3 className="text-xl md:text-2xl font-semibold tracking-tight mb-4 text-agentic-text font-display">
                   {feature.title}
                 </h3>
-                <p className="text-sm leading-loose text-agentic-text/70 font-sans mt-auto">
+                <p className="text-sm leading-relaxed text-agentic-text/70 font-sans mt-auto">
                   {feature.description}
                 </p>
               </motion.div>

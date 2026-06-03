@@ -110,7 +110,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
             name="username"
             value={formData.username}
             onChange={handleChange}
-            className="w-full px-4 py-3.5 md:py-3 bg-slate-50 md:bg-white border border-[#2196F3]/20 text-slate-900 text-base rounded-xl md:rounded-md transition-colors outline-none placeholder:text-slate-400 focus:bg-white focus:border-[#30705d] focus:ring-2 focus:ring-[#30705d]/20 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full px-5 py-4 md:py-3.5 bg-slate-50 md:bg-white border border-[#2196F3]/20 text-slate-900 text-base rounded-xl md:rounded-md transition-all duration-300 outline-none placeholder:text-slate-400 focus:bg-white focus:border-[#30705d] disabled:opacity-60 disabled:cursor-not-allowed"
             placeholder="Enter your username"
             disabled={isLoading}
             autoComplete="username"
@@ -128,7 +128,7 @@ const LoginForm = ({ isLoading, setIsLoading, onToast }) => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-3.5 md:py-3 pr-12 bg-slate-50 md:bg-white border border-[#2196F3]/20 text-slate-900 text-base rounded-xl md:rounded-md transition-colors outline-none placeholder:text-slate-400 focus:bg-white focus:border-[#30705d] focus:ring-2 focus:ring-[#30705d]/20 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full px-5 py-4 md:py-3.5 pr-12 bg-slate-50 md:bg-white border border-[#2196F3]/20 text-slate-900 text-base rounded-xl md:rounded-md transition-all duration-300 outline-none placeholder:text-slate-400 focus:bg-white focus:border-[#30705d] disabled:opacity-60 disabled:cursor-not-allowed"
               placeholder="Enter your password"
               disabled={isLoading}
               autoComplete="current-password"

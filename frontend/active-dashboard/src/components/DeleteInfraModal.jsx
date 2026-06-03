@@ -34,7 +34,7 @@ const DeleteInfraModal = ({ project, onClose, onDeletedAll, onInfraUpdated }) =>
     setDeletingItemId(id)
     setError(null)
     try {
-      await deleteResource(id)
+      await deleteResource(id, project.id)
       await loadInfra() // reload
     } catch (e) {
       setError(e.message || "Failed to delete item")

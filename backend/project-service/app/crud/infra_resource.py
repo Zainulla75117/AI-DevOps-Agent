@@ -220,6 +220,14 @@ async def delete_resources_by_project(
         await db.infra_versions.delete_many({"resource_id": {"$in": resource_ids}})
 
     result = await db.infra_resources.delete_many({"project_id": pid})
+
+    # Also wipe provisioning_contexts so the LLM doesn't re-inject deleted
+    # resources via the "CONFIRMED PROVISIONING CONTEXT" system prompt block
+    try:
+        await db.provisioning_contexts.delete_many({"project_id": project_id})
+    except Exception:
+        pass  # best-effort — collection may not exist
+
     return result.deleted_count
 
 

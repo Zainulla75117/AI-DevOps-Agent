@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
 from datetime import timedelta
@@ -60,6 +61,29 @@ async def register(user: UserCreate, db: AsyncIOMotorDatabase = Depends(get_db))
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create user: {str(e)}"
         )
+
+@router.post("/token", response_model=TokenResponse)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncIOMotorDatabase = Depends(get_db)):
+    """Swagger UI specific token endpoint (expects form data)."""
+    db_user = await crud_user.get_user_by_username(db, form_data.username)
+    if not db_user or db_user.password != form_data.password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not db_user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
+
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": db_user.username}, expires_delta=access_token_expires
+    )
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=TokenUser(username=db_user.username)
+    )
 
 @router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
 async def login(user: UserLogin, db: AsyncIOMotorDatabase = Depends(get_db)):

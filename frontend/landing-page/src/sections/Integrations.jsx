@@ -29,11 +29,11 @@ const Integrations = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="text-xs uppercase font-medium tracking-[0.2em] text-agentic-primary/80 mb-3">Ecosystem</div>
-          <h2 className="text-4xl md:text-5xl font-light mb-4 font-display text-agentic-text">
+          <div className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-agentic-primary/80 mb-3">Ecosystem</div>
+          <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4 font-display text-agentic-text">
             Seamless <span className="text-agentic-primary">Integrations</span>
           </h2>
-          <p className="text-xl text-agentic-text/80 max-w-2xl mx-auto font-sans">
+          <p className="text-lg md:text-xl text-agentic-text/70 leading-relaxed max-w-2xl mx-auto font-sans">
             Works with all your favorite DevOps tools and cloud providers
           </p>
         </motion.div>
@@ -52,7 +52,7 @@ const Integrations = () => {
                 <div className="w-12 h-12 flex items-center justify-center mb-2 group-hover:-translate-y-1 transition-transform">
                   <img src={integration.icon} alt={`${integration.name} logo`} className="w-10 h-10 object-contain hover:brightness-110 transition-all opacity-80 group-hover:opacity-100" />
                 </div>
-                <span className="text-sm font-medium text-agentic-text/80 group-hover:text-agentic-text transition-colors">
+                <span className="text-sm font-semibold tracking-wide font-sans text-agentic-text/80 group-hover:text-agentic-text transition-colors">
                   {integration.name}
                 </span>
 
@@ -80,7 +80,7 @@ const Integrations = () => {
               href="#integrations"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="inline-block px-6 py-3 bg-agentic-surface border border-agentic-text/10 text-agentic-text rounded-md font-medium shadow-sm hover:border-agentic-text/20 transition-all font-sans"
+              className="inline-block px-6 py-3 bg-agentic-surface border border-agentic-text/10 text-agentic-text rounded-md font-semibold tracking-wide shadow-sm hover:border-agentic-text/20 transition-all font-sans"
             >
               View All Integrations
             </motion.a>

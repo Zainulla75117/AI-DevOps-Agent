@@ -116,3 +116,29 @@ async def get_all_summaries(project_id: str) -> list:
     except Exception as e:
         logger.warning(f"Could not fetch summary history: {e}")
         return []
+
+
+async def delete_summaries_by_project(project_id: str) -> int:
+    """
+    Delete ALL infra_summaries for a project.
+    Called during full infrastructure wipe to clean up PostgreSQL.
+    Returns the number of rows deleted, or 0 if PG is unavailable.
+    """
+    if not is_pg_available():
+        return 0
+
+    pool = get_pool()
+    try:
+        async with pool.acquire() as conn:
+            result = await conn.execute(
+                "DELETE FROM infra_summaries WHERE project_id = $1",
+                project_id,
+            )
+            # result is like "DELETE 3"
+            count = int(result.split()[-1]) if result else 0
+            if count > 0:
+                logger.info(f"🗑️ Deleted {count} infra_summaries for project {project_id}")
+            return count
+    except Exception as e:
+        logger.warning(f"Could not delete infra summaries: {e}")
+        return 0

@@ -1675,6 +1675,15 @@ async def chat_stream_post(
                         logger.warning(f"Failed to fetch repo tree: {resp.text}")
             except Exception as e:
                 logger.warning(f"Could not fetch repo tree: {e}")
+    else:
+        # Refresh live state to prevent hallucinations from stale data
+        auth_token = authorization[7:] if authorization and authorization.startswith("Bearer ") else ""
+        if request.project_id and auth_token:
+            try:
+                existing_resources = await project_client.get_project_resources(request.project_id, auth_token)
+                sessions[session_id]["existing_resources"] = existing_resources
+            except Exception as e:
+                logger.warning(f"Could not refresh existing resources: {e}")
     
     # Determine message content - use query if provided, otherwise message
     user_message = request.get_message()
@@ -1821,7 +1830,6 @@ async def chat_stream_get(
             except Exception as e:
                 logger.warning(f"Could not fetch existing resources: {e}")
 
-        # Fetch repo_tree if repo_id is provided
         if repo_id and auth_token:
             try:
                 import httpx
@@ -1835,6 +1843,15 @@ async def chat_stream_get(
                         logger.warning(f"Failed to fetch repo tree: {resp.text}")
             except Exception as e:
                 logger.warning(f"Could not fetch repo tree: {e}")
+    else:
+        # Refresh live state to prevent hallucinations from stale data
+        auth_token = token or (authorization[7:] if authorization and authorization.startswith("Bearer ") else "")
+        if project_id and auth_token:
+            try:
+                existing_resources = await project_client.get_project_resources(project_id, auth_token)
+                sessions[session_id]["existing_resources"] = existing_resources
+            except Exception as e:
+                logger.warning(f"Could not refresh existing resources: {e}")
     
     # Prepare form_data if this is a form submission
     form_data = None

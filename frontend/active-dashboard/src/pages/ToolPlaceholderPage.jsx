@@ -76,15 +76,15 @@ const ToolPlaceholderPage = () => {
   const { userInfo, handleLogout } = useAuth()
   const location = useLocation()
   const [prompt, setPrompt] = useState('')
-  
+
   const pathParts = location.pathname.split('/')
   const toolId = pathParts[pathParts.length - 1]
-  
+
   const [sessionId, setSessionId] = useState('')
   useEffect(() => {
     setSessionId(`qt-${toolId}-${Date.now()}`)
   }, [toolId])
-  
+
   // Repo popover state
   const [showRepoPopover, setShowRepoPopover] = useState(false)
   const [repos, setRepos] = useState([])
@@ -103,9 +103,9 @@ const ToolPlaceholderPage = () => {
   const [generatedContent, setGeneratedContent] = useState('')
   const eventSourceRef = useRef(null)
   const responseRef = useRef(null)
-  
+
   const getToolTitle = () => {
-    switch(toolId) {
+    switch (toolId) {
       case 'dockerfile': return 'Dockerfile'
       case 'jenkins': return 'Jenkins Pipeline'
       case 'k8s-manifest': return 'K8s Manifest'
@@ -115,7 +115,7 @@ const ToolPlaceholderPage = () => {
   }
 
   const getToolDescription = () => {
-    switch(toolId) {
+    switch (toolId) {
       case 'dockerfile': return 'Generate highly optimized, production-ready Dockerfiles for your applications.'
       case 'jenkins': return 'Create robust, declarative Jenkins CI/CD pipelines tailored to your deployment workflow.'
       case 'k8s-manifest': return 'Build reliable Kubernetes deployment manifests and service configurations instantly.'
@@ -125,39 +125,49 @@ const ToolPlaceholderPage = () => {
   }
 
   const getSamplePrompts = () => {
-    switch(toolId) {
+    switch (toolId) {
       case 'dockerfile': return [
-        "Write a multi-stage Dockerfile for a Node.js API...", 
-        "Create a secure Dockerfile for a Python FastAPI app...", 
+        "Write a multi-stage Dockerfile for a Node.js API...",
+        "Create a secure Dockerfile for a Python FastAPI app...",
         "Dockerize a React app with Nginx server..."
       ]
       case 'jenkins': return [
-        "Generate a declarative pipeline for a Maven project...", 
-        "Create a Jenkinsfile with SonarQube and Docker build stages...", 
+        "Generate a declarative pipeline for a Maven project...",
+        "Create a Jenkinsfile with SonarQube and Docker build stages...",
         "Write a pipeline to deploy to AWS EKS..."
       ]
       case 'k8s-manifest': return [
-        "Create a deployment and service for a Postgres database...", 
-        "Write an ingress controller manifest for my web app...", 
+        "Create a deployment and service for a Postgres database...",
+        "Write an ingress controller manifest for my web app...",
         "Generate a StatefulSet configuration for Redis..."
       ]
       case 'helm': return [
-        "Create a starter Helm chart for a Go microservice...", 
-        "Generate a Helm chart with configmap and secrets...", 
+        "Create a starter Helm chart for a Go microservice...",
+        "Generate a Helm chart with configmap and secrets...",
         "Write a Helm template for a multi-tier application..."
       ]
       default: return [
-        "Describe what you want to build...", 
+        "Describe what you want to build...",
         "Paste your infrastructure requirements here..."
       ]
+    }
+  }
+
+  const getToolGradient = () => {
+    switch (toolId) {
+      case 'dockerfile': return 'linear-gradient(180deg, #0db7ed 0%, #298d83 50%, #268b81 100%)'
+      case 'jenkins': return 'linear-gradient(180deg, #d32f2f 0%, #298d83 50%, #268b81 100%)'
+      case 'k8s-manifest': return 'linear-gradient(180deg, #326ce5 0%, #298d83 50%, #268b81 100%)'
+      case 'helm': return 'linear-gradient(180deg, #0f1689 0%, #298d83 50%, #268b81 100%)'
+      default: return 'linear-gradient(180deg, #3275d9 0%, #298d83 50%, #268b81 100%)'
     }
   }
 
   // ── Tool-specific file detection ──────────────────────────────────
   const detectToolFiles = (tree) => {
     if (!tree || tree.length === 0) return []
-    
-    switch(toolId) {
+
+    switch (toolId) {
       case 'dockerfile':
         return tree.filter(f => {
           const name = f.split('/').pop().toLowerCase()
@@ -198,10 +208,10 @@ const ToolPlaceholderPage = () => {
 
     const type = () => {
       if (!isMounted) return
-      
+
       const prompts = getSamplePrompts()
       const currentPrompt = prompts[currentPromptIndex]
-      
+
       if (isDeleting) {
         setAnimatedPlaceholder(currentPrompt.substring(0, currentCharIndex - 1))
         currentCharIndex--
@@ -288,7 +298,7 @@ const ToolPlaceholderPage = () => {
     setShowRepoPopover(false)
     setScanLoading(true)
     setScanResult(null)
-    
+
     try {
       const data = await getRepoTree(repo.id)
       const tree = data.tree || []
@@ -399,12 +409,12 @@ const ToolPlaceholderPage = () => {
   return (
     <PageLayout userInfo={userInfo} onLogout={handleLogout}>
       <div className="relative flex-1 w-full overflow-hidden flex flex-col items-center justify-center">
-        
+
         {/* Background Gradients */}
-        <div 
-          className="absolute inset-0 pointer-events-none z-0" 
-          style={{ 
-            background: 'linear-gradient(180deg, #3275d9 0%, #298d83 50%, #268b81 100%)' 
+        <div
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{
+            background: getToolGradient()
           }}
         >
           <div className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[120%] h-[100%] bg-white opacity-80 rounded-[100%] blur-[120px] pointer-events-none mix-blend-screen"></div>
@@ -477,7 +487,7 @@ const ToolPlaceholderPage = () => {
                   autoFocus
                   spellCheck="false"
                 />
-                
+
                 {/* Bottom Controls */}
                 <div className="flex justify-between items-end mt-2 px-1 pb-1">
                   {/* Left Side: Repo picker */}
@@ -485,11 +495,10 @@ const ToolPlaceholderPage = () => {
                     <button
                       type="button"
                       onClick={handleOpenPopover}
-                      className={`w-[34px] h-[34px] flex items-center justify-center rounded-full transition-all duration-200 ${
-                        showRepoPopover 
-                          ? 'bg-slate-800 text-white' 
-                          : 'text-[#8a8883] hover:text-slate-700 hover:bg-black/5'
-                      }`}
+                      className={`w-[34px] h-[34px] flex items-center justify-center rounded-full transition-all duration-200 ${showRepoPopover
+                        ? 'bg-slate-800 text-white'
+                        : 'text-[#8a8883] hover:text-slate-700 hover:bg-black/5'
+                        }`}
                       title="Attach a repository"
                     >
                       <Plus size={22} strokeWidth={2.5} />
@@ -548,7 +557,7 @@ const ToolPlaceholderPage = () => {
 
                   {/* Right Side: Send */}
                   <div className="flex items-center">
-                    <button 
+                    <button
                       type="submit"
                       disabled={!prompt.trim() || isGenerating}
                       className={`w-[34px] h-[34px] flex items-center justify-center rounded-full shadow-[0_2px_8px_rgb(0,0,0,0.04)] transition-all duration-200 transform hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed
@@ -577,7 +586,7 @@ const ToolPlaceholderPage = () => {
           {/* Generated Response Area */}
           {displayContent && (
             <div className="w-full max-w-[760px] px-6 mt-6 mb-10">
-              <div 
+              <div
                 ref={responseRef}
                 className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 shadow-lg p-6 max-h-[70vh] overflow-y-auto text-sm text-slate-700 leading-relaxed"
               >

@@ -667,7 +667,7 @@ const FormComponent = ({ form, sessionId, onSubmit }) => {
 
   if (!form || !form.fields) {
     return (
-      <div style={{ padding: '16px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#991b1b' }}>
+      <div style={{ padding: '16px', backgroundColor: '#fff0f0', border: '1px solid #ff0000', borderRadius: '8px', color: '#ff0000' }}>
         Error: Invalid form configuration
       </div>
     )
@@ -699,7 +699,7 @@ const FormComponent = ({ form, sessionId, onSubmit }) => {
               <div key={field.name}>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
                   {field.label || 'Source Type'}
-                  {field.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+                  {field.required && <span style={{ color: '#ff0000', marginLeft: '4px' }}>*</span>}
                 </label>
                 <select
                   value={formData[field.name] || ''}
@@ -728,7 +728,7 @@ const FormComponent = ({ form, sessionId, onSubmit }) => {
               <div key={field.name} style={{ position: 'relative' }}>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
                   {field.label || 'SCM Credentials'}
-                  {field.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+                  {field.required && <span style={{ color: '#ff0000', marginLeft: '4px' }}>*</span>}
                 </label>
                 {loadingSCM ? (
                   <div style={{ padding: '8px 12px', color: '#6b7280', fontSize: '14px' }}>Loading SCM credentials...</div>
@@ -777,7 +777,7 @@ const FormComponent = ({ form, sessionId, onSubmit }) => {
               <div key={field.name}>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
                   {field.label || 'Repository Namespace'}
-                  {field.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+                  {field.required && <span style={{ color: '#ff0000', marginLeft: '4px' }}>*</span>}
                 </label>
                 {loadingNamespaces ? (
                   <div style={{ padding: '8px 12px', color: '#6b7280', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -850,7 +850,7 @@ const FormComponent = ({ form, sessionId, onSubmit }) => {
               <div key={field.name}>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
                   {field.label || 'Repository Name'}
-                  {field.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+                  {field.required && <span style={{ color: '#ff0000', marginLeft: '4px' }}>*</span>}
                 </label>
                 {loadingRepositories ? (
                   <div style={{ padding: '8px 12px', color: '#6b7280', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -975,7 +975,7 @@ const FormComponent = ({ form, sessionId, onSubmit }) => {
               <div key={field.name}>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
                   {field.label || 'Branch'}
-                  {field.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+                  {field.required && <span style={{ color: '#ff0000', marginLeft: '4px' }}>*</span>}
                 </label>
                 <input
                   type="text"
@@ -1002,7 +1002,7 @@ const FormComponent = ({ form, sessionId, onSubmit }) => {
               <div key={field.name}>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
                   {field.label || 'Stack Details'}
-                  {field.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+                  {field.required && <span style={{ color: '#ff0000', marginLeft: '4px' }}>*</span>}
                 </label>
                 <textarea
                   value={formData[field.name] || ''}
@@ -1030,7 +1030,7 @@ const FormComponent = ({ form, sessionId, onSubmit }) => {
             <div key={field.name}>
               <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
                 {field.label}
-                {field.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+                {field.required && <span style={{ color: '#ff0000', marginLeft: '4px' }}>*</span>}
               </label>
               {field.type === 'select' ? (
                 <select
@@ -1193,7 +1193,7 @@ const PreInputForm = ({ formConfig, onSubmit, onCancel }) => {
             <div key={field.name}>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 {field.label}
-                {field.required && <span className="text-red-500 ml-1">*</span>}
+                {field.required && <span className="text-[#ff0000] ml-1">*</span>}
               </label>
               {field.type === 'select' ? (
                 <select
@@ -2192,7 +2192,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
               <span className="flex-1 text-xs truncate overflow-hidden whitespace-nowrap">{s.title}</span>
               {deleteConfirmId === s.id ? (
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => handleDeleteJenkinsSession(s.id)} className="p-0.5 text-red-500 hover:text-red-700 transition-colors" title="Confirm delete">
+                  <button onClick={() => handleDeleteJenkinsSession(s.id)} className="p-0.5 text-[#ff0000] hover:text-[#cc0000] transition-colors" title="Confirm delete">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   </button>
                   <button onClick={() => setDeleteConfirmId(null)} className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors" title="Cancel">
@@ -2203,7 +2203,7 @@ const JenkinsChatInterface = ({ isOpen, onClose, initialMessage }) => {
                 <button
                   data-delete-btn
                   onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(s.id) }}
-                  className="p-0.5 text-slate-300 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
+                  className="p-0.5 text-slate-300 opacity-0 group-hover:opacity-100 hover:text-[#ff0000] transition-all"
                   title="Delete conversation"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

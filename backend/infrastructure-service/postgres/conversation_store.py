@@ -489,3 +489,77 @@ async def get_project_memory_by_type(project_id: str, memory_type: str) -> Optio
     except Exception as e:
         logger.warning(f"Could not fetch project memory by type: {e}")
         return None
+
+
+async def delete_project_memory_by_type(project_id: str, memory_type: str) -> int:
+    """
+    Delete all project_memory rows matching project_id + memory_type.
+    Returns number of rows deleted.
+    """
+    if not is_pg_available():
+        return 0
+
+    pool = get_pool()
+    try:
+        async with pool.acquire() as conn:
+            result = await conn.execute("""
+                DELETE FROM project_memory
+                WHERE project_id = $1 AND memory_type = $2
+            """, project_id, memory_type)
+            count = int(result.split()[-1]) if result else 0
+            if count > 0:
+                logger.info(f"🗑️ Deleted {count} project_memory[{memory_type}] rows for project {project_id}")
+            return count
+    except Exception as e:
+        logger.warning(f"Could not delete project memory [{memory_type}]: {e}")
+        return 0
+
+
+async def archive_infra_and_cleanup(project_id: str) -> dict:
+    """
+    Full infrastructure wipe cleanup for PostgreSQL.
+    Deletes ALL project memory and summaries that could cause the LLM
+    to hallucinate about resources that no longer exist.
+
+    Returns { summaries_deleted: int, memory_cleaned: list[str] }
+    """
+    result = {"summaries_deleted": 0, "memory_cleaned": []}
+
+    if not is_pg_available():
+        return result
+
+    # Delete all project_memory types that could carry stale infra data
+    for mem_type in [
+        "infra_state",
+        "repo_scan",
+        "iac_blueprint",
+        "deleted_infra_history",
+        "deleted_conversation",
+        "pruned_conversation",
+    ]:
+        count = await delete_project_memory_by_type(project_id, mem_type)
+        if count > 0:
+            result["memory_cleaned"].append(mem_type)
+
+    # Delete all infra_summaries
+    from postgres.summary_store import delete_summaries_by_project
+    result["summaries_deleted"] = await delete_summaries_by_project(project_id)
+
+    # Delete all conversation_summaries for this project
+    # These rolling summaries may reference resources that no longer exist
+    pool = get_pool()
+    try:
+        async with pool.acquire() as conn:
+            res = await conn.execute(
+                "DELETE FROM conversation_summaries WHERE project_id = $1",
+                project_id,
+            )
+            conv_summary_count = int(res.split()[-1]) if res else 0
+            if conv_summary_count > 0:
+                result["memory_cleaned"].append(f"conversation_summaries({conv_summary_count})")
+                logger.info(f"🗑️ Deleted {conv_summary_count} conversation_summaries for project {project_id}")
+    except Exception as e:
+        logger.warning(f"Could not delete conversation_summaries: {e}")
+
+    logger.info(f"✅ Infra cleanup complete for project {project_id}: {result}")
+    return result

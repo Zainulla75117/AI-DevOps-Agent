@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@xyflow/react": "^12.10.2",
     "axios": "^1.6.0",
     "crypto-js": "^4.2.0",
     "framer-motion": "^11.0.8",
@@ -20,7 +21,8 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.21.0",
     "react-syntax-highlighter": "^16.1.0",
-    "remark-gfm": "^4.0.0"
+    "remark-gfm": "^4.0.0",
+    "roughjs": "^4.6.6"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

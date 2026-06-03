@@ -8,7 +8,7 @@ from app.database.connection import get_db
 from app.crud import user as crud_user
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:8000/api/users/token")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """

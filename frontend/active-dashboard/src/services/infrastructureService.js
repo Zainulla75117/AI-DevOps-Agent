@@ -129,11 +129,13 @@ export const updateResource = async (resourceId, data) => {
 /**
  * Delete a single resource (checks dependencies).
  * @param {string} resourceId
+ * @param {string} [projectId] - Parent project ID for PostgreSQL cache invalidation
  * @returns {Promise<Object>} { message }
  */
-export const deleteResource = async (resourceId) => {
+export const deleteResource = async (resourceId, projectId) => {
   try {
-    const response = await apiClient.delete(`/api/infrastructure/resources/${resourceId}`)
+    const params = projectId ? { project_id: projectId } : {}
+    const response = await apiClient.delete(`/api/infrastructure/resources/${resourceId}`, { params })
     return response.data
   } catch (error) {
     console.error('Error deleting resource:', error)
@@ -369,7 +371,7 @@ export const deleteInfrastructureByProject = async (projectId) => {
  * Legacy adapter: delete specific infra item
  * @deprecated Use deleteResource(resourceId) instead
  */
-export const deleteSpecificInfrastructure = async (_infraType, infraId) => {
-  await deleteResource(infraId)
+export const deleteSpecificInfrastructure = async (_infraType, infraId, projectId) => {
+  await deleteResource(infraId, projectId)
   return true
 }

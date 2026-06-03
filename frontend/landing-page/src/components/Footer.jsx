@@ -20,7 +20,7 @@ const Footer = () => {
               alt="InfraX Logo" 
               className="h-8 w-auto object-contain"
             />
-            <span className="text-agentic-text/60 text-sm font-sans">AI-powered DevOps automation</span>
+            <span className="text-agentic-text/60 text-sm font-sans font-medium tracking-wide">AI-powered DevOps automation</span>
           </div>
 
           {/* Social Links */}
@@ -42,7 +42,7 @@ const Footer = () => {
           </div>
 
           {/* Copyright + links */}
-          <div className="flex items-center space-x-6 text-sm text-agentic-text/50 font-sans">
+          <div className="flex items-center space-x-6 text-sm text-agentic-text/60 font-sans font-medium tracking-wide">
             <a href="#privacy" className="hover:text-agentic-primary transition-colors">Privacy</a>
             <a href="#terms" className="hover:text-agentic-primary transition-colors">Terms</a>
             <span>© {new Date().getFullYear()} InfraX</span>

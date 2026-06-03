@@ -90,3 +90,26 @@ export const renameConversation = async (sessionId, title) => {
 
   return response.ok
 }
+
+/**
+ * Fetch deleted infrastructure history for a project.
+ * @param {string} projectId
+ * @returns {Promise<{has_history: boolean, history: object|null}>}
+ */
+export const getDeletedInfraHistory = async (projectId) => {
+  const token = getToken()
+  if (!token) throw new Error('Authentication required')
+
+  const params = new URLSearchParams({ token })
+  const response = await fetch(
+    `${INFRA_API_URL}/api/infra/deleted-history/${encodeURIComponent(projectId)}?${params}`
+  )
+
+  if (!response.ok) {
+    if (response.status === 404) return { has_history: false, history: null }
+    throw new Error(`Failed to load deleted infra history: ${response.status}`)
+  }
+
+  return await response.json()
+}
+

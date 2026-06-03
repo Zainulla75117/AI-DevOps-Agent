@@ -1,6 +1,43 @@
+/* Force CSS Rebuild for Tailwind Font Config */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'Funnel Display';
+  src: url('/fonts/Funnel_Display/FunnelDisplay-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Funnel Display';
+  src: url('/fonts/Funnel_Display/FunnelDisplay-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Funnel Display';
+  src: url('/fonts/Funnel_Display/FunnelDisplay-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Funnel Display';
+  src: url('/fonts/Funnel_Display/FunnelDisplay-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Funnel Display';
+  src: url('/fonts/Funnel_Display/FunnelDisplay-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
 
 @layer base {
   :root {
@@ -10,7 +47,8 @@
     --color-agentic-text: 17 24 39;
   }
 
-  .dark, :root.dark {
+  .dark,
+  :root.dark {
     --color-agentic-primary: 66 160 133;
     --color-agentic-secondary: 15 23 42;
     --color-agentic-surface: 30 41 59;
@@ -50,8 +88,8 @@
   h4,
   h5,
   h6 {
-    @apply font-display text-agentic-text font-bold;
-    letter-spacing: -0.02em;
+    @apply font-display text-agentic-text font-semibold leading-tight;
+    letter-spacing: -0.03em;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

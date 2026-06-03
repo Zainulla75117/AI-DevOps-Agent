@@ -1,3 +1,4 @@
+/* Trigger Vite Restart */
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 

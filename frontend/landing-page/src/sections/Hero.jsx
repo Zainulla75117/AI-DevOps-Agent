@@ -17,7 +17,7 @@ const Hero = () => {
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 z-0 pointer-events-none bg-dashed-grid mask-vertical-fade opacity-60"></div>
 
-      <div className="container mx-auto px-6 relative z-10">
+      <div className="container mx-auto px-6 relative z-10 pt-12 md:pt-12">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
           {/* Content */}
           <motion.div
@@ -28,15 +28,15 @@ const Hero = () => {
           >
             <div className="inline-flex items-center space-x-2 px-4 py-2 bg-agentic-surface border border-agentic-text/10 rounded-full">
               <span className="w-2 h-2 bg-agentic-primary rounded-full animate-pulse" />
-              <span className="text-sm font-light text-agentic-text tracking-wide">AI-First Infrastructure Engine</span>
+              <span className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-agentic-text">AI-First Infrastructure Engine</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-light font-display leading-tight text-agentic-text">
-              Delegate Your <span className="text-shimmer-anim font-light inline-block pb-2">DevOps</span> Workflows
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight font-display leading-tight text-agentic-text">
+              Delegate Your <span className="text-shimmer-anim font-semibold inline-block pb-2">DevOps</span> Workflows
             </h1>
 
-            <p className="text-xl text-agentic-text/80 leading-relaxed max-w-2xl font-sans mx-auto font-light">
-              <span className="font-normal italic">InfraX</span> builds cloud infrastructure and configures pipelines autonomously. Think of it as your AI-powered DevOps guy. Just describe what you need, and consider it done.
+            <p className="text-lg md:text-xl text-agentic-text/70 leading-relaxed max-w-2xl font-sans mx-auto">
+              <span className="font-semibold italic">InfraX</span> builds cloud infrastructure and configures pipelines autonomously. Think of it as your AI-powered DevOps guy. Just describe what you need, and consider it done.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
