@@ -69,6 +69,9 @@ class SessionManager:
                 resp = await resource_service.client.get(url, headers={"Authorization": f"Bearer {auth_token}"})
                 if resp.status_code == 200:
                     provisioning_context = resp.json()
+                elif resp.status_code != 404:
+                    logger.warning(f"Unexpected status {resp.status_code} fetching provision-context")
+                # 404 is expected for new projects — no provisioning context yet
             except Exception as e:
                 logger.warning(f"Could not fetch provisioning context: {e}")
 
@@ -121,11 +124,16 @@ class SessionManager:
             print(f"   infra_exists     = {infra_exists}")
             print(f"   existing_resources count = {len(existing_resources)}")
             print(f"   provisioning_context     = {bool(provisioning_context)}")
-            will_fetch = bool(repo_id and not repo_scan_memory and not infra_exists)
+            # Fetch repo tree if we don't already have it in session.
+            # Even with repo_scan_memory, we need the raw dependency files
+            # for the evidence-based resource filter.
+            has_repo_tree = bool(self.sessions[session_id].get("repo_tree"))
+            will_fetch = bool(repo_id and not has_repo_tree and not infra_exists)
+            print(f"   has_repo_tree        = {has_repo_tree}")
             print(f"   ➡️  Will fetch repo tree: {will_fetch}")
             print("-" * 70 + "\n")
 
-            if repo_id and not repo_scan_memory and not infra_exists:
+            if will_fetch:
                 try:
                     import httpx
                     scm_url = f"{settings.SCM_SERVICE_URL}/api/scm/repos/{repo_id}/tree"

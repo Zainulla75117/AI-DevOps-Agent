@@ -79,6 +79,20 @@ def validate_plan(resources: List[PlanResource]) -> ValidationReport:
                 errors.append(f"Resource {r.name} depends on missing resource order {dep}")
             if dep >= r.order:
                 errors.append(f"Resource {r.name} (order {r.order}) has invalid dependency on {dep} (must be strictly less)")
+
+    # Rationale quality check — flag vague rationales
+    _evidence_keywords = [
+        "package.json", "requirements.txt", "dockerfile", "docker-compose",
+        "pom.xml", "build.gradle", "go.mod", "cargo.toml", "gemfile",
+        "dependency", "found", "detected", "contains", "references", "uses",
+        "present", "configured", "defined", "specified",
+    ]
+    for r in resources:
+        rationale = (r.rationale or "").lower()
+        if len(rationale) < 10:
+            warnings.append(f"Resource '{r.name}' ({r.type}) has a very short rationale — may not be justified.")
+        elif not any(kw in rationale for kw in _evidence_keywords):
+            warnings.append(f"Resource '{r.name}' ({r.type}) rationale doesn't cite specific evidence — verify it's needed.")
                 
     cost_details = estimate_cost(resources)
     

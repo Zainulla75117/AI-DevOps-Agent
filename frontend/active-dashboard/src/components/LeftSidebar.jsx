@@ -215,7 +215,7 @@ const LeftSidebar = ({
           {/* Main Navigation Section Title */}
           {!showAutomationMenu && (
             <div className={`px-4 pb-2 pt-1 uppercase tracking-wider text-[11px] font-bold text-slate-400 hidden lg:block transition-all duration-300 overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-[200px] opacity-100' : 'max-w-0 opacity-0 px-0'}`}>
-              Navigations
+              AI Agents
             </div>
           )}
           {showAutomationMenu && (

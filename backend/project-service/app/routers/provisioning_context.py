@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
+from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.database.connection import get_db
 from app.schemas.provisioning_context import ProvisioningContextCreate, ProvisioningContextResponse
@@ -29,7 +31,7 @@ async def create_provisioning_context(
         updated_at=created.updated_at
     )
 
-@router.get("", response_model=ProvisioningContextResponse)
+@router.get("", response_model=Optional[ProvisioningContextResponse])
 async def get_latest_provisioning_context(
     project_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -37,7 +39,7 @@ async def get_latest_provisioning_context(
 ):
     context = await crud_provisioning_context.get_latest_provisioning_context(db, project_id)
     if not context:
-        raise HTTPException(status_code=404, detail="No provisioning context found for this project")
+        return None
         
     return ProvisioningContextResponse(
         id=str(context.id),

@@ -14,7 +14,7 @@ On approve_plan, the executor creates resources via the project-service API.
 import logging
 from typing import TypedDict, Annotated, Dict, Any, Optional, List
 
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_aws import ChatBedrock
@@ -171,7 +171,7 @@ def build_infra_chat_graph() -> StateGraph:
     workflow.add_node("execute", execute_node)
 
     # Entry point
-    workflow.set_entry_point("extract")
+    workflow.add_edge(START, "extract")
 
     # ── Routing ──
 

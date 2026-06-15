@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Play, Github } from 'lucide-react';
+import DevOpsScene from '../components/DevOpsScene';
 
 const GoogleIcon = ({ className }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
@@ -13,68 +14,71 @@ const GoogleIcon = ({ className }) => (
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-20 bg-agentic-secondary">
-      {/* Background Grid Pattern */}
-      <div className="absolute inset-0 z-0 pointer-events-none bg-dashed-grid mask-vertical-fade opacity-60"></div>
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-agentic-secondary">
+      {/* 3D Scene Background taking up the entire screen */}
+      <div className="absolute inset-0 z-0">
+        <DevOpsScene />
+      </div>
 
-      <div className="container mx-auto px-6 relative z-10 pt-12 md:pt-12">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          {/* Content */}
+      <div className="container mx-auto px-8 lg:px-16 relative z-10 pt-8 md:pt-10 lg:pt-12 pointer-events-none">
+        <div className="max-w-3xl pointer-events-auto">
+          {/* Left Content */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-8 flex flex-col items-center"
+            className="space-y-6 flex flex-col items-start text-left"
           >
-            <div className="inline-flex items-center space-x-2 px-4 py-2 bg-agentic-surface border border-agentic-text/10 rounded-full">
-              <span className="w-2 h-2 bg-agentic-primary rounded-full animate-pulse" />
-              <span className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-agentic-text">AI-First Infrastructure Engine</span>
+            <div className="inline-flex items-center space-x-2 px-3 py-1.5 bg-white/80 dark:bg-agentic-surface border border-gray-200 dark:border-agentic-text/10 rounded-full shadow-sm backdrop-blur-sm">
+              <span className="w-1.5 h-1.5 bg-agentic-primary rounded-full animate-pulse" />
+              <span className="text-[10px] sm:text-xs font-mono font-semibold uppercase tracking-[0.2em] text-gray-800 dark:text-agentic-text drop-shadow-sm dark:drop-shadow-md">AI-First Infrastructure Engine</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight font-display leading-tight text-agentic-text">
-              Delegate Your <span className="text-shimmer-anim font-semibold inline-block pb-2">DevOps</span> Workflows
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight font-display leading-tight text-gray-900 dark:text-white drop-shadow-sm dark:drop-shadow-lg">
+              Delegate Your <br className="hidden sm:block" /> <span className="text-agentic-primary dark:text-shimmer-anim font-semibold inline-block pb-1 md:pb-2">DevOps</span> Workflows
             </h1>
 
-            <p className="text-lg md:text-xl text-agentic-text/70 leading-relaxed max-w-2xl font-sans mx-auto">
-              <span className="font-semibold italic">InfraX</span> builds cloud infrastructure and configures pipelines autonomously. Think of it as your AI-powered DevOps guy. Just describe what you need, and consider it done.
+            <p className="text-base md:text-lg text-gray-600 dark:text-white/80 leading-relaxed max-w-2xl font-sans drop-shadow-sm dark:drop-shadow-md">
+              <span className="font-semibold italic text-gray-900 dark:text-white">InfraX</span> builds cloud infrastructure and configures pipelines autonomously. Think of it as your AI-powered DevOps guy. Just describe what you need, and consider it done.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto pt-2">
               <motion.a
                 href="https://infraxai.vercel.app"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="group px-8 py-4 bg-agentic-primary text-white rounded-md font-medium flex items-center justify-center space-x-2 hover:bg-[#265A4B] transition-colors shadow-sm"
+                className="group px-6 py-3 bg-agentic-primary text-white rounded-md font-medium text-sm md:text-base flex items-center justify-center space-x-2 hover:bg-[#265A4B] transition-colors shadow-lg"
               >
                 <span>Product Site</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </motion.a>
               <motion.a
                 href="#demo"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 bg-agentic-surface border border-agentic-text/10 text-agentic-text rounded-md font-medium flex items-center justify-center space-x-2 hover:border-agentic-text/20 transition-colors shadow-sm"
+                className="px-6 py-3 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-md font-medium text-sm md:text-base flex items-center justify-center space-x-2 hover:border-gray-300 dark:hover:border-white/20 transition-colors shadow-lg"
               >
-                <Play className="w-5 h-5" />
+                <Play className="w-4 h-4" />
                 <span>Watch Product Demo</span>
               </motion.a>
             </div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="mt-12 flex flex-col items-center justify-center space-y-4 text-agentic-text/60 text-sm font-medium"
-            >
-              <span className="opacity-60 uppercase tracking-[0.2em] text-xs">Seamless access via</span>
-              <div className="flex items-center space-x-4">
-                <GoogleIcon className="w-5 h-5 opacity-80 hover:opacity-100 transition-opacity" />
-                <Github className="w-5 h-5 opacity-80 hover:opacity-100 transition-opacity" />
-              </div>
-            </motion.div>
           </motion.div>
         </div>
       </div>
+
+      {/* Bottom Centered Info */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.8 }}
+        className="absolute inset-x-0 bottom-8 flex flex-col items-center justify-center space-y-4 text-gray-500 dark:text-white/60 text-sm font-medium w-full pointer-events-auto z-10"
+      >
+        <span className="opacity-80 uppercase tracking-[0.2em] text-xs text-gray-400 dark:text-white/60">Seamless access via</span>
+        <div className="flex items-center justify-center space-x-4">
+          <GoogleIcon className="w-5 h-5 opacity-90 hover:opacity-100 transition-opacity" />
+          <Github className="w-5 h-5 opacity-90 hover:opacity-100 transition-opacity text-gray-900 dark:text-white" />
+        </div>
+      </motion.div>
 
     </section>
   );
