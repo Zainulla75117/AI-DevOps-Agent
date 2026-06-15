@@ -52,7 +52,7 @@ function Label({ text, t }) {
       <Html center>
         <div 
           ref={divRef}
-          className="px-4 py-2 text-xs font-sans font-bold tracking-[0.2em] rounded-full border border-white/10 shadow-lg backdrop-blur-xl whitespace-nowrap bg-[#0f172a]/70 text-white"
+          className="px-4 py-2 text-xs font-sans font-bold tracking-[0.2em] rounded-full border border-white/10 shadow-lg whitespace-nowrap bg-[#0f172a]/90 text-white will-change-transform"
         >
           {text}
         </div>

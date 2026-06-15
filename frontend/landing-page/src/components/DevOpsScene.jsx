@@ -60,7 +60,7 @@ export default function DevOpsScene() {
     <div className="w-full h-full relative pointer-events-auto">
       <Canvas
         camera={{ position: [0, 0, 16], fov: 45 }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         gl={{
           antialias: true,
           alpha: true,
