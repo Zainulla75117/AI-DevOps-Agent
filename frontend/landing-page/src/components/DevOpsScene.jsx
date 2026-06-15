@@ -1,4 +1,4 @@
-import { Suspense, useRef, useEffect } from 'react';
+import { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -32,9 +32,29 @@ function CameraController() {
   return null;
 }
 
+// Forces EffectComposer to remount with fresh buffers when the tab becomes visible again.
+// This prevents bloom accumulation that happens when the browser throttles requestAnimationFrame
+// on inactive tabs, causing stale framebuffer data to stack additively.
+function useVisibilityKey() {
+  const [key, setKey] = useState(0);
+
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === 'visible') {
+        setKey(k => k + 1);
+      }
+    };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, []);
+
+  return key;
+}
+
 export default function DevOpsScene() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const bloomKey = useVisibilityKey();
 
   return (
     <div className="w-full h-full relative pointer-events-auto">
@@ -48,7 +68,7 @@ export default function DevOpsScene() {
           toneMappingExposure: 1.2
         }}
       >
-        <fogExp2 attach="fog" args={[isDark ? '#050816' : '#f8fafc', 0.025]} />
+        <fogExp2 attach="fog" args={['#050816', 0.025]} />
 
         {/* Lights based on reference code */}
         <ambientLight intensity={0.5} color="#ffffff" />
@@ -58,8 +78,8 @@ export default function DevOpsScene() {
         <directionalLight position={[0, 0, 10]} intensity={1.5} color="#ffffff" />
 
         {/* Environment Map generated from colored boxes like reference code */}
-        <Environment key={theme} frames={1} resolution={256}>
-          <color attach="background" args={[isDark ? '#050816' : '#ffffff']} />
+        <Environment frames={1} resolution={256}>
+          <color attach="background" args={['#050816']} />
           {/* Blue box */}
           <Lightformer form="box" intensity={2} color="#3b82f6" position={[10, 10, 10]} scale={[4, 4, 4]} />
           {/* Green box */}
@@ -72,7 +92,8 @@ export default function DevOpsScene() {
           <InfinityLogo />
           <Particles count={600} />
 
-          <EffectComposer disableNormalPass>
+          {/* key={bloomKey} forces fresh buffers when tab reactivates, preventing bloom accumulation */}
+          <EffectComposer key={bloomKey} disableNormalPass>
             <Bloom
               luminanceThreshold={0.3}
               mipmapBlur

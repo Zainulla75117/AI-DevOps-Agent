@@ -28,7 +28,7 @@ function Label({ text, t }) {
     // distance ~14 -> scale 1, opacity 1
     // distance ~18 -> scale 0.6, opacity 0.3
     const scale = Math.max(0.5, 1 - (distance - 14) / 5);
-    const baseOpacity = Math.max(0.1, 1 - (distance - 14) / 4);
+    const baseOpacity = Math.max(0.2, 1 - (distance - 14) / 4);
     
     // Initial fade in
     const fadeMultiplier = Math.min(1, state.clock.elapsedTime * 1.5);
@@ -64,9 +64,13 @@ function Label({ text, t }) {
 export default function DevOpsLabels() {
   return (
     <group>
-      {labels.map((label, index) => (
-        <Label key={label} text={label} t={index / labels.length} />
-      ))}
+      {labels.map((label, index) => {
+        // Offset by 0.0625 (1/16th) to prevent labels like 'PLAN' and 'RELEASE' 
+        // from being permanently stuck at the exact center (t=0 and t=0.5),
+        // which is the rotation pivot. This allows them to orbit properly.
+        const t = (index / labels.length + 0.0625) % 1;
+        return <Label key={label} text={label} t={t} />;
+      })}
     </group>
   );
 }
