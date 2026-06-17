@@ -38,7 +38,11 @@ const Header = () => {
 
   return (
     <motion.header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out pb-12 [-webkit-mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] pointer-events-none ${isScrolled
+      style={{
+        WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
+        maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
+      }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out pb-12 pointer-events-none ${isScrolled
         ? 'bg-agentic-surface/70 backdrop-blur-md'
         : 'bg-transparent backdrop-blur-none'
         }`}

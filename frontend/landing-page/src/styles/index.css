@@ -71,6 +71,7 @@
   body {
     @apply transition-colors duration-300 bg-agentic-secondary text-agentic-text font-sans;
     letter-spacing: -0.01em;
+    line-height: 1.7;
     overflow-x: hidden;
   }
 
@@ -88,11 +89,25 @@
   h4,
   h5,
   h6 {
-    @apply font-display text-agentic-text font-semibold leading-tight;
+    @apply font-display text-agentic-text font-semibold;
+    line-height: 1.15;
     letter-spacing: -0.03em;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1 {
+    letter-spacing: -0.04em;
+  }
+
+  h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+
+  p {
+    line-height: 1.75;
   }
 }
 

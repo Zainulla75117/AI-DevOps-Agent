@@ -78,10 +78,10 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
     <div className="w-full">
       <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-6 md:mb-8 text-center md:text-left gap-4 md:gap-0">
         <div>
-          <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-1 md:mb-2 md:mt-2 font-display">
+          <h2 className="text-2xl md:text-3xl font-semibold text-white md:text-slate-900 mb-1 md:mt-2 font-display">
             Create an account
           </h2>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-white/70 md:text-slate-500">
             Sign up to get started with infraXai
           </p>
         </div>
@@ -119,7 +119,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="username" className="text-sm font-medium text-slate-700 text-left">
+          <label htmlFor="username" className="text-[11px] font-semibold tracking-wider text-white/80 md:text-slate-500 text-left uppercase">
             Username
           </label>
           <input
@@ -128,7 +128,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
             name="username"
             value={formData.username}
             onChange={handleChange}
-            className="rounded-xl w-full px-5 py-4 md:py-3.5 bg-white border border-[#2196F3]/20 text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+            className="rounded-xl w-full px-5 py-3.5 bg-white/10 md:bg-white border border-white/20 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-white/50 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             placeholder="Choose a username"
             disabled={isLoading}
             autoComplete="username"
@@ -137,7 +137,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-slate-700 text-left">
+          <label htmlFor="email" className="text-[11px] font-semibold tracking-wider text-white/80 md:text-slate-500 text-left uppercase">
             Email Address
           </label>
           <input
@@ -146,7 +146,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="rounded-xl w-full px-5 py-4 md:py-3.5 bg-white border border-[#2196F3]/20 text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+            className="rounded-xl w-full px-5 py-3.5 bg-white/10 md:bg-white border border-white/20 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-white/50 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             placeholder="you@company.com"
             disabled={isLoading}
             autoComplete="email"
@@ -155,7 +155,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="password" className="text-sm font-medium text-slate-700 text-left">
+          <label htmlFor="password" className="text-[11px] font-semibold tracking-wider text-white/80 md:text-slate-500 text-left uppercase">
             Password
           </label>
           <div className="relative">
@@ -165,7 +165,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="rounded-xl w-full px-5 py-4 md:py-3.5 pr-12 bg-white border border-[#2196F3]/20 text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+              className="rounded-xl w-full px-5 py-3.5 pr-12 bg-white/10 md:bg-white border border-white/20 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-white/50 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               placeholder="Create a password"
               disabled={isLoading}
               autoComplete="new-password"
@@ -201,7 +201,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700 text-left">
+          <label htmlFor="confirmPassword" className="text-[11px] font-semibold tracking-wider text-white/80 md:text-slate-500 text-left uppercase">
             Confirm Password
           </label>
           <div className="relative">
@@ -211,7 +211,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="rounded-xl w-full px-5 py-4 md:py-3.5 pr-12 bg-white border border-[#2196F3]/20 text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+              className="rounded-xl w-full px-5 py-3.5 pr-12 bg-white/10 md:bg-white border border-white/20 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-white/50 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               placeholder="Confirm your password"
               disabled={isLoading}
               autoComplete="new-password"
@@ -250,16 +250,16 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
           )}
         </button>
 
-        <p className="text-xs text-slate-500 text-center mt-3 font-medium">
-          By signing up, you agree to our <a href="#" className="underline hover:text-slate-700">Terms of Service</a> and <a href="#" className="underline hover:text-slate-700">Privacy Policy</a>.
+        <p className="text-xs text-white/60 md:text-slate-500 text-center mt-3 font-medium">
+          By signing up, you agree to our <a href="#" className="underline hover:text-white md:hover:text-slate-700">Terms of Service</a> and <a href="#" className="underline hover:text-white md:hover:text-slate-700">Privacy Policy</a>.
         </p>
 
-        <div className="text-center pt-4 pb-4 border-t border-slate-200 mt-2">
-          <p className="text-sm text-slate-600 font-medium">
+        <div className="text-center pt-4 pb-4 border-t border-white/10 md:border-slate-200 mt-2">
+          <p className="text-sm text-white/70 md:text-slate-600 font-medium">
             Already have an account?{' '}
             <Link 
               to="/login" 
-              className="text-[#1E88E5] font-semibold hover:text-[#215646] transition-colors"
+              className="text-blue-300 md:text-[#1E88E5] font-semibold hover:text-blue-200 md:hover:text-[#215646] transition-colors"
             >
               Log in
             </Link>

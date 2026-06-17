@@ -20,7 +20,7 @@ const Footer = () => {
               alt="InfraX Logo" 
               className="h-8 w-auto object-contain"
             />
-            <span className="text-agentic-text/60 text-sm font-sans font-medium tracking-wide">AI-powered DevOps automation</span>
+            <span className="text-agentic-text/50 text-xs font-sans font-medium tracking-wide">AI-powered DevOps automation</span>
           </div>
 
           {/* Social Links */}

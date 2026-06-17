@@ -1,6 +1,12 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Play, Github } from 'lucide-react';
 import DevOpsScene from '../components/DevOpsScene';
+
+const headlines = [
+  { content: <>Delegate Your <br className="hidden sm:block" /> <span className="text-agentic-primary dark:text-shimmer-anim font-semibold inline-block pb-1 md:pb-2">DevOps</span> Workflows</>, sizeClass: 'text-3xl md:text-4xl lg:text-5xl' },
+  { content: <>Describe Your Infrastructure. <br className="hidden sm:block" /> <span className="text-agentic-primary dark:text-shimmer-anim font-semibold inline-block pb-1 md:pb-2">Let AI</span> Build the Rest.</>, sizeClass: 'text-3xl md:text-4xl lg:text-5xl' },
+];
 
 const GoogleIcon = ({ className }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
@@ -13,6 +19,14 @@ const GoogleIcon = ({ className }) => (
 );
 
 const Hero = () => {
+  const [headlineIndex, setHeadlineIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeadlineIndex((prev) => (prev + 1) % headlines.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-agentic-secondary">
       {/* 3D Scene Background taking up the entire screen */}
@@ -21,25 +35,30 @@ const Hero = () => {
       </div>
 
       <div className="container mx-auto px-8 lg:px-16 relative z-10 pt-8 md:pt-10 lg:pt-12 pointer-events-none">
-        <div className="max-w-3xl pointer-events-auto">
+        <div className="max-w-3xl pointer-events-auto pl-0 lg:pl-24">
           {/* Left Content */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          <div
             className="space-y-6 flex flex-col items-start text-left"
           >
-            <div className="inline-flex items-center space-x-2 px-3 py-1.5 bg-white/80 dark:bg-agentic-surface border border-gray-200 dark:border-agentic-text/10 rounded-full shadow-sm backdrop-blur-sm">
-              <span className="w-1.5 h-1.5 bg-agentic-primary rounded-full animate-pulse" />
-              <span className="text-[10px] sm:text-xs font-mono font-semibold uppercase tracking-[0.2em] text-gray-800 dark:text-agentic-text drop-shadow-sm dark:drop-shadow-md">AI-First Infrastructure Engine</span>
+
+
+            <div className="relative w-full min-h-[5.5rem] md:min-h-[7rem] lg:min-h-[8.5rem]">
+              <AnimatePresence mode="wait">
+                <motion.h1
+                  key={headlineIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5, ease: 'easeInOut' }}
+                  className={`absolute inset-0 ${headlines[headlineIndex].sizeClass} font-medium tracking-tight font-display leading-tight text-gray-900 dark:text-white drop-shadow-sm dark:drop-shadow-lg`}
+                >
+                  {headlines[headlineIndex].content}
+                </motion.h1>
+              </AnimatePresence>
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight font-display leading-tight text-gray-900 dark:text-white drop-shadow-sm dark:drop-shadow-lg">
-              Delegate Your <br className="hidden sm:block" /> <span className="text-agentic-primary dark:text-shimmer-anim font-semibold inline-block pb-1 md:pb-2">DevOps</span> Workflows
-            </h1>
-
-            <p className="text-base md:text-lg text-gray-600 dark:text-white/80 leading-relaxed max-w-2xl font-sans drop-shadow-sm dark:drop-shadow-md">
-              <span className="font-semibold italic text-gray-900 dark:text-white">InfraX</span> builds cloud infrastructure and configures pipelines autonomously. Think of it as your AI-powered DevOps guy. Just describe what you need, and consider it done.
+            <p className="text-base md:text-lg text-gray-500 dark:text-white/70 leading-relaxed max-w-xl font-sans">
+              <span className="font-semibold italic text-gray-800 dark:text-white/90">InfraX</span> builds cloud infrastructure and configures pipelines autonomously. Think of it as your AI-powered DevOps guy. Just describe what you need, and consider it done.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto pt-2">
@@ -47,22 +66,22 @@ const Hero = () => {
                 href="https://infraxai.vercel.app"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="group px-6 py-3 bg-agentic-primary text-white rounded-md font-medium text-sm md:text-base flex items-center justify-center space-x-2 hover:bg-[#265A4B] transition-colors shadow-lg"
+                className="group px-7 py-3 bg-agentic-primary text-white rounded-md font-medium text-sm tracking-wide flex items-center justify-center space-x-2 hover:bg-[#059669] transition-colors shadow-lg"
               >
-                <span>Product Site</span>
+                <span>Explore Platform</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </motion.a>
               <motion.a
                 href="#demo"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="px-6 py-3 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-md font-medium text-sm md:text-base flex items-center justify-center space-x-2 hover:border-gray-300 dark:hover:border-white/20 transition-colors shadow-lg"
+                className="px-7 py-3 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-md font-medium text-sm tracking-wide flex items-center justify-center space-x-2 hover:border-gray-300 dark:hover:border-white/20 transition-colors shadow-lg"
               >
                 <Play className="w-4 h-4" />
                 <span>Watch Product Demo</span>
               </motion.a>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
@@ -73,7 +92,7 @@ const Hero = () => {
         transition={{ delay: 0.8, duration: 0.8 }}
         className="absolute inset-x-0 bottom-8 flex flex-col items-center justify-center space-y-4 text-gray-500 dark:text-white/60 text-sm font-medium w-full pointer-events-auto z-10"
       >
-        <span className="opacity-80 uppercase tracking-[0.2em] text-xs text-gray-400 dark:text-white/60">Seamless access via</span>
+        <span className="uppercase tracking-[0.15em] text-[11px] font-mono font-medium text-gray-400 dark:text-white/50">Seamless access via</span>
         <div className="flex items-center justify-center space-x-4">
           <GoogleIcon className="w-5 h-5 opacity-90 hover:opacity-100 transition-opacity" />
           <Github className="w-5 h-5 opacity-90 hover:opacity-100 transition-opacity text-gray-900 dark:text-white" />

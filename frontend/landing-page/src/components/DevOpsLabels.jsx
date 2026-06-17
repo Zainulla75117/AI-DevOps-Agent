@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -62,6 +62,18 @@ function Label({ text, t }) {
 }
 
 export default function DevOpsLabels() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // Defer label rendering to prioritize the 3D scene's first paint.
+    // Each <Html> portal is expensive DOM work; delaying them lets the
+    // infinity logo render smoothly first.
+    const id = setTimeout(() => setReady(true), 1500);
+    return () => clearTimeout(id);
+  }, []);
+
+  if (!ready) return null;
+
   return (
     <group>
       {labels.map((label, index) => {

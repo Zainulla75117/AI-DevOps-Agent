@@ -29,11 +29,11 @@ const Integrations = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-agentic-primary/80 mb-3">Ecosystem</div>
-          <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4 font-display text-agentic-text">
+          <div className="text-[11px] font-mono font-medium uppercase tracking-[0.15em] text-agentic-primary/70 mb-4">Ecosystem</div>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-5 font-display text-agentic-text">
             Seamless <span className="text-agentic-primary">Integrations</span>
           </h2>
-          <p className="text-lg md:text-xl text-agentic-text/70 leading-relaxed max-w-2xl mx-auto font-sans">
+          <p className="text-base md:text-lg text-agentic-text/60 leading-relaxed max-w-2xl mx-auto font-sans">
             Works with all your favorite DevOps tools and cloud providers
           </p>
         </motion.div>
@@ -73,7 +73,7 @@ const Integrations = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-center mt-12"
           >
-            <p className="text-agentic-text/80 mb-6 font-sans">
+            <p className="text-agentic-text/60 mb-6 font-sans text-sm">
               And many more integrations available
             </p>
             <motion.a

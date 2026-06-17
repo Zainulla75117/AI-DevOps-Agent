@@ -42,11 +42,11 @@ const HowItWorks = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-agentic-primary/80 mb-3">Operational Flow</div>
-          <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4 font-display text-agentic-text">
+          <div className="text-[11px] font-mono font-medium uppercase tracking-[0.15em] text-agentic-primary/70 mb-4">Operational Flow</div>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-5 font-display text-agentic-text">
             How <span className="text-agentic-primary">InfraX</span> Works
           </h2>
-          <p className="text-lg md:text-xl text-agentic-text/70 leading-relaxed max-w-2xl mx-auto font-sans">
+          <p className="text-base md:text-lg text-agentic-text/60 leading-relaxed max-w-2xl mx-auto font-sans">
             Get started in minutes, automate in seconds
           </p>
         </motion.div>
@@ -77,8 +77,8 @@ const HowItWorks = () => {
                         </div>
                         <span className="text-4xl font-semibold tracking-tighter opacity-50 text-agentic-primary font-mono">{step.number}</span>
                       </div>
-                      <h3 className="text-xl md:text-2xl font-semibold tracking-tight mb-3 text-agentic-text font-display">{step.title}</h3>
-                      <p className="text-sm leading-relaxed text-agentic-text/70 font-sans">{step.description}</p>
+                      <h3 className="text-lg md:text-xl font-semibold tracking-tight mb-2 text-agentic-text font-display">{step.title}</h3>
+                      <p className="text-sm leading-relaxed text-agentic-text/60 font-sans">{step.description}</p>
                     </div>
                   </div>
 
@@ -119,8 +119,8 @@ const HowItWorks = () => {
                     <div className="flex items-center space-x-3 mb-4">
                       <span className="text-3xl font-semibold tracking-tighter opacity-50 text-agentic-primary font-mono">{step.number}</span>
                     </div>
-                    <h3 className="text-xl font-semibold tracking-tight mb-3 text-agentic-text font-display">{step.title}</h3>
-                    <p className="text-sm leading-relaxed text-agentic-text/70 font-sans">{step.description}</p>
+                    <h3 className="text-lg font-semibold tracking-tight mb-2 text-agentic-text font-display">{step.title}</h3>
+                    <p className="text-sm leading-relaxed text-agentic-text/60 font-sans">{step.description}</p>
                   </div>
                 </motion.div>
               );

@@ -52,7 +52,7 @@ export default function InfinityLogo() {
 
   return (
     <mesh ref={meshRef}>
-      <tubeGeometry args={[curveInstance, 250, 0.45, 36, true]} />
+      <tubeGeometry args={[curveInstance, 128, 0.45, 20, true]} />
       {/* Premium Metallic Chrome PBR Material */}
       <meshPhysicalMaterial
         color={0xffffff}

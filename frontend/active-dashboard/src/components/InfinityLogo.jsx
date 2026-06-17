@@ -10,13 +10,7 @@ const InfinityLogo = () => {
 
   return (
     <div className="relative w-40 h-20 sm:w-48 sm:h-24 flex items-center justify-center animate-float" style={{ willChange: 'transform' }}>
-      <div 
-        className="absolute w-[250px] h-[150px] rounded-full animate-glow-pulse -z-10"
-        style={{
-          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(139, 92, 246, 0.2) 50%, transparent 70%)',
-          willChange: 'opacity'
-        }}
-      ></div>
+
       <svg
         className="w-full h-full drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]"
         viewBox="0 0 200 100"

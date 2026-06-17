@@ -46,13 +46,13 @@ const FAQ = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-agentic-primary/80 mb-3">
+          <div className="text-[11px] font-mono font-medium uppercase tracking-[0.15em] text-agentic-primary/70 mb-4">
             Knowledge Base
           </div>
-          <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4 font-display text-agentic-text">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-5 font-display text-agentic-text">
             Commonly Asked <span className="text-agentic-primary">Questions</span>
           </h2>
-          <p className="text-lg md:text-xl text-agentic-text/70 leading-relaxed max-w-2xl mx-auto font-sans">
+          <p className="text-base md:text-lg text-agentic-text/60 leading-relaxed max-w-2xl mx-auto font-sans">
             Everything you need to know about the future of automation.
           </p>
         </motion.div>
@@ -71,7 +71,7 @@ const FAQ = () => {
                 onClick={() => toggleOpen(index)}
                 className="w-full flex items-center justify-between py-6 text-left focus:outline-none group"
               >
-                <h3 className="text-xl md:text-2xl font-semibold tracking-tight text-agentic-text font-display pr-8 group-hover:text-agentic-primary transition-colors">
+                <h3 className="text-lg md:text-xl font-semibold tracking-tight text-agentic-text font-display pr-8 group-hover:text-agentic-primary transition-colors">
                   {faq.question}
                 </h3>
                 <motion.div
@@ -92,7 +92,7 @@ const FAQ = () => {
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
-                    <p className="text-base leading-relaxed text-agentic-text/70 font-sans pb-8 max-w-3xl">
+                    <p className="text-sm md:text-base leading-relaxed text-agentic-text/60 font-sans pb-8 max-w-3xl">
                       {faq.answer}
                     </p>
                   </motion.div>

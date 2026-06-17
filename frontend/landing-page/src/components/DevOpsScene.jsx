@@ -60,7 +60,7 @@ export default function DevOpsScene() {
     <div className="w-full h-full relative pointer-events-auto">
       <Canvas
         camera={{ position: [0, 0, 16], fov: 45 }}
-        dpr={[1, 1.5]}
+        dpr={[1, 1.25]}
         gl={{
           antialias: true,
           alpha: true,
@@ -78,7 +78,7 @@ export default function DevOpsScene() {
         <directionalLight position={[0, 0, 10]} intensity={1.5} color="#ffffff" />
 
         {/* Environment Map generated from colored boxes like reference code */}
-        <Environment frames={1} resolution={256}>
+        <Environment frames={1} resolution={128}>
           <color attach="background" args={['#050816']} />
           {/* Blue box */}
           <Lightformer form="box" intensity={2} color="#3b82f6" position={[10, 10, 10]} scale={[4, 4, 4]} />
@@ -90,7 +90,7 @@ export default function DevOpsScene() {
 
         <Suspense fallback={null}>
           <InfinityLogo />
-          <Particles count={600} />
+          <Particles count={300} />
 
           {/* key={bloomKey} forces fresh buffers when tab reactivates, preventing bloom accumulation */}
           <EffectComposer key={bloomKey} disableNormalPass>

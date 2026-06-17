@@ -1,14 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import Header from './components/Header';
 import Hero from './sections/Hero';
-import Features from './sections/Features';
-import HowItWorks from './sections/HowItWorks';
-import Showcase from './sections/Showcase';
-import Integrations from './sections/Integrations';
-import FAQ from './sections/FAQ';
-
 import Footer from './components/Footer';
 import './styles/index.css';
+
+// Lazy-load below-fold sections to reduce initial bundle and speed up first paint
+const Features = lazy(() => import('./sections/Features'));
+const HowItWorks = lazy(() => import('./sections/HowItWorks'));
+const Showcase = lazy(() => import('./sections/Showcase'));
+const Integrations = lazy(() => import('./sections/Integrations'));
+const FAQ = lazy(() => import('./sections/FAQ'));
 
 function App() {
   useEffect(() => {
@@ -34,11 +35,13 @@ function App() {
       <Header />
       <main>
         <Hero />
-        <Features />
-        <HowItWorks />
-        <Showcase />
-        <Integrations />
-        <FAQ />
+        <Suspense fallback={null}>
+          <Features />
+          <HowItWorks />
+          <Showcase />
+          <Integrations />
+          <FAQ />
+        </Suspense>
       </main>
       <Footer />
     </div>

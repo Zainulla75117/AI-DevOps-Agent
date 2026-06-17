@@ -23,9 +23,9 @@ const Toast = ({ message, type = 'success', onClose, duration = 5000 }) => {
     : 'bg-[#2196F3]'
 
   return (
-    <div className="fixed top-24 right-6 z-[100] animate-slide-in-right">
+    <div className="fixed top-4 left-4 right-4 md:top-24 md:left-auto md:right-6 z-[100] animate-in fade-in slide-in-from-top-4 md:animate-slide-in-right duration-300 flex justify-center">
       <div
-        className="flex items-center gap-4 px-5 py-4 bg-slate-900 text-white max-w-md rounded-lg shadow-[0_8px_16px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.1)_inset] border border-slate-700/50"
+        className="flex items-center w-full gap-4 px-4 py-3.5 md:px-5 md:py-4 bg-slate-900/80 md:bg-slate-900 backdrop-blur-2xl md:backdrop-blur-none text-white md:max-w-md rounded-[1.25rem] md:rounded-lg shadow-2xl border border-white/10 md:border-slate-700/50"
         style={{
           boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 2px 4px rgba(0, 0, 0, 0.3) inset'
         }}
