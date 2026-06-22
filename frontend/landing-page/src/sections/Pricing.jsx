@@ -83,9 +83,9 @@ const Pricing = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative glass-effect rounded-2xl p-8 flex flex-col h-full bg-agentic-surface ${plan.popular
-                  ? 'border-2 border-agentic-primary shadow-lg scale-100 md:scale-105 z-10'
-                  : 'border border-agentic-text/10'
+              className={`relative p-8 flex flex-col h-full ${plan.popular
+                  ? 'scale-100 md:scale-105 z-10'
+                  : ''
                 } transition-all duration-300`}
             >
               {plan.popular && (

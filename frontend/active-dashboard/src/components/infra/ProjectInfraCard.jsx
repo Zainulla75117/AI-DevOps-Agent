@@ -115,7 +115,7 @@ const ProjectInfraCard = ({
                 <span className="text-xs font-medium text-slate-400 bg-white px-2 py-1 rounded-md border border-slate-200 shadow-sm">{projectInfra.length} Node{projectInfra.length !== 1 && 's'}</span>
                 <button 
                   onClick={(e) => { e.stopPropagation(); onViewTopology(project); }}
-                  className="flex items-center gap-1.5 text-[11px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-2.5 py-1.5 rounded-md border border-purple-200 transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-md border border-blue-200 transition-colors shadow-sm"
                 >
                   <Network className="w-3 h-3" />
                   View Topology Map

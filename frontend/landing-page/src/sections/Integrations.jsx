@@ -47,7 +47,7 @@ const Integrations = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="glass-effect p-6 flex flex-col items-center justify-center space-y-3 cursor-pointer group relative"
+                className="p-6 flex flex-col items-center justify-center space-y-3 cursor-pointer group relative"
               >
                 <div className="w-12 h-12 flex items-center justify-center mb-2 group-hover:-translate-y-1 transition-transform">
                   <img src={integration.icon} alt={`${integration.name} logo`} className="w-10 h-10 object-contain hover:brightness-110 transition-all opacity-80 group-hover:opacity-100" />

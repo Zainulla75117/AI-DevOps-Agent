@@ -72,7 +72,7 @@ const Features = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="glass-effect p-8 flex flex-col h-full group"
+                className="p-8 flex flex-col h-full group"
               >
                 <div className="w-14 h-14 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center mb-6 group-hover:border-agentic-primary/30 transition-colors">
                   <Icon className="w-6 h-6 text-agentic-primary" />

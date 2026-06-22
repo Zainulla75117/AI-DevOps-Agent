@@ -70,7 +70,7 @@ const HowItWorks = () => {
                   className={`flex items-center mb-16 ${isEven ? 'flex-row' : 'flex-row-reverse'}`}
                 >
                   <div className={`w-5/12 ${isEven ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
-                    <div className="glass-effect p-6 flex flex-col items-start text-left">
+                    <div className="p-6 flex flex-col items-start text-left">
                       <div className="flex items-center space-x-3 mb-4 w-full">
                         <div className="w-12 h-12 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center">
                           <Icon className="w-6 h-6 text-agentic-primary" />
@@ -115,7 +115,7 @@ const HowItWorks = () => {
                     <Icon className="w-4 h-4 text-agentic-primary" />
                   </div>
 
-                  <div className="glass-effect p-6">
+                  <div className="p-6">
                     <div className="flex items-center space-x-3 mb-4">
                       <span className="text-3xl font-semibold tracking-tighter opacity-50 text-agentic-primary font-mono">{step.number}</span>
                     </div>

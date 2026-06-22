@@ -60,7 +60,7 @@ const Testimonials = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="glass-effect rounded-xl p-8 transition-all duration-300 relative border border-agentic-text/10 hover:border-agentic-text/20"
+              className="p-8 transition-all duration-300 relative"
             >
               <Quote className="w-8 h-8 text-agentic-primary/40 mb-4" />
               <p className="text-2xl md:text-3xl font-light italic leading-relaxed tracking-tight font-display text-agentic-text/80 mb-8">

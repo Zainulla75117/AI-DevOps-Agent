@@ -19,8 +19,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Funnel Display', 'sans-serif'],
-        display: ['Funnel Display', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+        display: ['Outfit', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       keyframes: {

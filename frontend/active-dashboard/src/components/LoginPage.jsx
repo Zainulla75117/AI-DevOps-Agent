@@ -59,10 +59,7 @@ const LoginPage = () => {
         <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-slate-200 to-transparent"></div>
 
         {/* Mobile Glass Card wrapper */}
-        <div className="w-full max-w-lg bg-white/10 md:bg-transparent backdrop-blur-3xl md:backdrop-blur-none p-8 sm:p-10 md:p-0 rounded-[2rem] md:rounded-none shadow-2xl md:shadow-none border border-white/20 md:border-none relative overflow-hidden">
-
-          {/* Subtle mobile card inner shine */}
-          <div className="md:hidden absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none"></div>
+        <div className="w-full max-w-lg bg-slate-900 md:bg-transparent p-8 sm:p-10 md:p-0 rounded-[2rem] md:rounded-none shadow-2xl md:shadow-none border border-slate-800 md:border-none relative overflow-hidden">
 
           <div className="relative z-10 w-full">
             <LoginForm isLoading={isLoading} setIsLoading={setIsLoading} onToast={setToast} />

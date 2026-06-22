@@ -173,7 +173,7 @@ const Showcase = () => {
               transition={{ duration: 0.6 }}
               className="space-y-6"
             >
-              <div className="glass-effect rounded-xl p-6 border border-agentic-text/10 transition-all duration-300">
+              <div className="p-6 transition-all duration-300">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center flex-shrink-0">
                     <Code2 className="w-6 h-6 text-agentic-primary" />
@@ -187,7 +187,7 @@ const Showcase = () => {
                 </div>
               </div>
 
-              <div className="glass-effect rounded-xl p-6 border border-agentic-text/10 transition-all duration-300">
+              <div className="p-6 transition-all duration-300">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center flex-shrink-0">
                     <CheckCircle className="w-6 h-6 text-agentic-primary" />
@@ -201,7 +201,7 @@ const Showcase = () => {
                 </div>
               </div>
 
-              <div className="glass-effect rounded-xl p-6 border border-agentic-text/10 transition-all duration-300">
+              <div className="p-6 transition-all duration-300">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center flex-shrink-0">
                     <Terminal className="w-6 h-6 text-agentic-primary" />

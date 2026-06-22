@@ -43,14 +43,14 @@ const InsightsCard = () => {
       const rc = rough.svg(svg);
       
       const path1 = rc.path("M7 4c3 4 5 10 10 14", {
-        stroke: '#c084fc',
+        stroke: '#3b82f6',
         strokeWidth: 2,
         roughness: 1.5,
         bowing: 1
       });
       
       const path2 = rc.path("M12 18h5v-5", {
-        stroke: '#c084fc',
+        stroke: '#3b82f6',
         strokeWidth: 2,
         roughness: 1.5,
         bowing: 1
@@ -123,17 +123,17 @@ const InsightsCard = () => {
           className="flex items-center gap-1.5 text-left focus:outline-none group/btn transition-opacity hover:opacity-70"
           title={isCollapsed ? "Expand Insights" : "Collapse Insights"}
         >
-          <svg className="w-5 h-5 text-purple-600 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-blue-600 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
           </svg>
           <div className="flex items-center gap-1.5">
-            <h3 className="text-sm font-brand font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 tracking-wide">
+            <h3 className="text-sm font-brand font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-blue-600 tracking-wide">
               DevOps Insights
             </h3>
             <motion.svg 
               animate={{ rotate: isCollapsed ? 180 : 0 }} 
               transition={{ duration: 0.3 }}
-              className="w-4 h-4 text-slate-400 group-hover/btn:text-purple-500 transition-colors" 
+              className="w-4 h-4 text-slate-400 group-hover/btn:text-blue-500 transition-colors" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -147,7 +147,7 @@ const InsightsCard = () => {
           {!isCollapsed && (
             <button 
               onClick={nextFact}
-              className="text-[11px] uppercase tracking-widest text-slate-400 hover:text-purple-600 transition-colors flex items-center gap-1 font-bold bg-transparent focus:outline-none"
+              className="text-[11px] uppercase tracking-widest text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-1 font-bold bg-transparent focus:outline-none"
             >
               Next 
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,7 +201,7 @@ const InsightsCard = () => {
             >
               <div className="opacity-80 hover:opacity-100 transition-opacity flex flex-col items-end w-full">
                 <p className="text-[12px] font-display text-slate-500 leading-relaxed">
-                  Ask the <span className="text-purple-600 font-semibold">Guide Agent</span>!
+                  Ask the <span className="text-blue-600 font-semibold">Guide Agent</span>!
                 </p>
                 <div ref={containerRef} className="relative w-full h-10 mt-1">
                   {/* RoughJS SVG injected here */}

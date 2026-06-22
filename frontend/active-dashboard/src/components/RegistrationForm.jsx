@@ -128,7 +128,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
             name="username"
             value={formData.username}
             onChange={handleChange}
-            className="rounded-xl w-full px-5 py-3.5 bg-white/10 md:bg-white border border-white/20 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-white/50 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+            className="rounded-xl w-full px-5 py-3.5 bg-slate-800 md:bg-white border border-slate-700 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-slate-400 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             placeholder="Choose a username"
             disabled={isLoading}
             autoComplete="username"
@@ -146,7 +146,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="rounded-xl w-full px-5 py-3.5 bg-white/10 md:bg-white border border-white/20 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-white/50 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+            className="rounded-xl w-full px-5 py-3.5 bg-slate-800 md:bg-white border border-slate-700 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-slate-400 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             placeholder="you@company.com"
             disabled={isLoading}
             autoComplete="email"
@@ -165,7 +165,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="rounded-xl w-full px-5 py-3.5 pr-12 bg-white/10 md:bg-white border border-white/20 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-white/50 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+              className="rounded-xl w-full px-5 py-3.5 pr-12 bg-slate-800 md:bg-white border border-slate-700 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-slate-400 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               placeholder="Create a password"
               disabled={isLoading}
               autoComplete="new-password"
@@ -211,7 +211,7 @@ const RegistrationForm = ({ isLoading, setIsLoading }) => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="rounded-xl w-full px-5 py-3.5 pr-12 bg-white/10 md:bg-white border border-white/20 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-white/50 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+              className="rounded-xl w-full px-5 py-3.5 pr-12 bg-slate-800 md:bg-white border border-slate-700 md:border-[#2196F3]/20 text-white md:text-slate-900 text-sm transition-all duration-300 outline-none placeholder:text-slate-400 md:placeholder:text-slate-400 shadow-sm hover:shadow focus:border-[#30705d] focus:ring-[3px] focus:ring-[#30705d]/20 focus:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               placeholder="Confirm your password"
               disabled={isLoading}
               autoComplete="new-password"

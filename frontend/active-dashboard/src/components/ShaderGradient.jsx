@@ -48,7 +48,7 @@ const ShaderGradient = () => {
       <motion.div
         className="absolute w-[600px] h-[600px] rounded-full blur-[24px] mix-blend-screen opacity-60"
         style={{
-          background: 'radial-gradient(circle, rgba(99,102,241,0.9) 0%, rgba(99,102,241,0) 60%)',
+          background: 'radial-gradient(circle, rgba(14,165,233,0.9) 0%, rgba(14,165,233,0) 60%)',
           top: '30%',
           left: '30%',
         }}
