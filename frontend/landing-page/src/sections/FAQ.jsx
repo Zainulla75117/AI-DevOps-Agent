@@ -38,68 +38,92 @@ const FAQ = () => {
 
   return (
     <section id="faq" className="py-24 relative overflow-hidden bg-agentic-secondary">
-      <div className="container mx-auto px-6 max-w-4xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <div className="text-[11px] font-mono font-medium uppercase tracking-[0.15em] text-agentic-primary/70 mb-4">
-            Knowledge Base
-          </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-5 font-display text-agentic-text">
-            Commonly Asked <span className="text-agentic-primary">Questions</span>
-          </h2>
-          <p className="text-base md:text-lg text-agentic-text/60 leading-relaxed max-w-2xl mx-auto font-sans">
-            Everything you need to know about the future of automation.
-          </p>
-        </motion.div>
+      {/* Subtle background glow */}
+      <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-agentic-primary/5 rounded-full blur-[100px] pointer-events-none z-0" />
 
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="border-b border-agentic-text/10"
-            >
-              <button
-                onClick={() => toggleOpen(index)}
-                className="w-full flex items-center justify-between py-6 text-left focus:outline-none group"
+      <div className="container mx-auto px-6 max-w-6xl relative z-10">
+        <div className="grid lg:grid-cols-12 gap-16 items-start">
+          
+          {/* Left Column - Header details & CTA */}
+          <div className="lg:col-span-5 flex flex-col items-start text-left lg:sticky lg:top-32">
+            <div className="text-[11px] font-mono font-medium uppercase tracking-[0.15em] text-agentic-primary/70 mb-4">
+              Knowledge Base
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-5 font-display text-agentic-text leading-tight animate-fade-in">
+              Commonly Asked <span className="text-agentic-primary dark:text-shimmer-anim font-semibold">Questions</span>
+            </h2>
+            <p className="text-base text-agentic-text/60 leading-relaxed font-sans max-w-md">
+              Everything you need to know about the future of cloud infrastructure automation and AI DevOps.
+            </p>
+            
+            {/* Help Callout */}
+            <div className="mt-10 border-t border-agentic-text/10 pt-8 w-full">
+              <h4 className="text-sm font-semibold tracking-wide text-agentic-text mb-2 font-display">Still have questions?</h4>
+              <p className="text-xs leading-relaxed text-agentic-text/50 font-sans mb-5 max-w-xs">
+                Can't find the answer you're looking for? Message our support team and talk directly to our engineering department.
+              </p>
+              <motion.a
+                whileHover={{ x: 3 }}
+                href="mailto:support@infraxai.com"
+                className="inline-flex items-center space-x-2 text-xs font-mono font-bold tracking-wider uppercase text-agentic-primary hover:text-blue-500 transition-colors"
               >
-                <h3 className="text-lg md:text-xl font-semibold tracking-tight text-agentic-text font-display pr-8 group-hover:text-agentic-primary transition-colors">
-                  {faq.question}
-                </h3>
-                <motion.div
-                  animate={{ rotate: openIndex === index ? 45 : 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="flex-shrink-0"
-                >
-                  <Plus className="w-6 h-6 text-agentic-primary" />
-                </motion.div>
-              </button>
+                <span>Contact Engineering</span>
+                <span>→</span>
+              </motion.a>
+            </div>
+          </div>
 
-              <AnimatePresence initial={false}>
-                {openIndex === index && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="overflow-hidden"
+          {/* Right Column - FAQ Accordion Items */}
+          <div className="lg:col-span-7 space-y-2 w-full">
+            {faqs.map((faq, index) => {
+              const isOpen = openIndex === index;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  className="border-b border-agentic-text/10"
+                >
+                  <button
+                    onClick={() => toggleOpen(index)}
+                    className="w-full flex items-center justify-between py-6 text-left focus:outline-none group cursor-pointer"
                   >
-                    <p className="text-sm md:text-base leading-relaxed text-agentic-text/60 font-sans pb-8 max-w-3xl">
-                      {faq.answer}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ))}
+                    <h3 className={`text-base md:text-lg font-semibold tracking-tight pr-6 font-display transition-all duration-300 transform group-hover:translate-x-1 ${
+                      isOpen ? 'text-agentic-primary' : 'text-agentic-text/80 group-hover:text-agentic-text'
+                    }`}>
+                      {faq.question}
+                    </h3>
+                    <motion.div
+                      animate={{ rotate: isOpen ? 45 : 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="flex-shrink-0"
+                    >
+                      <Plus className={`w-5 h-5 transition-colors duration-300 ${isOpen ? 'text-agentic-primary' : 'text-agentic-text/40 group-hover:text-agentic-primary'}`} />
+                    </motion.div>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <p className="text-sm leading-relaxed text-agentic-text/60 font-sans pb-6 pr-4 max-w-3xl">
+                          {faq.answer}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </div>
+
         </div>
       </div>
     </section>

@@ -41,9 +41,11 @@ function Label({ text, t }) {
     if (scale > 0.85) {
       divRef.current.classList.add('active');
       divRef.current.style.zIndex = '10';
+      divRef.current.style.background = 'linear-gradient(90deg, rgba(48,112,93,0.95) 0%, rgba(59,130,246,0.95) 100%)';
     } else {
       divRef.current.classList.remove('active');
       divRef.current.style.zIndex = '1';
+      divRef.current.style.background = 'rgba(15, 23, 42, 0.9)';
     }
   });
 
@@ -52,7 +54,10 @@ function Label({ text, t }) {
       <Html center>
         <div 
           ref={divRef}
-          className="px-4 py-2 text-xs font-sans font-bold tracking-[0.2em] rounded-full border border-white/10 shadow-lg whitespace-nowrap bg-[#0f172a]/90 text-white will-change-transform"
+          style={{
+            clipPath: 'polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%, 10% 50%)'
+          }}
+          className="px-6 py-2 text-[10px] font-sans font-bold tracking-[0.25em] shadow-lg whitespace-nowrap text-white will-change-transform transition-all duration-300"
         >
           {text}
         </div>

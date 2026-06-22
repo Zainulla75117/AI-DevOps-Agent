@@ -14,14 +14,14 @@ const testimonials = [
     role: 'Platform Engineer',
     company: 'CloudScale',
     avatar: 'MR',
-    content: 'The Kubernetes automation is incredible. We\'ve reduced deployment time by 80% and eliminated manual errors. This is the future of DevOps.',
+    content: "The Kubernetes automation is incredible. We've reduced deployment time by 80% and eliminated manual errors. This is the future of DevOps.",
   },
   {
     name: 'Emily Watson',
     role: 'CTO',
     company: 'StartupXYZ',
     avatar: 'EW',
-    content: 'As a small team, InfraX gives us enterprise-grade infrastructure automation without the complexity. It\'s like having a senior DevOps engineer on autopilot.',
+    content: "As a small team, InfraX gives us enterprise-grade infrastructure automation without the complexity. It's like having a senior DevOps engineer on autopilot.",
   },
   {
     name: 'David Kim',
@@ -34,25 +34,29 @@ const testimonials = [
 
 const Testimonials = () => {
   return (
-    <section className="py-24 relative overflow-hidden bg-agentic-surface">
-      <div className="container mx-auto px-6">
+    <section className="py-24 relative overflow-hidden bg-agentic-secondary">
+      {/* Background grid accent */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-br from-agentic-primary/5 to-blue-500/5 rounded-full blur-[140px] pointer-events-none z-0" />
+
+      <div className="container mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
-          <div className="text-xs uppercase font-medium tracking-[0.2em] text-agentic-primary/80 mb-3">Customer Success</div>
-          <h2 className="text-4xl md:text-5xl font-light mb-4 font-display text-agentic-text">
-            Loved by <span className="text-agentic-primary">DevOps Teams</span>
+          <div className="text-[11px] font-mono font-medium uppercase tracking-[0.15em] text-agentic-primary/70 mb-4">Customer Success</div>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-5 font-display text-agentic-text">
+            Loved by <span className="text-agentic-primary dark:text-shimmer-anim font-semibold">DevOps Teams</span>
           </h2>
-          <p className="text-xl text-agentic-text/70 max-w-2xl mx-auto font-sans">
-            See what teams are saying about InfraX
+          <p className="text-base md:text-lg text-agentic-text/60 leading-relaxed max-w-2xl mx-auto font-sans">
+            See what teams are saying about their automation experience
           </p>
         </motion.div>
 
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
+        {/* Editorial Divided Grid */}
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 border-t border-b border-agentic-text/10">
           {testimonials.map((testimonial, index) => (
             <motion.div
               key={testimonial.name}
@@ -60,19 +64,34 @@ const Testimonials = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="p-8 transition-all duration-300 relative"
+              className={`p-10 md:p-12 flex flex-col justify-between group relative transition-all duration-300 ${
+                index === 0 ? 'border-b md:border-r border-agentic-text/10' :
+                index === 1 ? 'border-b border-agentic-text/10' :
+                index === 2 ? 'border-b md:border-b-0 md:border-r border-agentic-text/10' :
+                'scale-100'
+              }`}
             >
-              <Quote className="w-8 h-8 text-agentic-primary/40 mb-4" />
-              <p className="text-2xl md:text-3xl font-light italic leading-relaxed tracking-tight font-display text-agentic-text/80 mb-8">
+              {/* Quote Mark Icon */}
+              <div className="relative mb-6">
+                <Quote className="w-8 h-8 text-agentic-primary/30 group-hover:text-agentic-primary transition-colors duration-300" />
+              </div>
+
+              {/* Quote Body */}
+              <p className="text-lg md:text-xl font-light italic leading-relaxed tracking-tight font-sans text-agentic-text/80 mb-8 group-hover:text-agentic-text transition-colors duration-300 flex-grow">
                 "{testimonial.content}"
               </p>
+
+              {/* Client Info */}
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-full bg-agentic-primary flex items-center justify-center text-white font-medium shadow-sm">
+                {/* Custom Avatar ring */}
+                <div className="w-11 h-11 rounded-full border border-agentic-text/10 flex items-center justify-center text-xs font-semibold tracking-wider font-mono text-agentic-primary bg-agentic-primary/5 group-hover:border-agentic-primary/45 transition-all duration-300 flex-shrink-0">
                   {testimonial.avatar}
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-widest font-bold text-agentic-text">{testimonial.name}</div>
-                  <div className="text-xs uppercase text-agentic-text/50 font-sans tracking-wider">
+                  <div className="text-xs font-bold tracking-wider font-mono text-agentic-text group-hover:text-agentic-primary transition-colors duration-300">
+                    {testimonial.name}
+                  </div>
+                  <div className="text-[10px] font-semibold tracking-widest uppercase text-agentic-text/45 font-sans mt-0.5">
                     {testimonial.role} at {testimonial.company}
                   </div>
                 </div>

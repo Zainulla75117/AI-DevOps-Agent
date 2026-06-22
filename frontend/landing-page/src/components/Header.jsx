@@ -100,9 +100,10 @@ const Header = () => {
 
             <a
               href="https://infraxai.vercel.app"
-              className="text-base font-sans font-normal text-agentic-text/80 transition-colors duration-300 antialiased hover:text-agentic-text"
+              className="text-base font-sans font-normal text-agentic-text/70 hover:text-agentic-primary transition-colors duration-300 antialiased relative py-1 group/login"
             >
-              Login
+              <span>Login</span>
+              <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-agentic-primary scale-x-0 group-hover/login:scale-x-100 transition-transform duration-300 origin-left" />
             </a>
 
             <motion.a
@@ -111,7 +112,7 @@ const Header = () => {
               whileTap={{ scale: 0.98 }}
               className="relative inline-flex items-center justify-center overflow-hidden rounded-full p-[2px] hover:shadow-lg transition-all duration-300 group bg-agentic-text/5"
             >
-              <span className="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] [will-change:transform] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_30%,#8B5CF6_47%,#ffffff_50%,transparent_50%,transparent_80%,#8B5CF6_97%,#ffffff_100%)]" />
+              <span className="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] [will-change:transform] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_30%,#3b82f6_47%,#ffffff_50%,transparent_50%,transparent_80%,#3b82f6_97%,#ffffff_100%)]" />
               <span className="relative inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-agentic-text text-agentic-surface text-[13px] font-sans font-semibold tracking-wide antialiased w-full h-full transition-colors group-hover:bg-agentic-text/95">
                 Sign Up
               </span>

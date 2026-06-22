@@ -7,16 +7,24 @@ import ShaderGradient from './ShaderGradient'
 const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [toast, setToast] = useState(null)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     document.title = 'infraXai - Login'
+    
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   return (
     <div className="w-full min-h-screen flex flex-col lg:flex-row bg-slate-900 md:bg-white relative overflow-hidden md:overflow-visible">
       {/* Mobile Dark Visual Background */}
       <div className="md:hidden absolute inset-0 z-0 pointer-events-none">
-        <ShaderGradient />
+        {!isMobile && <ShaderGradient />}
       </div>
 
       {/* Brand Logo - Responsive Placement */}
@@ -32,11 +40,13 @@ const LoginPage = () => {
       </div>
 
       {/* Mobile Animated Logo - Bottom */}
-      <div className="md:hidden absolute bottom-8 left-0 right-0 flex justify-center z-0 pointer-events-none">
-        <div className="scale-[1.5] opacity-80 pl-4">
-          <InfinityLogo />
+      {!isMobile && (
+        <div className="md:hidden absolute bottom-8 left-0 right-0 flex justify-center z-0 pointer-events-none">
+          <div className="scale-[1.5] opacity-80 pl-4">
+            <InfinityLogo />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Left Panel - Brand / Visual Section (50% on desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-[#0B1120] items-center justify-center overflow-hidden">

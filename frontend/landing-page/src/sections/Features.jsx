@@ -44,25 +44,28 @@ const features = [
 const Features = () => {
   return (
     <section id="features" className="py-24 relative overflow-hidden bg-agentic-secondary">
-      <div className="container mx-auto px-6">
+      {/* Subtle background glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-agentic-primary/5 to-blue-500/5 rounded-full blur-[120px] pointer-events-none z-0" />
+
+      <div className="container mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
           <div className="text-[11px] font-mono font-medium uppercase tracking-[0.15em] text-agentic-primary/70 mb-4">Core Platform</div>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-5 font-display text-agentic-text">
             Powerful Features for{' '}
-            <span className="text-agentic-primary">Modern DevOps</span>
+            <span className="text-agentic-primary dark:text-shimmer-anim font-semibold">Modern DevOps</span>
           </h2>
           <p className="text-base md:text-lg text-agentic-text/60 leading-relaxed max-w-2xl mx-auto font-sans">
             Everything you need to automate and optimize your infrastructure operations
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 border-t border-l border-agentic-text/10">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
@@ -72,14 +75,21 @@ const Features = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="p-8 flex flex-col h-full group"
+                className="p-10 md:p-12 flex flex-col h-full group relative border-r border-b border-agentic-text/10 overflow-hidden cursor-pointer"
               >
-                <div className="w-14 h-14 rounded-lg bg-agentic-surface border border-agentic-text/10 flex items-center justify-center mb-6 group-hover:border-agentic-primary/30 transition-colors">
-                  <Icon className="w-6 h-6 text-agentic-primary" />
+                {/* Neon top accent line */}
+                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-agentic-primary to-blue-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+
+                {/* Floating Icon with background glow */}
+                <div className="w-12 h-12 flex items-center justify-center mb-8 relative">
+                  <div className="absolute inset-0 bg-agentic-primary/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Icon className="w-8 h-8 text-agentic-primary relative z-10 group-hover:scale-110 transition-transform duration-300" />
                 </div>
-                <h3 className="text-lg md:text-xl font-semibold tracking-tight mb-3 text-agentic-text font-display">
+
+                <h3 className="text-lg md:text-xl font-semibold tracking-tight mb-4 text-agentic-text font-display group-hover:text-agentic-primary transition-colors duration-300">
                   {feature.title}
                 </h3>
+                
                 <p className="text-sm leading-relaxed text-agentic-text/60 font-sans mt-auto">
                   {feature.description}
                 </p>
