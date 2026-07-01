@@ -29,8 +29,8 @@ const Hero = () => {
   }, []);
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-agentic-secondary">
-      {/* 3D Scene Background taking up the entire screen */}
-      <div className="absolute inset-0 z-0">
+      {/* 3D Scene Background taking up the entire screen (disable pointer events on mobile for smooth scrolling) */}
+      <div className="absolute inset-0 z-0 pointer-events-none md:pointer-events-auto">
         <DevOpsScene />
       </div>
 
@@ -42,7 +42,7 @@ const Hero = () => {
           >
 
 
-            <div className="relative w-full min-h-[5.5rem] md:min-h-[7rem] lg:min-h-[8.5rem]">
+            <div className="relative w-full min-h-[8rem] sm:min-h-[5.5rem] md:min-h-[7rem] lg:min-h-[8.5rem]">
               <AnimatePresence mode="wait">
                 <motion.h1
                   key={headlineIndex}

@@ -106,7 +106,7 @@ const HowItWorks = () => {
           {/* Mobile Timeline */}
           <div className="md:hidden space-y-12 relative pl-6">
             {/* Vertical Line with flowing light beam */}
-            <div className="absolute left-10 top-2 bottom-2 w-[1px] bg-agentic-text/10 dark:bg-white/10 overflow-hidden">
+            <div className="absolute left-[44px] top-2 bottom-2 w-[1px] bg-agentic-text/10 dark:bg-white/10 overflow-hidden">
               <motion.div
                 initial={{ top: '-30%' }}
                 animate={{ top: '100%' }}
