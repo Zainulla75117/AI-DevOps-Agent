@@ -72,7 +72,7 @@ const Hero = () => {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </motion.a>
               <motion.a
-                href="#demo"
+                href="/demo"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="px-7 py-3 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-md font-medium text-sm tracking-wide flex items-center justify-center space-x-2 hover:border-gray-300 dark:hover:border-white/20 transition-colors shadow-lg"
