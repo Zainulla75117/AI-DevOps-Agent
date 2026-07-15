@@ -25,6 +25,7 @@ build/
 .pytest_cache/
 *.sqlite3
 chroma_db/
+qdrant_storage/
 
 # Node.js
 node_modules/

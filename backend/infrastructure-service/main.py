@@ -4,7 +4,15 @@ InfraX Infrastructure Service (port 8004)
 AI-driven infrastructure provisioning via conversational chat.
 """
 
+import sys
 import logging
+
+# Force UTF-8 output on Windows (prevents charmap errors from emoji in print/logging)
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 import httpx
 from contextlib import asynccontextmanager
 from fastapi import FastAPI

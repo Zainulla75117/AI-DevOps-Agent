@@ -113,6 +113,7 @@ class SessionManager:
                 "dependency_asked": False,
                 "created_at": time.time(),
                 "_is_first_message": True,
+                "repo_id": kwargs.get("repo_id"),
             }
             
             repo_id = kwargs.get("repo_id")
@@ -127,30 +128,54 @@ class SessionManager:
             # Fetch repo tree if we don't already have it in session.
             # Even with repo_scan_memory, we need the raw dependency files
             # for the evidence-based resource filter.
+            has_repo_analysis = bool(self.sessions[session_id].get("repo_analysis"))
             has_repo_tree = bool(self.sessions[session_id].get("repo_tree"))
-            will_fetch = bool(repo_id and not has_repo_tree and not infra_exists)
+            needs_context = bool(repo_id and not has_repo_analysis and not has_repo_tree and not infra_exists)
+            print(f"   has_repo_analysis    = {has_repo_analysis}")
             print(f"   has_repo_tree        = {has_repo_tree}")
-            print(f"   ➡️  Will fetch repo tree: {will_fetch}")
+            print(f"   ➡️  Needs context: {needs_context}")
             print("-" * 70 + "\n")
 
-            if will_fetch:
+            if needs_context:
                 try:
                     import httpx
-                    scm_url = f"{settings.SCM_SERVICE_URL}/api/scm/repos/{repo_id}/tree"
-                    logger.info(f"Fetching repo tree from {scm_url}...")
                     async with httpx.AsyncClient(timeout=30.0) as client:
-                        resp = await client.get(scm_url, headers={"Authorization": f"Bearer {auth_token}"})
+                        # 1. Try to get structured analysis
+                        analysis_url = f"{settings.SCM_SERVICE_URL}/api/scm/repos/{repo_id}/analysis"
+                        logger.info(f"Checking for structured repo analysis at {analysis_url}...")
+                        resp = await client.get(analysis_url, headers={"Authorization": f"Bearer {auth_token}"})
+                        
                         if resp.status_code == 200:
-                            tree_data = resp.json()
-                            logger.info(f"Successfully fetched repo tree: {len(tree_data.get('tree', []))} files, {len(tree_data.get('dependency_files', {}))} deps")
-                            self.sessions[session_id]["repo_tree"] = tree_data
-                        else:
-                            logger.error(f"Failed to fetch repo tree. Status: {resp.status_code}, Body: {resp.text}")
+                            analysis_data = resp.json()
+                            if analysis_data.get("status") == "ready":
+                                logger.info(f"✅ Found ready structured analysis for repo {repo_id}")
+                                self.sessions[session_id]["repo_analysis"] = analysis_data
+                            else:
+                                logger.info(f"⏳ Analysis status is {analysis_data.get('status')} - will use fallback tree")
+                        elif resp.status_code == 404:
+                            # 2. Trigger background analysis if missing
+                            trigger_url = f"{settings.SCM_SERVICE_URL}/api/scm/repos/{repo_id}/analyze"
+                            logger.info(f"No analysis found. Triggering background analysis: {trigger_url}")
+                            await client.post(trigger_url, headers={"Authorization": f"Bearer {auth_token}"})
+                        
+                        # 3. If we don't have a ready analysis, fetch the raw tree as fallback for THIS session
+                        if not self.sessions[session_id].get("repo_analysis"):
+                            scm_url = f"{settings.SCM_SERVICE_URL}/api/scm/repos/{repo_id}/tree"
+                            logger.info(f"Fetching raw repo tree (fallback) from {scm_url}...")
+                            tree_resp = await client.get(scm_url, headers={"Authorization": f"Bearer {auth_token}"})
+                            if tree_resp.status_code == 200:
+                                tree_data = tree_resp.json()
+                                logger.info(f"Successfully fetched fallback repo tree: {len(tree_data.get('tree', []))} files")
+                                self.sessions[session_id]["repo_tree"] = tree_data
+                            else:
+                                logger.error(f"Failed to fetch fallback repo tree. Status: {tree_resp.status_code}")
                 except Exception as e:
-                    logger.error(f"Exception while fetching repo tree: {e}", exc_info=True)
+                    logger.error(f"Exception while fetching repo context: {e}", exc_info=True)
 
         else:
             self.sessions[session_id]["auth_token"] = auth_token
+            if kwargs.get("repo_id"):
+                self.sessions[session_id]["repo_id"] = kwargs.get("repo_id")
 
             try:
                 existing_resources = await resource_service.get_project_resources(project_id, auth_token)

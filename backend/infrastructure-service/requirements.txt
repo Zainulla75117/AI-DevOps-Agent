@@ -24,3 +24,6 @@ pydantic>=2.12.0
 
 # PostgreSQL (summary persistence)
 asyncpg>=0.29.0
+
+# Qdrant Vector Database (semantic repo context search)
+qdrant-client[fastembed]>=1.7.0

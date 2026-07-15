@@ -31,6 +31,8 @@ from app.schemas.intent_schemas import (
     SafetyReview,
     WorkbookEntry,
     WorkbookStatus,
+    PromptDecision,
+    PromptAnalysis,
 )
 from app.schemas.response_schemas import (
     ChatStreamEvent,

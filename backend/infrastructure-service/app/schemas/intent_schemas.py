@@ -14,7 +14,7 @@ These models are the single source of truth for:
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -38,6 +38,55 @@ class InfrastructureIntent(str, Enum):
     CANCEL = "cancel"
     PLAN = "plan"
     APPROVE_PLAN = "approve_plan"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  HUMAN-IN-THE-LOOP PROMPT ANALYSIS
+# ═══════════════════════════════════════════════════════════════════════
+
+class PromptDecision(str, Enum):
+    """
+    Decision made by the Prompt Analyzer node (Node 0).
+
+    The graph router uses this to decide whether to send the user
+    a clarification request, a rephrased version, or proceed normally.
+    """
+    PROCEED  = "proceed"   # Prompt is specific enough — go to extractor
+    CLARIFY  = "clarify"   # Too ambiguous — ask targeted counter-questions
+    REPHRASE = "rephrase"  # Vague but guessable — suggest a precise rewrite
+
+
+class PromptAnalysis(BaseModel):
+    """
+    Structured output of the Prompt Analyzer LLM node.
+
+    This model is passed to llm.with_structured_output() and drives
+    the HITL gate before the main extraction pipeline runs.
+    """
+    decision: PromptDecision = Field(
+        ...,
+        description="What action to take with this prompt: proceed, clarify, or rephrase"
+    )
+    ambiguity_score: float = Field(
+        ..., ge=0.0, le=1.0,
+        description="0.0 = crystal clear intent, 1.0 = completely ambiguous"
+    )
+    missing_info: List[str] = Field(
+        default_factory=list,
+        description="Specific pieces of information that are absent from the prompt"
+    )
+    counter_questions: List[str] = Field(
+        default_factory=list,
+        description="2-3 targeted clarifying questions to ask (filled when decision=clarify)"
+    )
+    rephrased_prompt: Optional[str] = Field(
+        None,
+        description="A precise, infra-specific rewrite of the user's intent (filled when decision=rephrase)"
+    )
+    reasoning: str = Field(
+        ...,
+        description="Brief explanation of why this decision was made"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════

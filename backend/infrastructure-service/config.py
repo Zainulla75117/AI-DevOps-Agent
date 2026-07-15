@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
 
+    # Qdrant Vector Database
+    QDRANT_URL: str = os.getenv("QDRANT_URL", "http://localhost:6333")
+
     # CORS
     CORS_ORIGINS: str = os.getenv(
         "CORS_ORIGINS",

@@ -470,15 +470,15 @@ const InfraChatInterface = ({
 
   const SUGGESTED_PROMPTS = hasInfrastructure
     ? [
-        "Explain my current architecture",
-        "How can I reduce my AWS costs?",
-        "Scan repository for new microservices",
-      ]
+      "Explain my current architecture",
+      "How can I reduce my AWS costs?",
+      "Scan repository for new microservices",
+    ]
     : [
-        "Scan my repository and propose an architecture",
-        "Deploy a standard full-stack environment",
-        "What AWS services do I need for a React app?",
-      ];
+      "Scan my repository and propose an architecture",
+      "Deploy a standard full-stack environment",
+      "What AWS services do I need for a React app?",
+    ];
 
   // On mount: load conversations from API (fallback to localStorage cache)
   useEffect(() => {
@@ -918,10 +918,10 @@ const InfraChatInterface = ({
               prev.map((s) =>
                 s.id === targetSessionId
                   ? {
-                      ...s,
-                      plan: data.plan,
-                      plan_status: data.plan_status || "draft",
-                    }
+                    ...s,
+                    plan: data.plan,
+                    plan_status: data.plan_status || "draft",
+                  }
                   : s,
               ),
             );
@@ -931,10 +931,10 @@ const InfraChatInterface = ({
               prev.map((s) =>
                 s.id === targetSessionId
                   ? {
-                      ...s,
-                      workbook: data.workbook,
-                      plan_status: data.plan_status || "executing",
-                    }
+                    ...s,
+                    workbook: data.workbook,
+                    plan_status: data.plan_status || "executing",
+                  }
                   : s,
               ),
             );
@@ -1184,13 +1184,12 @@ const InfraChatInterface = ({
             return (
               <div
                 key={s.id}
-                className={`group relative overflow-hidden rounded-md cursor-pointer transition-colors duration-150 ${
-                  isDeleting
+                className={`group relative overflow-hidden rounded-md cursor-pointer transition-colors duration-150 ${isDeleting
                     ? "bg-red-50"
                     : isActive
                       ? "bg-slate-200/70"
                       : "hover:bg-slate-100"
-                }`}
+                  }`}
                 onClick={() => !isDeleting && handleLoadSession(s)}
               >
                 {/* Normal state */}
@@ -1206,9 +1205,8 @@ const InfraChatInterface = ({
                   }}
                 >
                   <span
-                    className={`flex-1 text-[13px] truncate ${
-                      isActive ? "text-slate-900 font-medium" : "text-slate-600"
-                    }`}
+                    className={`flex-1 text-[13px] truncate ${isActive ? "text-slate-900 font-medium" : "text-slate-600"
+                      }`}
                     title={s.title}
                   >
                     {s.title}
@@ -1280,9 +1278,8 @@ const InfraChatInterface = ({
     <div className="bg-white rounded-xl border border-slate-200 shadow-2xl flex h-[calc(100vh-7rem)] min-h-[600px] overflow-hidden">
       {/* ===== Chat History Sidebar ===== */}
       <div
-        className={`flex-shrink-0 border-r border-slate-200 bg-slate-50 flex flex-col transition-all duration-300 ease-in-out overflow-hidden ${
-          isSidebarOpen ? "w-64" : "w-0"
-        }`}
+        className={`flex-shrink-0 border-r border-slate-200 bg-slate-50 flex flex-col transition-all duration-300 ease-in-out overflow-hidden ${isSidebarOpen ? "w-64" : "w-0"
+          }`}
       >
         <div className="px-4 pt-4 pb-3 flex-shrink-0">
           <button
@@ -1466,7 +1463,7 @@ const InfraChatInterface = ({
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-1 py-1 space-y-1 bg-white relative"
+          className="flex-1 overflow-y-auto px-6 py-6 space-y-5 bg-white relative"
         >
           {messages.map((msg, index) => {
             const isLastAiMessage =
@@ -1480,16 +1477,15 @@ const InfraChatInterface = ({
                 <div
                   className={
                     msg.sender === "user"
-                      ? "max-w-[80%] flex flex-col items-end"
+                      ? "max-w-[85%] flex flex-col items-end animate-in slide-in-from-bottom-2 duration-300"
                       : "w-full"
                   }
                 >
                   <div
-                    className={`relative text-[15px] leading-relaxed ${
-                      msg.sender === "user"
-                        ? "bg-emerald-600 text-white rounded-2xl rounded-tr-sm px-2 py-1"
+                    className={`relative text-[15px] leading-relaxed ${msg.sender === "user"
+                        ? "bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 py-2 shadow-sm"
                         : "text-slate-700 py-0"
-                    }`}
+                      }`}
                   >
                     <ReactMarkdown
                       components={markdownComponents}
@@ -1576,12 +1572,12 @@ const InfraChatInterface = ({
                                     (r) =>
                                       r.order === order
                                         ? {
-                                            ...r,
-                                            config: {
-                                              ...r.config,
-                                              [key]: value,
-                                            },
-                                          }
+                                          ...r,
+                                          config: {
+                                            ...r.config,
+                                            [key]: value,
+                                          },
+                                        }
                                         : r,
                                   );
                                   return {
@@ -1819,14 +1815,14 @@ const InfraChatInterface = ({
 
             <form onSubmit={handleSendMessage} className="relative">
               <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-2xl blur opacity-0 group-focus-within:opacity-25 transition duration-500"></div>
+                <div className="absolute -inset-0.5 bg-blue-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-300"></div>
                 <textarea
                   ref={textareaRef}
                   value={inputValue}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
                   placeholder="Type your infrastructure requirements... (Shift+Enter for new line)"
-                  className="relative w-full pl-6 pr-16 py-4 bg-white border border-slate-300 shadow-[0_4px_20px_rgba(0,0,0,0.06)] rounded-2xl text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-all duration-300 text-slate-800 placeholder-slate-400 block resize-none overflow-hidden"
+                  className="relative w-full pl-6 pr-16 py-4 bg-white border border-slate-300 shadow-[0_4px_20px_rgba(0,0,0,0.06)] rounded-2xl text-sm focus:outline-none focus:border-blue-600 focus:bg-white transition-all duration-300 text-slate-800 placeholder-slate-400 block resize-none overflow-hidden"
                   style={{ minHeight: "54px", maxHeight: "200px" }}
                   rows={1}
                   autoFocus
@@ -1834,7 +1830,7 @@ const InfraChatInterface = ({
                 <button
                   type="submit"
                   disabled={!inputValue.trim() || isTyping}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-xl shadow-md disabled:shadow-none hover:shadow-lg disabled:opacity-40 disabled:from-slate-400 disabled:to-slate-400 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md disabled:shadow-none hover:shadow-lg disabled:opacity-40 disabled:bg-slate-400 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
                 >
                   <img
                     src="/icons8-send-puffy-filled-32.png"

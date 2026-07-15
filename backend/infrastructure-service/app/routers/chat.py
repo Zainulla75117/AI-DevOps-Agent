@@ -98,6 +98,9 @@ async def stream_chat_response(
             "implementation_plan", "plan_status", "workbook", "approved_orders",
             "generated_plan", "extracted_resources", "validation_errors",
             "validation_report", "safety_warnings",
+            # HITL prompt analysis state (persisted so clarification_pending survives turns)
+            "prompt_decision", "clarification_pending",
+            "clarification_questions", "rephrased_prompt",
         ):
             if key in result:
                 session[key] = result[key]

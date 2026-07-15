@@ -36,8 +36,19 @@ async def startup_event():
             background=True
         )
         print("✅ [scm-service] Unique index ensured on user_scm_data")
+        # Ensure repo_analyses indexes
+        from app.crud.repo_analysis import ensure_indexes
+        await ensure_indexes(db)
     else:
         print(f"❌ [scm-service] DB connection failed: {settings.MONGODB_URL}")
+    
+    # Initialize Qdrant collection
+    try:
+        from app.services.qdrant_service import ensure_collection
+        await ensure_collection(url=settings.QDRANT_URL)
+        print(f"✅ [scm-service] Qdrant connected: {settings.QDRANT_URL}")
+    except Exception as e:
+        print(f"⚠️ [scm-service] Qdrant not available (non-fatal): {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():

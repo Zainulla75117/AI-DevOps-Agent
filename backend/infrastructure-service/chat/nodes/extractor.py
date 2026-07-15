@@ -2,6 +2,7 @@ import logging
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from chat.prompts import build_extractor_prompt
 from chat.schemas import ExtractionResult
+from chat.context_builder import build_repo_context
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +37,20 @@ async def extract_request(state: dict, llm) -> dict:
                     "response_type": "text"
                 }
 
-        # Build prompt
+        # Build prompt with repo context for general chat
+        from config import settings
+        repo_context = await build_repo_context(
+            state,
+            scm_service_url=settings.SCM_SERVICE_URL,
+            qdrant_url=settings.QDRANT_URL,
+        )
+        
         system_prompt = build_extractor_prompt(
             project_name=state.get("project_name", "Unknown"),
             existing_resources=state.get("existing_resources", []),
             conversation_summary=state.get("conversation_summary", {}),
-            previous_plan=state.get("generated_plan") or state.get("implementation_plan")
+            previous_plan=state.get("generated_plan") or state.get("implementation_plan"),
+            repo_context=repo_context
         )
         
         messages = [SystemMessage(content=system_prompt)]
@@ -68,9 +77,9 @@ async def extract_request(state: dict, llm) -> dict:
             extraction: ExtractionResult = await structured_llm.ainvoke(messages)
             logger.info(f"Extraction result: intent={extraction.intent}, confidence={extraction.confidence}")
 
-            # ── DEBUG: Print full LLM response to terminal ──
+            # -- DEBUG: Print full LLM response to terminal --
             print("\n" + "=" * 70)
-            print("🤖 [EXTRACTOR] LLM RESPONSE")
+            print("[EXTRACTOR] LLM RESPONSE")
             print("=" * 70)
             print(f"  Intent      : {extraction.intent}")
             print(f"  Confidence  : {extraction.confidence}")
@@ -81,9 +90,20 @@ async def extract_request(state: dict, llm) -> dict:
         except Exception as e:
             logger.warning(f"Error extracting request (LLM schema violation): {e}")
             
-            # Fallback heuristic for common plan triggers when LLM fails parsing
-            content_lower = content.lower() if 'content' in locals() else ""
-            if "scan" in content_lower or "plan" in content_lower or "architecture" in content_lower or "build" in content_lower:
+            # Fallback heuristic: use state user_message (more reliable than local `content`)
+            user_msg = state.get("user_message", "").lower()
+            if not user_msg:
+                # last resort: grab from message history
+                user_msg = content.lower() if 'content' in locals() and content else ""
+
+            plan_keywords = (
+                "scan", "plan", "architecture", "build", "deploy",
+                "containerize", "container", "create", "provision",
+                "aws", "ec2", "ecs", "rds", "database", "postgres",
+                "node", "python", "flask", "fastapi", "react", "api",
+                "production", "staging", "server", "service",
+            )
+            if any(kw in user_msg for kw in plan_keywords):
                 logger.info("Heuristic fallback: routing to plan intent")
                 return {
                     **state,

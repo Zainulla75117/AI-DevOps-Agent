@@ -5,10 +5,14 @@ from app.database.connection import get_db
 from app.schemas.scm_repo import SCMRepoCreate, SCMRepoResponse, SCMRepoUpdate
 from app.crud import scm_repo as crud_scm_repo
 from app.crud import scm as crud_scm
+from app.crud import repo_analysis as crud_repo_analysis
 from app.models.scm_repo import SCMRepo
 from app.services.scm_service import fetch_repository_tree, download_and_extract_repo_zip
+from app.services.repo_analyzer import analyze_repository
+from app.services.qdrant_service import embed_repo_analysis
 from app.auth.jwt import get_current_user
 from app.models.user import User
+from app.config import settings
 
 router = APIRouter(prefix="/api", tags=["scm-repos"])
 
@@ -350,3 +354,163 @@ async def delete_scm_repo(
         )
     
     return None
+
+# ═══════════════════════════════════════════════════════════════════════
+#  REPO ANALYSIS ENDPOINTS (SCM Knowledge DB)
+# ═══════════════════════════════════════════════════════════════════════
+
+async def _run_analysis_pipeline(
+    repo: SCMRepo,
+    scm: Any,
+    user_id: str,
+    project_id: str,
+    db: AsyncIOMotorDatabase,
+):
+    """Background task: download repo, analyze, and embed into Qdrant."""
+    try:
+        repo_details = {
+            "name_with_namespace": repo.name_with_namespace,
+            "default_branch": repo.default_branch,
+            "id": repo.repo_id,
+        }
+
+        # 1. Download the repo ZIP
+        print(f"📥 [ANALYZE] Downloading repo: {repo.name_with_namespace}")
+        repo_dir = await download_and_extract_repo_zip(scm, repo_details)
+
+        # 2. Run deterministic analysis
+        analysis = analyze_repository(
+            repo_dir=repo_dir,
+            repo_id=str(repo.repo_id),
+            repo_name=repo.name_with_namespace,
+            scm_provider=repo.scm_provider,
+            user_id=user_id,
+            project_id=project_id,
+            default_branch=repo.default_branch or "main",
+        )
+
+        # 3. Store in MongoDB
+        await crud_repo_analysis.upsert_repo_analysis(db, analysis)
+
+        # 4. Embed into Qdrant
+        try:
+            embed_repo_analysis(analysis, qdrant_url=settings.QDRANT_URL)
+        except Exception as e:
+            print(f"⚠️ Qdrant embedding failed (analysis still saved): {e}")
+
+        print(f"✅ [ANALYZE] Pipeline complete for {repo.name_with_namespace}")
+
+    except Exception as e:
+        print(f"❌ [ANALYZE] Pipeline failed for {repo.name_with_namespace}: {e}")
+        import traceback
+        traceback.print_exc()
+        # Mark analysis as failed
+        try:
+            await crud_repo_analysis.upsert_repo_analysis(db, {
+                "repo_id": str(repo.repo_id),
+                "user_id": user_id,
+                "project_id": project_id,
+                "repo_name": repo.name_with_namespace,
+                "scm_provider": repo.scm_provider,
+                "status": "failed",
+                "error": str(e)[:500],
+            })
+        except Exception:
+            pass
+
+
+@router.post("/scm/repos/{repo_id}/analyze", status_code=status.HTTP_202_ACCEPTED)
+async def analyze_scm_repo(
+    repo_id: str,
+    background_tasks: BackgroundTasks,
+    project_id: str = "",
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Trigger repo analysis: download ZIP, parse dependencies, detect infra signals,
+    and embed into Qdrant for semantic search.
+    
+    Runs in the background. Query GET /analysis to check results.
+    """
+    # Try MongoDB ObjectId first
+    repo = await crud_scm_repo.get_scm_repo(db, repo_id)
+    if not repo:
+        try:
+            numeric_id = int(repo_id)
+            repo = await crud_scm_repo.get_scm_repo_by_repo_id(db, numeric_id)
+        except (ValueError, TypeError):
+            pass
+
+    if not repo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="SCM repository not found",
+        )
+
+    scm = await crud_scm.get_scm(db, repo.scm_id)
+    if not scm:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="SCM credentials not found",
+        )
+
+    # Mark as pending
+    await crud_repo_analysis.upsert_repo_analysis(db, {
+        "repo_id": str(repo.repo_id),
+        "user_id": str(current_user.id),
+        "project_id": project_id,
+        "repo_name": repo.name_with_namespace,
+        "scm_provider": repo.scm_provider,
+        "status": "analyzing",
+    })
+
+    background_tasks.add_task(
+        _run_analysis_pipeline,
+        repo=repo,
+        scm=scm,
+        user_id=str(current_user.id),
+        project_id=project_id,
+        db=db,
+    )
+
+    return {
+        "message": "Analysis started in background",
+        "repo_id": repo_id,
+        "repo_name": repo.name_with_namespace,
+        "status": "analyzing",
+    }
+
+
+@router.get("/scm/repos/{repo_id}/analysis", status_code=status.HTTP_200_OK)
+async def get_scm_repo_analysis(
+    repo_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get the structured repo analysis.
+    Returns the full analysis including tech stack, dependencies, infra signals, etc.
+    """
+    analysis = await crud_repo_analysis.get_repo_analysis(
+        db, repo_id, user_id=str(current_user.id)
+    )
+
+    # Also try with the numeric repo_id from the SCM repo record
+    if not analysis:
+        repo = await crud_scm_repo.get_scm_repo(db, repo_id)
+        if repo:
+            analysis = await crud_repo_analysis.get_repo_analysis(
+                db, str(repo.repo_id), user_id=str(current_user.id)
+            )
+
+    if not analysis:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No analysis found for this repository. Trigger one with POST /analyze.",
+        )
+
+    # Remove large fields that aren't needed in the API response
+    analysis.pop("dep_file_contents", None)
+
+    return analysis

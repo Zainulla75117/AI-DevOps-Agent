@@ -5,6 +5,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from chat.prompts import build_planner_prompt
 from chat.schemas import ResourcePlan
 from chat.tools import get_architecture_template, get_available_regions
+from chat.context_builder import build_repo_context, get_infra_evidence_from_analysis, _format_fallback_context
 from app.schemas.resource_schemas import ResourceType
 from app.schemas.aws_schemas import AWS_CONFIG_REGISTRY, AWS_CONFIG_ALTERNATIVES
 
@@ -243,16 +244,22 @@ async def generate_execution_plan(state: dict, llm) -> dict:
         return state # Skip if not planning
         
     try:
-        # Build rich repo context
-        repo_context = _format_repo_context(state)
-        
+        # Build rich repo context using structured analysis + Qdrant
+        # Falls back to raw repo_tree if no analysis exists
+        from config import settings
+        repo_context = await build_repo_context(
+            state,
+            scm_service_url=settings.SCM_SERVICE_URL,
+            qdrant_url=settings.QDRANT_URL,
+        )
         system_prompt = build_planner_prompt(
             project_name=state.get("project_name", "Unknown"),
             project_info=state.get("project_info", {}),
             repo_context=repo_context,
             existing_resources=state.get("existing_resources", []),
             validation_errors=state.get("validation_errors", []),
-            previous_plan=state.get("generated_plan") or state.get("implementation_plan")
+            previous_plan=state.get("generated_plan") or state.get("implementation_plan"),
+            safety_warnings=state.get("safety_warnings", [])
         )
         
         messages = [SystemMessage(content=system_prompt)]
@@ -303,7 +310,14 @@ async def generate_execution_plan(state: dict, llm) -> dict:
         # ── Evidence-based resource filtering ──
         # Deterministic filter: strip resources the LLM hallucinated
         # that have no supporting evidence in the repo.
-        evidence_set = _detect_repo_evidence(state)
+        analysis = state.get("repo_analysis")
+        if analysis and analysis.get("status") == "ready":
+            evidence_set = get_infra_evidence_from_analysis(analysis)
+            logger.info("Using evidence from structured repo_analysis")
+        else:
+            evidence_set = _detect_repo_evidence(state)
+            logger.info("Using evidence from fallback _detect_repo_evidence")
+        
         logger.info(f"Repo evidence detected for resource types: {evidence_set or '{none}'}")
         
         raw_plan = plan.model_dump()
@@ -371,9 +385,11 @@ async def generate_execution_plan(state: dict, llm) -> dict:
             **state,
             "generated_plan": enriched_plan,
             "validation_errors": all_val_warnings,
+            "safety_warnings": [],
             "response_content": response_msg,
             "raw_response": response_msg,
-            "response_type": "planned"
+            "response_type": "planned",
+            "retry_count": state.get("retry_count", 0) + (1 if state.get("safety_warnings") else 0)
         }
         
     except Exception as e:

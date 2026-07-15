@@ -2,8 +2,12 @@
 LangGraph-based infrastructure provisioning workflow.
 
 Multi-LLM pipeline:
-  extract → plan → validate → safety → END
-                                      ↘ execute → END
+  prompt_analyzer → extract → plan → validate → safety → END
+                                                          ↘ execute → END
+
+The prompt_analyzer (Node 0) is the Human-in-the-Loop gate. It evaluates
+whether the user's prompt is specific enough to proceed, or if it should
+ask clarifying counter-questions / suggest a rephrased version first.
 
 The extract node classifies user intent. If it's a plan/create/update/edit
 request, the planner generates a ResourcePlan. The validator runs
@@ -23,6 +27,7 @@ import boto3
 from config import settings
 
 # Import graph nodes
+from chat.nodes.prompt_analyzer import analyze_prompt
 from chat.nodes.extractor import extract_request
 from chat.nodes.planner import generate_execution_plan
 from chat.nodes.validator import validate_request
@@ -96,7 +101,9 @@ class InfraChatState(TypedDict):
     project_info: Dict[str, Any]
     provisioning_context: Optional[Dict[str, Any]]
     repo_tree: Optional[Dict[str, Any]]
+    repo_analysis: Optional[Dict[str, Any]]
     repo_scan_memory: Optional[Dict[str, Any]]
+    repo_id: str
     user_message: str
     auth_token: str
     infra_exists: bool
@@ -105,6 +112,12 @@ class InfraChatState(TypedDict):
     intent: str                             # InfrastructureIntent enum value
     existing_resources: List[Dict[str, Any]]
     conversation_summary: Optional[Dict[str, Any]]
+
+    # ── Human-in-the-Loop prompt analysis (Node 0) ──
+    prompt_decision: Optional[str]          # "proceed" | "clarify" | "rephrase"
+    clarification_pending: bool             # True when waiting for user to answer our questions
+    clarification_questions: List[str]      # Questions sent to user on clarify decision
+    rephrased_prompt: Optional[str]         # Suggested rewrite shown to user on rephrase decision
 
     # ── Multi-LLM pipeline outputs ──
     extracted_resources: List[Dict[str, Any]]
@@ -118,6 +131,7 @@ class InfraChatState(TypedDict):
     plan_status: str                        # "none" | "draft" | "approved" | "executing" | "completed"
     workbook: List[Dict[str, Any]]
     approved_orders: List[int]
+    retry_count: int                        # Track self-healing iterations
 
     # ── Legacy fields (kept for backward-compatible session state) ──
     pending_resources: List[Dict[str, Any]]
@@ -148,6 +162,9 @@ def build_infra_chat_graph() -> StateGraph:
     workflow = StateGraph(InfraChatState)
 
     # Wrap nodes to inject the LLM instance
+    async def prompt_analyzer_node(state):
+        return await analyze_prompt(state, llm)
+
     async def extract_node(state):
         return await extract_request(state, llm)
 
@@ -164,16 +181,25 @@ def build_infra_chat_graph() -> StateGraph:
         return await execute_dag_plan(state)
 
     # Add nodes
+    workflow.add_node("prompt_analyzer", prompt_analyzer_node)
     workflow.add_node("extract", extract_node)
     workflow.add_node("plan", plan_node)
     workflow.add_node("validate", validate_node)
     workflow.add_node("safety", safety_node)
     workflow.add_node("execute", execute_node)
 
-    # Entry point
-    workflow.add_edge(START, "extract")
+    # Entry point: START -> prompt_analyzer (HITL gate runs first)
+    workflow.add_edge(START, "prompt_analyzer")
 
     # ── Routing ──
+
+    def route_after_analyzer(state: InfraChatState) -> str:
+        """Route based on prompt quality decision."""
+        decision = state.get("prompt_decision", "proceed")
+        if decision == "proceed":
+            return "extract"
+        # clarify and rephrase both terminate this turn (return counter-questions to user)
+        return "end"
 
     def route_after_extract(state: InfraChatState) -> str:
         intent = state.get("intent")
@@ -193,6 +219,23 @@ def build_infra_chat_graph() -> StateGraph:
             return "end"
         return "safety"
 
+    def route_after_safety(state: InfraChatState) -> str:
+        warnings = state.get("safety_warnings", [])
+        retry_count = state.get("retry_count", 0)
+        
+        # If safety warnings exist and we haven't hit the retry limit, route back to planner to self-heal
+        if warnings and retry_count < 3:
+            logger.info(f"Self-healing safety loop triggered (Retry {retry_count + 1}/3).")
+            return "plan"
+            
+        return "end"
+
+    workflow.add_conditional_edges(
+        "prompt_analyzer",
+        route_after_analyzer,
+        {"extract": "extract", "end": END},
+    )
+
     workflow.add_conditional_edges(
         "extract",
         route_after_extract,
@@ -211,7 +254,12 @@ def build_infra_chat_graph() -> StateGraph:
         {"safety": "safety", "end": END},
     )
 
-    workflow.add_edge("safety", END)
+    workflow.add_conditional_edges(
+        "safety",
+        route_after_safety,
+        {"plan": "plan", "end": END},
+    )
+    
     workflow.add_edge("execute", END)
 
     return workflow.compile()
@@ -269,7 +317,9 @@ async def run_turn(
         "project_info": session_state.get("project_info", {}),
         "provisioning_context": session_state.get("provisioning_context", {}),
         "repo_tree": session_state.get("repo_tree", {}),
+        "repo_analysis": session_state.get("repo_analysis"),
         "repo_scan_memory": session_state.get("repo_scan_memory"),
+        "repo_id": session_state.get("repo_id", ""),
         "user_message": user_message,
         "auth_token": session_state.get("auth_token", ""),
         "infra_exists": session_state.get("infra_exists", False),
@@ -278,6 +328,12 @@ async def run_turn(
         "intent": session_state.get("intent", "general"),
         "existing_resources": session_state.get("existing_resources", []),
         "conversation_summary": session_state.get("conversation_summary"),
+
+        # HITL prompt analysis
+        "prompt_decision": session_state.get("prompt_decision"),
+        "clarification_pending": session_state.get("clarification_pending", False),
+        "clarification_questions": session_state.get("clarification_questions", []),
+        "rephrased_prompt": session_state.get("rephrased_prompt"),
 
         # Multi-LLM pipeline outputs
         "extracted_resources": session_state.get("extracted_resources", []),
@@ -291,6 +347,7 @@ async def run_turn(
         "plan_status": session_state.get("plan_status", "none"),
         "workbook": session_state.get("workbook", []),
         "approved_orders": session_state.get("approved_orders", []),
+        "retry_count": session_state.get("retry_count", 0),
 
         # Legacy fields (backward compat)
         "pending_resources": session_state.get("pending_resources", []),

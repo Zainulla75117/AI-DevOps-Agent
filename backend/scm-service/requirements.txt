@@ -21,3 +21,6 @@ httpx>=0.27.0
 
 # Date Parsing (for SCM timestamps)
 python-dateutil>=2.9.0
+
+# Qdrant Vector Database (repo analysis embeddings)
+qdrant-client[fastembed]>=1.7.0
