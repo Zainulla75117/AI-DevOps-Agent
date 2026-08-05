@@ -9,10 +9,18 @@ const Header = () => {
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 40);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const shouldScroll = window.scrollY > 40;
+          setIsScrolled((prev) => (prev !== shouldScroll ? shouldScroll : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -23,12 +31,11 @@ const Header = () => {
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out pb-12 pointer-events-none"
     >
       {/* Background overlay with blur and mask (only mask when mobile menu is closed) */}
-      <div 
-        className={`absolute inset-0 transition-all duration-500 pointer-events-none z-0 ${
-          isScrolled || isMobileMenuOpen 
-            ? 'opacity-100 bg-agentic-surface/75 backdrop-blur-md' 
+      <div
+        className={`absolute inset-0 transition-all duration-500 pointer-events-none z-0 ${isScrolled || isMobileMenuOpen
+            ? 'opacity-100 bg-agentic-surface/75 backdrop-blur-md'
             : 'opacity-0 bg-transparent backdrop-blur-none'
-        }`}
+          }`}
         style={{
           WebkitMaskImage: isMobileMenuOpen
             ? 'none'
